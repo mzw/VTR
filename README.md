@@ -1,5 +1,4 @@
 # VTR
-----
 Written by [Yuta Maezawa](mailto:maezawa@nii.ac.jp) and greatest contributors
 
 ## Get to Start
