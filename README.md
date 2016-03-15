@@ -32,11 +32,12 @@ $ make compile
 
 ### Run
 VTR has two phases: in-advance and in-use.
-For validating your test cases, you can ignore the in-advance phase and just run ```$ make validate```.
+For validating your test cases, you can ignore the in-advance phase and just run ```$ make subjects``` and ```$ make validate```.
 
 #### Sophisticate "test-case modifications towards software release" patterns
 For this purpose, you can run VTR for collecting and clustering test-case modifications for previously released source programs.
 ```
+$ make subjects
 $ make detect
 $ make cluster
 ```
