@@ -1,7 +1,7 @@
 # VTR
 Written by [Yuta Maezawa](mailto:maezawa@nii.ac.jp) and greatest contributors
 
-## Get to Start
+## Get Started
 Stay tuned!
 
 ## License
@@ -9,6 +9,7 @@ Stay tuned!
 
 ## Contributors
 * Shunsuke Komuta - Result data analysis
+* Kazuyuki Honda - Result data analysis
 
 ----
 (C) Yuta Maezawa 2016
