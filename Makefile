@@ -16,11 +16,15 @@ subjects:
 	cd subjects && git clone https://github.com/mzw/vtr-example
 	
 dict:
-	$(JAVA) jp.mzw.vtr.git.DictionaryMaker &
+	$(JAVA) jp.mzw.vtr.git.DictionaryMaker
 
 detect:
 	$(JAVA)  jp.mzw.vtr.detect.EachTestMethodRunner &
 	
+cluster:
+	$(JAVA)  jp.mzw.vtr.cluster.LCSGenerator
+	$(JAVA)  jp.mzw.vtr.cluster.LCSAnalyzer
+	
 suggest:
-	java -XX:-UseGCOverheadLimit -Xms4096m -Xmx12g -cp target/classes:target/dependency/* jp.mzw.vtr.suggest.Suggester &
+	$(JAVA) jp.mzw.vtr.suggest.Suggester &
 	
