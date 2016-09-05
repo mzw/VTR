@@ -15,6 +15,9 @@ import jp.mzw.vtr.Utils;
 
 public class GitUtils {
 	static Logger log = LoggerFactory.getLogger(GitUtils.class);
+	
+	public static final String DOT_GIT = ".git";
+	
 
 	public static void checkout(Project project, Properties config, String commitId) throws IOException, InterruptedException {
 		Utils.exec(project.getBaseDir(), Arrays.asList(Utils.getPathToGit(config), "checkout", commitId));
