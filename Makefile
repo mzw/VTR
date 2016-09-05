@@ -5,7 +5,7 @@ MAX_MEM := 4096m
 JAVA := java -XX:-UseGCOverheadLimit -Xms$(MIN_MEM) -Xmx$(MAX_MEM) -cp target/classes:target/dependency/*
 
 config:
-	vim src/main/resources/peta.properties
+	vim src/main/resources/vtr.properties
 
 compile:
 	mvn clean compile test-compile dependency:copy-dependencies
