@@ -3,6 +3,7 @@ subjects/
 log/
 *.log
 *.properties
+output/
 
 # Maven
 target/

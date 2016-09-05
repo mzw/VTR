@@ -1,0 +1,30 @@
+#!/bin/bash
+
+####################################################################################################
+# $ sh/run command subject path/to/subject ref_to_compare
+#
+# command        : 
+# subject        : ID representing subject
+# path/to/subject: absolute or relative path to subject root directory
+# ref_to_compare : 
+#
+# Ex.
+# $ sh/run dict vtr-example subjects/vtr-example refs/heads/master
+####################################################################################################
+
+## Parse arguments
+COMMAND=${1}
+SUBJECT=${2}
+PATH_TO_SUBJECT=${3}
+REF_TO_COMPARE=${4}
+
+## Create class path
+VTR_CP="target/classes:target/test-classes:target/dependency/*"
+
+## Run VTR
+/usr/bin/java \
+  -Xms6400m \
+  -cp ${VTR_CP} \
+  jp.mzw.vtr.CLI ${COMMAND} ${SUBJECT} ${PATH_TO_SUBJECT} ${REF_TO_COMPARE}
+
+echo "Finish"
