@@ -25,7 +25,7 @@ public class CheckoutConductor {
 	 *
 	 */
 	public interface Listener {
-		public void onEvent();
+		public void onCheckout();
 	}
 
 	/** Observer listeners */
@@ -43,7 +43,7 @@ public class CheckoutConductor {
 	/** Notify Observer listeners */
 	private void notifyListeners() {
 		for (Listener listener : this.listenerSet) {
-			listener.onEvent();
+			listener.onCheckout();
 		}
 	}
 
