@@ -2,7 +2,6 @@ package jp.mzw.vtr.dict;
 
 import java.io.File;
 import java.io.IOException;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -28,10 +27,8 @@ import org.eclipse.jgit.revwalk.RevWalk;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class DictionaryMaker {
+public class DictionaryMaker extends DictionaryBase {
 	static Logger LOGGER = LoggerFactory.getLogger(DictionaryMaker.class);
-
-	public static final SimpleDateFormat SDF = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z");
 
 	protected Git git;
 
@@ -142,10 +139,10 @@ public class DictionaryMaker {
 	 * @throws IncorrectObjectTypeException
 	 * @throws IOException
 	 */
-	public void writeDictInXML(Map<Ref, Collection<RevCommit>> tagCommitsMap, String refToCompare, File file) throws MissingObjectException,
+	public void writeDictInXML(Map<Ref, Collection<RevCommit>> tagCommitsMap, String refToCompare, File dir) throws MissingObjectException,
 			IncorrectObjectTypeException, IOException {
 		Document document = this.getDict(tagCommitsMap, refToCompare);
-		FileUtils.write(file, document.asXML());
+		FileUtils.write(new File(dir, FILENAME_DICT_XML), document.asXML());
 	}
 
 	/**
@@ -173,8 +170,8 @@ public class DictionaryMaker {
 	 * @throws GitAPIException
 	 * @throws IOException
 	 */
-	public void writeCommitListInXML(File file) throws NoHeadException, GitAPIException, IOException {
+	public void writeCommitListInXML(File dir) throws NoHeadException, GitAPIException, IOException {
 		Document document = this.getCommits();
-		FileUtils.write(file, document.asXML());
+		FileUtils.write(new File(dir, FILENAME_COMMITS_XML), document.asXML());
 	}
 }
