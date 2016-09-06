@@ -31,16 +31,6 @@ import org.slf4j.LoggerFactory;
 public class EachTestMethodRunner extends VtrBase {
 	protected static Logger log = LoggerFactory.getLogger(EachTestMethodRunner.class);
 	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
 	public static void main(String[] args) throws Exception {
 		Properties config = Utils.getConfig("vtr.properties");
 		Project project = Project.make(config);
