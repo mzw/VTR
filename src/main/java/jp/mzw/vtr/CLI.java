@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Map;
-import java.util.Properties;
 
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -22,10 +21,7 @@ public class CLI {
 	
 	public static void main(String[] args) throws IOException, NoHeadException, GitAPIException {
 		
-		Properties config = new Properties();
-		config.load(CLI.class.getClassLoader().getResourceAsStream("config.properties"));
-		String pathToOutputDir = config.getProperty("path_to_output_dir") != null ? config.getProperty("path_to_output_dir") : "output";
-		File outputDir = new File(pathToOutputDir);
+		Config config = new Config("config.properties");
 		
 		if (args.length == 0) {
 			// Invalid usage
@@ -34,7 +30,7 @@ public class CLI {
 			String subjectId = args[1];
 			String pathToSubject = args[2];
 			String refToCompare = args[3];
-			dict(outputDir, subjectId, pathToSubject, refToCompare);
+			dict(config.getOutputDir(), subjectId, pathToSubject, refToCompare);
 		}
 		
 	}
@@ -45,8 +41,8 @@ public class CLI {
 		Map<Ref, Collection<RevCommit>> tagCommitsMap = dm.getTagCommitsMap(refToCompare);
 		
 		File dir = new File(outputDir, subjectId);
-		dm.writeCommitListInXML(new File(dir, "commits.xml"));
-		dm.writeDictInXML(tagCommitsMap, refToCompare, new File(dir, "dict.xml"));
+		dm.writeCommitListInXML(dir);
+		dm.writeDictInXML(tagCommitsMap, refToCompare, dir);
 	}
-	
+
 }
