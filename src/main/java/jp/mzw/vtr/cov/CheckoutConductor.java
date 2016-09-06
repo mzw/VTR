@@ -6,8 +6,11 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.errors.GitAPIException;
 
 import jp.mzw.vtr.dict.DictionaryParser;
 import jp.mzw.vtr.git.Commit;
@@ -15,21 +18,106 @@ import jp.mzw.vtr.git.Tag;
 
 public class CheckoutConductor {
 
+	/**
+	 * Listener interface for Observer pattern
+	 * 
+	 * @author yuta
+	 *
+	 */
+	public interface Listener {
+		public void onEvent();
+	}
+
+	/** Observer listeners */
+	private Set<Listener> listenerSet = new CopyOnWriteArraySet<>();
+
+	/**
+	 * Add Observer listeners
+	 * 
+	 * @param listener
+	 */
+	public void addListener(Listener listener) {
+		this.listenerSet.add(listener);
+	}
+
+	/** Notify Observer listeners */
+	private void notifyListeners() {
+		for (Listener listener : this.listenerSet) {
+			listener.onEvent();
+		}
+	}
+
 	Git git;
 	List<Commit> commits;
 	Map<Tag, List<Commit>> dict;
-	
+
 	public CheckoutConductor(Git git, File dir) throws IOException, ParseException {
 		this.git = git;
 		commits = DictionaryParser.parseCommits(dir);
 		dict = DictionaryParser.parseDictionary(dir);
 	}
-	
+
 	/**
+	 * API for conducting checkout
+	 * 
+	 * @throws GitAPIException
+	 */
+	public void checkout() throws GitAPIException {
+		List<Commit> commits = getCommitsAfterInitialRelease();
+		checkout(commits);
+	}
+
+	/**
+	 * Types representing checkout after or at given commit ID
+	 * 
+	 * @author yuta
+	 *
+	 */
+	public static enum Type {
+		After, At,
+	}
+
+	/**
+	 * API for conducting checkout
+	 * 
+	 * @param type
+	 * @param commitId
+	 * @throws GitAPIException
+	 */
+	public void checkout(Type type, String commitId) throws GitAPIException {
+		List<Commit> commits = new ArrayList<>();
+		switch (type) {
+		case After:
+			commits = getCommitsAfter(commitId);
+			break;
+		case At:
+			commits.addAll(getCommitAt(commitId));
+			break;
+		default:
+			return;
+		}
+		checkout(commits);
+	}
+
+	/**
+	 * Actual checkout conductor
+	 * 
+	 * @param commits
+	 * @throws GitAPIException
+	 */
+	private void checkout(List<Commit> commits) throws GitAPIException {
+		for (Commit commit : commits) {
+			git.checkout().setName(commit.getId()).call();
+			notifyListeners();
+		}
+	}
+
+	/**
+	 * Get commits after initial release
 	 * 
 	 * @return
 	 */
-	public List<Commit> getCommitsAfterInitialRelease() {
+	protected List<Commit> getCommitsAfterInitialRelease() {
 		List<Commit> ret = new ArrayList<>();
 		for (Commit commit : this.commits) {
 			// Skip until initial release
@@ -47,13 +135,13 @@ public class CheckoutConductor {
 		}
 		return ret;
 	}
-	
-	
+
 	/**
 	 * Get commits after given commit ID
+	 * 
 	 * @param commitId
 	 */
-	public List<Commit> getCommitsAfter(String commitId) {
+	protected List<Commit> getCommitsAfter(String commitId) {
 		List<Commit> ret = new ArrayList<>();
 		boolean detect = false;
 		for (Commit commit : this.commits) {
@@ -67,9 +155,14 @@ public class CheckoutConductor {
 		}
 		return ret;
 	}
-	
-	
-	public List<Commit> getCommitAt(String commitId) {
+
+	/**
+	 * Get a commit at given commit ID
+	 * 
+	 * @param commitId
+	 * @return
+	 */
+	protected List<Commit> getCommitAt(String commitId) {
 		List<Commit> ret = new ArrayList<>();
 		for (Commit commit : this.commits) {
 			if (commit.getId().equals(commitId)) {
@@ -79,5 +172,5 @@ public class CheckoutConductor {
 		}
 		return ret;
 	}
-	
+
 }
