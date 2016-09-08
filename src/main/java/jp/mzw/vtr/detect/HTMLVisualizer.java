@@ -11,8 +11,8 @@ import java.util.Properties;
 
 import jp.mzw.vtr.Project;
 import jp.mzw.vtr.Utils;
+import jp.mzw.vtr.dict.DictionaryBase;
 import jp.mzw.vtr.git.Commit;
-import jp.mzw.vtr.git.DictionaryMaker;
 import jp.mzw.vtr.git.GitUtils;
 import jp.mzw.vtr.git.Tag;
 import jp.mzw.vtr.maven.TestCase;
@@ -42,8 +42,8 @@ public class HTMLVisualizer {
 	Project project;
 	Properties config;
 	List<Commit> commits;
-	HashMap<Tag, ArrayList<Commit>> dict;
-	public HTMLVisualizer(Project project, Properties config, List<Commit> commits, HashMap<Tag, ArrayList<Commit>> dict) {
+	HashMap<Tag, List<Commit>> dict;
+	public HTMLVisualizer(Project project, Properties config, List<Commit> commits, HashMap<Tag, List<Commit>> dict) {
 		this.project = project;
 		this.config = config;
 		this.dict = dict;
@@ -82,7 +82,7 @@ public class HTMLVisualizer {
 				Tr tr = new Tr();
 				
 				Commit test_commit = GitUtils.blame(lineno, test_case.getTestFile(), project, config, commits);
-				Tag test_tag = DictionaryMaker.getTagBy(test_commit, dict);
+				Tag test_tag = DictionaryBase.getTagBy(test_commit, dict);
 
 				if(!cur_commit.getDate().after(test_commit.getDate())) tr.setCSSClass("target");
 				

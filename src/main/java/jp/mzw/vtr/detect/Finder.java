@@ -24,8 +24,8 @@ public class Finder extends VtrBase {
 	Logger log = LoggerFactory.getLogger(Finder.class);
 
 	List<Commit> commits;
-	HashMap<Tag, ArrayList<Commit>> dict;
-	public Finder(Project project, Properties config, List<Commit> commits, HashMap<Tag, ArrayList<Commit>> dict) {
+	HashMap<Tag, List<Commit>> dict;
+	public Finder(Project project, Properties config, List<Commit> commits, HashMap<Tag, List<Commit>> dict) {
 		super(project, config);
 		this.commits = commits;
 		this.dict = dict;
