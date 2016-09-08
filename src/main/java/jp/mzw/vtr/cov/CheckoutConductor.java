@@ -21,11 +21,11 @@ public class CheckoutConductor {
 	/**
 	 * Listener interface for Observer pattern
 	 * 
-	 * @author yuta
+	 * @author Yuta Maezawa
 	 *
 	 */
 	public interface Listener {
-		public void onCheckout();
+		public void onCheckout(Commit commit);
 	}
 
 	/** Observer listeners */
@@ -41,9 +41,9 @@ public class CheckoutConductor {
 	}
 
 	/** Notify Observer listeners */
-	private void notifyListeners() {
+	private void notifyListeners(Commit commit) {
 		for (Listener listener : this.listenerSet) {
-			listener.onCheckout();
+			listener.onCheckout(commit);
 		}
 	}
 
@@ -108,7 +108,7 @@ public class CheckoutConductor {
 	private void checkout(List<Commit> commits) throws GitAPIException {
 		for (Commit commit : commits) {
 			git.checkout().setName(commit.getId()).call();
-			notifyListeners();
+			notifyListeners(commit);
 		}
 	}
 

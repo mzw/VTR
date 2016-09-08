@@ -2,6 +2,7 @@ package jp.mzw.vtr.maven;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
@@ -19,6 +20,34 @@ import jp.mzw.vtr.Utils;
 
 public class MavenUtils {
 	static Logger log = LoggerFactory.getLogger(MavenUtils.class);
+	
+
+	/**
+	 * 
+	 * @return
+	 * @throws IOException
+	 */
+	public static List<TestSuite> getTestSuites(File mvnPrj) throws IOException {
+		ArrayList<TestSuite> testSuites = new ArrayList<TestSuite>();
+		File testDir = new File(mvnPrj, "src/test/java");
+		// Determine
+		ArrayList<File> mvnTestFileList = new ArrayList<File>();
+		for(File file : Utils.getFiles(testDir)) {
+			if(Pattern.compile(".*Test(Case)?.*\\.java").matcher(file.getName()).find()) {
+				mvnTestFileList.add(file);
+			}
+		}
+		// Return
+		for(File testFile : mvnTestFileList) {
+			TestSuite testSuite = new TestSuite(testDir, testFile).parseJuitTestCaseList();
+			testSuites.add(testSuite);
+		}
+		return testSuites;
+	}
+	
+	
+	
+	
 
 	public static boolean compile(Project project, Properties config) throws IOException, InterruptedException {
 		log.info("Maven-compile: " + project.getBaseDir().getAbsolutePath());

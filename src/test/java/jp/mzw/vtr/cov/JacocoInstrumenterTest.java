@@ -1,6 +1,7 @@
 package jp.mzw.vtr.cov;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 
 import org.apache.commons.io.FileUtils;
@@ -24,12 +25,19 @@ public class JacocoInstrumenterTest {
 		JacocoInstrumenter ji = new JacocoInstrumenter(dir);
 		
 		String origin = FileUtils.readFileToString(new File(dir, JacocoInstrumenter.FILENAME_POM));
+		ji.instrument();
 		String modified = FileUtils.readFileToString(new File(dir, JacocoInstrumenter.FILENAME_POM));
 		ji.revert();
 		String reverted = FileUtils.readFileToString(new File(dir, JacocoInstrumenter.FILENAME_POM));
 		
 		Assert.assertFalse(origin.equals(modified));
 		Assert.assertTrue(origin.equals(reverted));
+	}
+	
+	@Test(expected=FileNotFoundException.class)
+	public void testPomNotFound() throws IOException {
+		File dir = new File("src/test/resouces/output");
+		new JacocoInstrumenter(dir);
 	}
 	
 }

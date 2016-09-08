@@ -1,6 +1,7 @@
 package jp.mzw.vtr.cov;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -25,6 +26,9 @@ public class JacocoInstrumenter {
 
 	public JacocoInstrumenter(File dir) throws IOException {
 		this.pom = new File(dir, FILENAME_POM);
+		if (!this.pom.exists()) {
+			throw new FileNotFoundException("pom.xml not found");
+		}
 		this.originalPomContent = FileUtils.readFileToString(pom);
 		this.document = Jsoup.parse(this.originalPomContent, "", Parser.xmlParser());
 	}
@@ -33,7 +37,7 @@ public class JacocoInstrumenter {
 		FileUtils.writeStringToFile(this.pom, this.originalPomContent);
 	}
 
-	public void instrument() throws IOException {
+	public boolean instrument() throws IOException {
 		String modified = String.copyValueOf(this.originalPomContent.toCharArray());
 		modified = this.modifyJunitVersion(modified);
 		modified = this.modifySurefireVersion(modified);
@@ -41,8 +45,9 @@ public class JacocoInstrumenter {
 
 		if (this.originalPomContent.compareTo(modified) != 0) { // modified
 			FileUtils.writeStringToFile(this.pom, modified);
-
+			return true;
 		}
+		return false;
 	}
 
 	/**
