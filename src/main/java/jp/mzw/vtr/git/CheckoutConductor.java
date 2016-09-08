@@ -1,4 +1,4 @@
-package jp.mzw.vtr.cov;
+package jp.mzw.vtr.git;
 
 import java.io.File;
 import java.io.IOException;
@@ -13,8 +13,6 @@ import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 
 import jp.mzw.vtr.dict.DictionaryParser;
-import jp.mzw.vtr.git.Commit;
-import jp.mzw.vtr.git.Tag;
 
 public class CheckoutConductor {
 

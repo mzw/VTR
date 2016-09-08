@@ -8,6 +8,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import jp.mzw.vtr.core.Config;
+import jp.mzw.vtr.git.CheckoutConductor;
 import jp.mzw.vtr.git.Commit;
 import jp.mzw.vtr.maven.MavenUtils;
 import jp.mzw.vtr.maven.TestCase;

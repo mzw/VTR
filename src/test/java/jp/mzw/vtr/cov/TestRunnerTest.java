@@ -6,6 +6,7 @@ import java.text.ParseException;
 import java.util.Date;
 
 import jp.mzw.vtr.core.Config;
+import jp.mzw.vtr.git.CheckoutConductor;
 import jp.mzw.vtr.git.Commit;
 import jp.mzw.vtr.git.GitUtils;
 

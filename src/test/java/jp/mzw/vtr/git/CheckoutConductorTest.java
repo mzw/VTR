@@ -1,10 +1,11 @@
-package jp.mzw.vtr.cov;
+package jp.mzw.vtr.git;
 
 import java.io.File;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.List;
 
+import jp.mzw.vtr.git.CheckoutConductor;
 import jp.mzw.vtr.git.Commit;
 import jp.mzw.vtr.git.GitUtils;
 
