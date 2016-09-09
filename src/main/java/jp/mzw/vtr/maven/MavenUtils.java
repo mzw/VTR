@@ -46,7 +46,7 @@ public class MavenUtils {
 		invoker.setOutputHandler(new InvocationOutputHandler() {
 			@Override
 			public void consumeLine(String line) {
-				// NOP
+				System.out.println(line);
 			}
 		});
 		invoker.setErrorHandler(new InvocationOutputHandler() {
