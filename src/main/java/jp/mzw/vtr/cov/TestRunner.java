@@ -94,13 +94,16 @@ public class TestRunner implements CheckoutConductor.Listener {
 		}
 		// Not found "pom.xml" meaning not Maven project
 		catch (FileNotFoundException e) {
+			e.printStackTrace();
 			return;
 		} catch (IOException | MavenInvocationException e) {
+			e.printStackTrace();
 			try {
 				if (modified) {
 					ji.revert();
 				}
 			} catch (IOException _e) {
+				e.printStackTrace();
 				LOGGER.warn("Failed to revert even though test running exception");
 			}
 		}
