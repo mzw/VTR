@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -11,6 +12,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
 
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.revwalk.RevCommit;
 
 import jp.mzw.vtr.dict.DictionaryParser;
 
@@ -105,6 +107,13 @@ public class CheckoutConductor {
 	 */
 	private void checkout(List<Commit> commits) throws GitAPIException {
 		for (Commit commit : commits) {
+			// Stash before checkout
+			git.stashCreate().call();
+			Collection<RevCommit> stashes = git.stashList().call();
+			if (!stashes.isEmpty()) {
+				git.stashDrop().setStashRef(0).call();
+			}
+			// Checkout
 			git.checkout().setName(commit.getId()).call();
 			notifyListeners(commit);
 		}
