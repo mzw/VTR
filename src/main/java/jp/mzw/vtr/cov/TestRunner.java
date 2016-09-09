@@ -88,9 +88,8 @@ public class TestRunner implements CheckoutConductor.Listener {
 						}
 					}
 				}
-
-				ji.revert();
 			}
+			ji.revert();
 		}
 		// Not found "pom.xml" meaning not Maven project
 		catch (FileNotFoundException e) {
