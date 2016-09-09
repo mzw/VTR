@@ -65,8 +65,10 @@ public class TestRunner implements CheckoutConductor.Listener {
 						String method = tc.getClassName() + "#" + tc.getName();
 						File dst = new File(commitDir, method + "!jacoco.exec");
 						if (dst.exists()) {
+							LOGGER.info("Skip to measure coverage: {}", tc.getFullName());
 							continue;
 						}
+						LOGGER.info("Measure coverage: {}", tc.getFullName());
 						// Compile
 						MavenUtils.maven(this.subject, Arrays.asList("clean", "compile", "test-compile"), this.config.getMavenHome());
 						// Run
