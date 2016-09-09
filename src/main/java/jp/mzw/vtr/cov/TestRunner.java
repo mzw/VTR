@@ -92,6 +92,8 @@ public class TestRunner implements CheckoutConductor.Listener {
 							} else {
 								LOGGER.error("Cannot copy: " + dst);
 							}
+						} else {
+							LOGGER.warn("Failed to measure coverage: {}", src.getAbsolutePath());
 						}
 					}
 				}
