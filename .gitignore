@@ -4,6 +4,7 @@ log/
 *.log
 *.properties
 output/
+sh/ba.sh
 
 # Maven
 target/

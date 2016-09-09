@@ -14,10 +14,6 @@ import jp.mzw.vtr.maven.MavenUtils;
 import jp.mzw.vtr.maven.TestCase;
 import jp.mzw.vtr.maven.TestSuite;
 
-import org.apache.maven.shared.invoker.DefaultInvocationRequest;
-import org.apache.maven.shared.invoker.DefaultInvoker;
-import org.apache.maven.shared.invoker.InvocationRequest;
-import org.apache.maven.shared.invoker.Invoker;
 import org.apache.maven.shared.invoker.MavenInvocationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,16 +22,16 @@ public class TestRunner implements CheckoutConductor.Listener {
 	static Logger LOGGER = LoggerFactory.getLogger(TestRunner.class);
 
 	protected String subjectId;
-	protected File mvnPrj;
+	protected File subject;
 	protected Config config;
 
 	protected JacocoInstrumenter ji;
 
-	public TestRunner(String subjectId, File mvnPrj, Config config) throws IOException {
+	public TestRunner(String subjectId, File subject, Config config) throws IOException {
 		this.subjectId = subjectId;
-		this.mvnPrj = mvnPrj;
+		this.subject = subject;
 		this.config = config;
-		this.ji = new JacocoInstrumenter(this.mvnPrj);
+		this.ji = new JacocoInstrumenter(this.subject);
 	}
 
 	/**
@@ -62,7 +58,7 @@ public class TestRunner implements CheckoutConductor.Listener {
 					commitDir.mkdirs();
 				}
 				// Measure coverage
-				List<TestSuite> testSuites = MavenUtils.getTestSuites(this.mvnPrj);
+				List<TestSuite> testSuites = MavenUtils.getTestSuites(this.subject);
 				for (TestSuite ts : testSuites) {
 					for (TestCase tc : ts.getTestCases()) {
 						// Skip if coverage is already measured
@@ -72,19 +68,11 @@ public class TestRunner implements CheckoutConductor.Listener {
 							continue;
 						}
 						// Compile
-						InvocationRequest request = new DefaultInvocationRequest();
-						request.setPomFile(new File(this.mvnPrj, JacocoInstrumenter.FILENAME_POM));
-						request.setGoals(Arrays.asList("clean", "compile", "test-compile"));
-						Invoker invoker = new DefaultInvoker();
-						invoker.setMavenHome(this.config.getMavenHome());
-						invoker.execute(request);
+						MavenUtils.maven(this.subject, Arrays.asList("clean", "compile", "test-compile"), this.config.getMavenHome());
 						// Run
-						request.setGoals(Arrays.asList("-Dtest=" + method, "jacoco:prepare-agent", "test", "jacoco:report"));
-						invoker = new DefaultInvoker();
-						invoker.setMavenHome(this.config.getMavenHome());
-						invoker.execute(request);
+						MavenUtils.maven(this.subject, Arrays.asList("-Dtest=" + method, "jacoco:prepare-agent", "test", "jacoco:report"), this.config.getMavenHome());
 						// Copy
-						File src = new File(this.mvnPrj, "target/jacoco.exec");
+						File src = new File(this.subject, "target/jacoco.exec");
 						if (src.exists()) {
 							boolean copy = dst.exists() ? dst.delete() : true;
 							if (copy) {

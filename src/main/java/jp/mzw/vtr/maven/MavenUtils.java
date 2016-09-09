@@ -28,9 +28,10 @@ import jp.mzw.vtr.cov.JacocoInstrumenter;
 
 public class MavenUtils {
 	static Logger log = LoggerFactory.getLogger(MavenUtils.class);
-	
+
 	/**
 	 * Invoke Maven command
+	 * 
 	 * @param subject
 	 * @param goals
 	 * @param mavenHome
@@ -43,10 +44,16 @@ public class MavenUtils {
 		Invoker invoker = new DefaultInvoker();
 		invoker.setMavenHome(mavenHome);
 		invoker.setOutputHandler(new InvocationOutputHandler() {
-	        @Override
-	        public void consumeLine( String line ) {
-	        	// NOP
-	        }
+			@Override
+			public void consumeLine(String line) {
+				// NOP
+			}
+		});
+		invoker.setErrorHandler(new InvocationOutputHandler() {
+			@Override
+			public void consumeLine(String line) {
+				System.err.println(line);
+			}
 		});
 		invoker.execute(request);
 	}
@@ -73,11 +80,11 @@ public class MavenUtils {
 		}
 		return testSuites;
 	}
-	
+
 	public static File getTargetClassesDir(File subjectDir) {
 		return new File(subjectDir, "target/classes");
 	}
-	
+
 	/**
 	 * 
 	 * @param subjectDir
@@ -94,14 +101,12 @@ public class MavenUtils {
 		}
 		return null;
 	}
-	
-	
 
 	public static boolean compile(Project project, Properties config) throws IOException, InterruptedException {
 		log.info("Maven-compile: " + project.getBaseDir().getAbsolutePath());
 		List<String> results = Utils.exec(project.getBaseDir(), Arrays.asList(Utils.getPathToMaven(config), "clean", "compile", "test-compile"));
-		for(String result : results) {
-			if(result.startsWith("[ERROR]")) {
+		for (String result : results) {
+			if (result.startsWith("[ERROR]")) {
 				return false;
 			}
 		}
@@ -114,45 +119,46 @@ public class MavenUtils {
 	}
 
 	public static boolean isMavenTest(File file) {
-		if(file == null) return false;
-		
+		if (file == null)
+			return false;
+
 		String filename = file.getName();
-		
+
 		Matcher matcher = Pattern.compile(".*Test(Case)?.*\\.java").matcher(filename);
-		if(matcher.find()) { // && !filename.startsWith("Abstract")) {
+		if (matcher.find()) { // && !filename.startsWith("Abstract")) {
 			return true;
 		}
-		
+
 		return false;
 	}
 
 	public static boolean isJUnitTest(MethodDeclaration method) {
-		for(Object _modifier : method.modifiers()) {
+		for (Object _modifier : method.modifiers()) {
 			// For JUnit4
-			if(_modifier instanceof MarkerAnnotation) {
-				MarkerAnnotation annotation = (MarkerAnnotation)_modifier;
-				if("Test".equals(annotation.getTypeName().getFullyQualifiedName())) {
+			if (_modifier instanceof MarkerAnnotation) {
+				MarkerAnnotation annotation = (MarkerAnnotation) _modifier;
+				if ("Test".equals(annotation.getTypeName().getFullyQualifiedName())) {
 					boolean hasIgnore = false;
-					for(Object __modifier : method.modifiers()) {
-						if(__modifier instanceof MarkerAnnotation) {
-							MarkerAnnotation _annotation = (MarkerAnnotation)__modifier;
-							if("Ignore".equals(_annotation.getTypeName().getFullyQualifiedName())) {
+					for (Object __modifier : method.modifiers()) {
+						if (__modifier instanceof MarkerAnnotation) {
+							MarkerAnnotation _annotation = (MarkerAnnotation) __modifier;
+							if ("Ignore".equals(_annotation.getTypeName().getFullyQualifiedName())) {
 								hasIgnore = true;
 							}
 						}
 					}
-					if(hasIgnore) {
+					if (hasIgnore) {
 						return false;
 					}
 					return true;
 				}
 			}
 			// For JUnit3
-			else if(_modifier instanceof Modifier) {
+			else if (_modifier instanceof Modifier) {
 				Modifier modifier = (Modifier) _modifier;
-				if(modifier.isPublic()) {
+				if (modifier.isPublic()) {
 					String ret_type_str = method.getReturnType2() != null ? method.getReturnType2().toString() : "";
-					if("void".equals(ret_type_str) && method.getName().getIdentifier().startsWith("test")) {
+					if ("void".equals(ret_type_str) && method.getName().getIdentifier().startsWith("test")) {
 						return true;
 					}
 				}
