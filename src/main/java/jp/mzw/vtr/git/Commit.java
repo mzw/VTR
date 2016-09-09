@@ -9,6 +9,7 @@ import java.util.Date;
 import java.util.List;
 
 import org.apache.commons.io.FileUtils;
+import org.eclipse.jgit.revwalk.RevCommit;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -21,6 +22,11 @@ public class Commit {
 	public Commit(String id, Date date) {
 		this.id = id;
 		this.date = date;
+	}
+	
+	public Commit(RevCommit commit) {
+		this.id = commit.getId().name();
+		this.date = commit.getAuthorIdent().getWhen();
 	}
 	
 	public String getId() {

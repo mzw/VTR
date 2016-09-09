@@ -1,8 +1,8 @@
 package jp.mzw.vtr.dict;
 
 import java.text.SimpleDateFormat;
-import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import jp.mzw.vtr.git.Commit;
 import jp.mzw.vtr.git.Tag;
@@ -20,7 +20,7 @@ public class DictionaryBase {
 	 * @param dict
 	 * @return
 	 */
-	public static Tag getTagBy(Commit commit, HashMap<Tag, List<Commit>> dict) {
+	public static Tag getTagBy(Commit commit, Map<Tag, List<Commit>> dict) {
 		for(Tag tag : dict.keySet()) {
 			for(Commit _commit : dict.get(tag)) {
 				if(_commit.getId().equals(commit.getId())) {

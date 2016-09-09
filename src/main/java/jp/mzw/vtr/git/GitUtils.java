@@ -23,12 +23,25 @@ public class GitUtils {
 	
 	public static final String DOT_GIT = ".git";
 	
+	/**
+	 * 
+	 * @param pathToGitRepo
+	 * @return
+	 * @throws IOException
+	 */
 	public static Git getGit(String pathToGitRepo) throws IOException {
 		FileRepositoryBuilder builder = new FileRepositoryBuilder();
 		Repository repository = builder.setGitDir(new File(pathToGitRepo, GitUtils.DOT_GIT)).readEnvironment().findGitDir().build();
 		return new Git(repository);
 	}
 	
+	/**
+	 * 
+	 * @param git
+	 * @param branchName
+	 * @return
+	 * @throws GitAPIException
+	 */
 	public static Ref getBranch(Git git, String branchName) throws GitAPIException {
 		List<Ref> branchList = git.branchList().call();
 		for (Ref branch : branchList) {

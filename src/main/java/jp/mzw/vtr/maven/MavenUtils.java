@@ -2,6 +2,7 @@ package jp.mzw.vtr.maven;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -9,6 +10,12 @@ import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.maven.shared.invoker.DefaultInvocationRequest;
+import org.apache.maven.shared.invoker.DefaultInvoker;
+import org.apache.maven.shared.invoker.InvocationOutputHandler;
+import org.apache.maven.shared.invoker.InvocationRequest;
+import org.apache.maven.shared.invoker.Invoker;
+import org.apache.maven.shared.invoker.MavenInvocationException;
 import org.eclipse.jdt.core.dom.MarkerAnnotation;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.Modifier;
@@ -17,35 +24,76 @@ import org.slf4j.LoggerFactory;
 
 import jp.mzw.vtr.Project;
 import jp.mzw.vtr.Utils;
+import jp.mzw.vtr.cov.JacocoInstrumenter;
 
 public class MavenUtils {
 	static Logger log = LoggerFactory.getLogger(MavenUtils.class);
 	
+	/**
+	 * Invoke Maven command
+	 * @param subject
+	 * @param goals
+	 * @param mavenHome
+	 * @throws MavenInvocationException
+	 */
+	public static void maven(File subject, List<String> goals, File mavenHome) throws MavenInvocationException {
+		InvocationRequest request = new DefaultInvocationRequest();
+		request.setPomFile(new File(subject, JacocoInstrumenter.FILENAME_POM));
+		request.setGoals(goals);
+		Invoker invoker = new DefaultInvoker();
+		invoker.setMavenHome(mavenHome);
+		invoker.setOutputHandler(new InvocationOutputHandler() {
+	        @Override
+	        public void consumeLine( String line ) {
+	        	// NOP
+	        }
+		});
+		invoker.execute(request);
+	}
 
 	/**
 	 * 
 	 * @return
 	 * @throws IOException
 	 */
-	public static List<TestSuite> getTestSuites(File mvnPrj) throws IOException {
+	public static List<TestSuite> getTestSuites(File subjectDir) throws IOException {
 		ArrayList<TestSuite> testSuites = new ArrayList<TestSuite>();
-		File testDir = new File(mvnPrj, "src/test/java");
+		File testDir = new File(subjectDir, "src/test/java");
 		// Determine
 		ArrayList<File> mvnTestFileList = new ArrayList<File>();
-		for(File file : Utils.getFiles(testDir)) {
-			if(Pattern.compile(".*Test(Case)?.*\\.java").matcher(file.getName()).find()) {
+		for (File file : Utils.getFiles(testDir)) {
+			if (Pattern.compile(".*Test(Case)?.*\\.java").matcher(file.getName()).find()) {
 				mvnTestFileList.add(file);
 			}
 		}
 		// Return
-		for(File testFile : mvnTestFileList) {
+		for (File testFile : mvnTestFileList) {
 			TestSuite testSuite = new TestSuite(testDir, testFile).parseJuitTestCaseList();
 			testSuites.add(testSuite);
 		}
 		return testSuites;
 	}
 	
+	public static File getTargetClassesDir(File subjectDir) {
+		return new File(subjectDir, "target/classes");
+	}
 	
+	/**
+	 * 
+	 * @param subjectDir
+	 * @param relativePathToSrcFile
+	 * @return
+	 */
+	public static File getSrcFile(File subjectDir, String className) {
+		File srcDir = new File(subjectDir, "src/main/java");
+		for (File file : Utils.getFiles(srcDir)) {
+			URI relative = srcDir.toURI().relativize(file.toURI());
+			if (relative.toString().equals(className + ".java")) {
+				return file;
+			}
+		}
+		return null;
+	}
 	
 	
 

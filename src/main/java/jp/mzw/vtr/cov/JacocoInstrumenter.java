@@ -7,6 +7,10 @@ import java.io.InputStream;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.jacoco.core.analysis.Analyzer;
+import org.jacoco.core.analysis.CoverageBuilder;
+import org.jacoco.core.analysis.ICounter;
+import org.jacoco.core.tools.ExecFileLoader;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -155,4 +159,38 @@ public class JacocoInstrumenter {
 		// Return
 		return content;
 	}
+	
+	
+	/**
+	 * Parse coverage results
+	 * @param exec
+	 * @param targetClasses
+	 * @return
+	 * @throws IOException
+	 */
+	public static CoverageBuilder parse(File exec, File targetClasses) throws IOException {
+		ExecFileLoader loader = new ExecFileLoader();
+		loader.load(exec);
+		CoverageBuilder builder = new CoverageBuilder();
+		Analyzer analyzer = new Analyzer(loader.getExecutionDataStore(), builder);
+		analyzer.analyzeAll(targetClasses);
+		return builder;
+	}
+	
+	/**
+	 * Determine whether given line is covered by test cases
+	 * @param status
+	 * @return
+	 */
+	public static boolean isCoveredLine(int status) {
+		switch(status) {
+		case ICounter.PARTLY_COVERED:
+		case ICounter.FULLY_COVERED:
+			return true;
+		case ICounter.NOT_COVERED:
+		case ICounter.EMPTY:
+		}
+		return false;
+	}
+	
 }

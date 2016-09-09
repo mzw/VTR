@@ -3,6 +3,7 @@ package jp.mzw.vtr.maven;
 import java.io.File;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import jp.mzw.vtr.git.Commit;
 
@@ -21,6 +22,7 @@ public class TestCase {
 	
 	TestSuite testSuite;
 	
+	Map<File, List<Integer>> coveredClassLinesMap;
 	
 	public TestCase(String name, String classname, MethodDeclaration method, CompilationUnit cu, TestSuite testSuite) {
 		this.name = name;
@@ -30,6 +32,22 @@ public class TestCase {
 		this.cu = cu;
 		
 		this.testSuite = testSuite;
+	}
+	
+	/**
+	 * 
+	 * @param covered
+	 */
+	public void setCoveredClassLinesMap(Map<File, List<Integer>> covered) {
+		this.coveredClassLinesMap = covered;
+	}
+	
+	/**
+	 * 
+	 * @return
+	 */
+	public Map<File, List<Integer>> getCoveredClassLinesMap() {
+		return this.coveredClassLinesMap;
 	}
 	
 	public String getName() {
@@ -59,7 +77,6 @@ public class TestCase {
 	public List<Commit> getTestCommits() {
 		return this.test_commits;
 	}
-	
 	
 	public int getStartLineNumber() {
 		return this.cu.getLineNumber(this.method.getStartPosition());
