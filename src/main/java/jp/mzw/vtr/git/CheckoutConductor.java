@@ -105,6 +105,7 @@ public class CheckoutConductor {
 	 */
 	private void checkout(List<Commit> commits) throws GitAPIException {
 		for (Commit commit : commits) {
+			git.stashApply().call();
 			git.checkout().setName(commit.getId()).call();
 			notifyListeners(commit);
 		}
