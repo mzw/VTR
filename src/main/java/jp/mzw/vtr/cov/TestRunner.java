@@ -74,6 +74,7 @@ public class TestRunner implements CheckoutConductor.Listener {
 						// Copy
 						File src = new File(this.subject, "target/jacoco.exec");
 						if (src.exists()) {
+							LOGGER.info("Found coverage results: {}", src.getAbsolutePath());
 							boolean copy = dst.exists() ? dst.delete() : true;
 							if (copy) {
 								Files.copy(src.toPath(), dst.toPath());
