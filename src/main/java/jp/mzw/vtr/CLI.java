@@ -41,15 +41,12 @@ public class CLI {
 		} else if ("cov".equals(args[0])) {
 			String subjectId = args[1];
 			String pathToSubject = args[2];
-			CheckoutConductor.Type type = CheckoutConductor.Type.valueOf(args[3]);
-			String commitId = args[4];
-			// Specific commit(s)
-			if (type != null && commitId != null) {
-				cov(subjectId, pathToSubject, type, commitId, config);
-			}
-			// All commits
-			else {
+			if (args[3] == null) { // All commits
 				cov(subjectId, pathToSubject, config);
+			} else if (args[3] != null && args[4] != null) {
+				CheckoutConductor.Type type = CheckoutConductor.Type.valueOf(args[3]);
+				String commitId = args[4];
+				cov(subjectId, pathToSubject, type, commitId, config);
 			}
 		} else if ("detect".equals(args[0])) {
 			String subjectId = args[1];
