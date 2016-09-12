@@ -65,4 +65,11 @@ public class CheckoutConductorTest {
 		Assert.assertEquals(0, commits.size());
 	}
 
+	@Test
+	public void testGetLatestCommit() throws IOException, ParseException {
+		CheckoutConductor cc = new CheckoutConductor(git, new File(PATH_TO_OUTPUT_DIR));
+		Commit commit = cc.getLatestCommit();
+		Assert.assertArrayEquals("fcf9382884874b7ceecc16cd2155ab73b1346931".toCharArray(), commit.id.toCharArray());
+	}
+	
 }

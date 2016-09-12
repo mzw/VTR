@@ -100,23 +100,32 @@ public class CheckoutConductor {
 	}
 
 	/**
-	 * Actual checkout conductor
+	 * Checkout given commits
 	 * 
 	 * @param commits
 	 * @throws GitAPIException
 	 */
 	private void checkout(List<Commit> commits) throws GitAPIException {
 		for (Commit commit : commits) {
-			// Stash before checkout
-			git.stashCreate().call();
-			Collection<RevCommit> stashes = git.stashList().call();
-			if (!stashes.isEmpty()) {
-				git.stashDrop().setStashRef(0).call();
-			}
-			// Checkout
-			git.checkout().setName(commit.getId()).call();
+			checkout(commit);
 			notifyListeners(commit);
 		}
+		// Recover initial state
+		checkout(getLatestCommit());
+	}
+	
+	/**
+	 * Checkout given commit
+	 * @param commit
+	 * @throws GitAPIException
+	 */
+	private void checkout(Commit commit) throws GitAPIException {
+		git.stashCreate().call();
+		Collection<RevCommit> stashes = git.stashList().call();
+		if (!stashes.isEmpty()) {
+			git.stashDrop().setStashRef(0).call();
+		}
+		git.checkout().setName(commit.getId()).call();
 	}
 
 	/**
@@ -180,4 +189,14 @@ public class CheckoutConductor {
 		return ret;
 	}
 
+	/**
+	 * Get latest commit
+	 * @return latest commit
+	 */
+	public Commit getLatestCommit() {
+		int index = this.commits.size() - 1;
+		return this.commits.get(index);
+	}
+	
+	
 }
