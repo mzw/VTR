@@ -27,7 +27,7 @@ import jp.mzw.vtr.Utils;
 import jp.mzw.vtr.cov.JacocoInstrumenter;
 
 public class MavenUtils {
-	static Logger log = LoggerFactory.getLogger(MavenUtils.class);
+	static Logger LOGGER = LoggerFactory.getLogger(MavenUtils.class);
 
 	/**
 	 * Invoke Maven command
@@ -46,13 +46,13 @@ public class MavenUtils {
 		invoker.setOutputHandler(new InvocationOutputHandler() {
 			@Override
 			public void consumeLine(String line) {
-				// NOP
+				LOGGER.info(line);
 			}
 		});
 		invoker.setErrorHandler(new InvocationOutputHandler() {
 			@Override
 			public void consumeLine(String line) {
-				System.err.println(line);
+				LOGGER.warn(line);
 			}
 		});
 		invoker.execute(request);
@@ -103,7 +103,7 @@ public class MavenUtils {
 	}
 
 	public static boolean compile(Project project, Properties config) throws IOException, InterruptedException {
-		log.info("Maven-compile: " + project.getBaseDir().getAbsolutePath());
+		LOGGER.info("Maven-compile: " + project.getBaseDir().getAbsolutePath());
 		List<String> results = Utils.exec(project.getBaseDir(), Arrays.asList(Utils.getPathToMaven(config), "clean", "compile", "test-compile"));
 		for (String result : results) {
 			if (result.startsWith("[ERROR]")) {
@@ -114,7 +114,7 @@ public class MavenUtils {
 	}
 
 	public static List<String> clean(Project project, Properties config) throws IOException, InterruptedException {
-		log.info("Maven-clean: " + project.getBaseDir().getAbsolutePath());
+		LOGGER.info("Maven-clean: " + project.getBaseDir().getAbsolutePath());
 		return Utils.exec(project.getBaseDir(), Arrays.asList(Utils.getPathToMaven(config), "clean"));
 	}
 
