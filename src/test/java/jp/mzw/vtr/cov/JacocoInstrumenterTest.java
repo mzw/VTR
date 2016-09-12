@@ -10,7 +10,12 @@ import jp.mzw.vtr.maven.MavenUtils;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.maven.shared.invoker.MavenInvocationException;
+import org.dom4j.DocumentException;
 import org.jacoco.core.analysis.CoverageBuilder;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.parser.Parser;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -34,7 +39,7 @@ public class JacocoInstrumenterTest {
 	}
 
 	@Test
-	public void testInstrument() throws IOException {
+	public void testInstrument() throws IOException, DocumentException {
 		File dir = new File(PATH_TO_MVN_PRJ);
 		JacocoInstrumenter ji = new JacocoInstrumenter(dir);
 
@@ -71,4 +76,24 @@ public class JacocoInstrumenterTest {
 		Assert.assertNotNull(builder);
 	}
 
+	@Test
+	public void testModifySurefireVersion() throws IOException, DocumentException {
+		JacocoInstrumenter ji = new JacocoInstrumenter(new File("src/test/resources/jacoco-test"));
+		String modified = ji.modifySurefireVersion(ji.originalPomContent);
+		Document modifiedDocument = Jsoup.parse(modified, "", Parser.xmlParser());
+		for (Element plugins : modifiedDocument.select("plugins plugin")) {
+			Element artifactId = null;
+			Element version = null;
+			for (Element plugin : plugins.children()) {
+				if ("artifactId".equalsIgnoreCase(plugin.tagName())) {
+					artifactId = plugin;
+				} else if ("version".equalsIgnoreCase(plugin.tagName())) {
+					version = plugin;
+				}
+			}
+			if (artifactId != null && "maven-surefire-plugin".equalsIgnoreCase(artifactId.text())) {
+				Assert.assertArrayEquals("2.18.1".toCharArray(), version.text().toCharArray());
+			}
+		}
+	}
 }

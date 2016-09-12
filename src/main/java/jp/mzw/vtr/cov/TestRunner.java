@@ -15,6 +15,7 @@ import jp.mzw.vtr.maven.TestCase;
 import jp.mzw.vtr.maven.TestSuite;
 
 import org.apache.maven.shared.invoker.MavenInvocationException;
+import org.dom4j.DocumentException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,6 +39,7 @@ public class TestRunner implements CheckoutConductor.Listener {
 	 * Run Maven test cases and measure code coverage
 	 * 
 	 * @param commit
+	 * @throws DocumentException 
 	 */
 	@Override
 	public void onCheckout(Commit commit) {
@@ -97,7 +99,7 @@ public class TestRunner implements CheckoutConductor.Listener {
 		catch (FileNotFoundException e) {
 			e.printStackTrace();
 			return;
-		} catch (IOException | MavenInvocationException e) {
+		} catch (IOException | MavenInvocationException | DocumentException e) {
 			e.printStackTrace();
 			try {
 				if (modified) {

@@ -4,9 +4,14 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.dom4j.DocumentException;
+import org.dom4j.DocumentHelper;
 import org.jacoco.core.analysis.Analyzer;
 import org.jacoco.core.analysis.CoverageBuilder;
 import org.jacoco.core.analysis.ICounter;
@@ -41,7 +46,7 @@ public class JacocoInstrumenter {
 		FileUtils.writeStringToFile(this.pom, this.originalPomContent);
 	}
 
-	public boolean instrument() throws IOException {
+	public boolean instrument() throws IOException, DocumentException {
 		String modified = String.copyValueOf(this.originalPomContent.toCharArray());
 		modified = this.modifyJunitVersion(modified);
 		modified = this.modifySurefireVersion(modified);
@@ -64,22 +69,22 @@ public class JacocoInstrumenter {
 	protected String modifyJunitVersion(String content) {
 		for (Element dependencies : this.document.select("dependencies dependency")) {
 			// Detect
-			String artifactId = null;
-			String version = null;
+			Element artifactId = null;
+			Element version = null;
 			for (Element dependency : dependencies.children()) {
 				if ("artifactId".equalsIgnoreCase(dependency.tagName())) {
-					artifactId = dependency.text();
+					artifactId = dependency;
 				} else if ("version".equalsIgnoreCase(dependency.tagName())) {
-					version = dependency.text();
+					version = dependency;
 				}
 			}
 			// Modify
-			if ("junit".equalsIgnoreCase(artifactId)) {
+			if (artifactId != null && "junit".equalsIgnoreCase(artifactId.text())) {
 				if (version == null) {
-					content = content.replace("<artifactId>junit</artifactId>", "<artifactId>junit</artifactId><version>4.12</version>");
+					dependencies.append("<version>4.12</version>");
 					LOGGER.info("Add JUnit version");
-				} else if (version.startsWith("3")) {
-					content = content.replace("<version>" + version + "</version>", "<version>4.12</version>");
+				} else if (version.text().startsWith("3")) {
+					version.text("4.12");
 					LOGGER.info("Change JUnit version from {} to 4.12", version);
 				}
 			}
@@ -93,30 +98,52 @@ public class JacocoInstrumenter {
 	 * @param content
 	 *            POM content under modify
 	 * @return modified POM content
+	 * @throws IOException 
+	 * @throws DocumentException 
 	 */
-	protected String modifySurefireVersion(String content) {
-		for (Element plugins : this.document.select("build plugins plugin")) {
-			// Detect
-			String artifactId = null;
-			String version = null;
-			for (Element plugin : plugins.children()) {
-				if ("artifactId".equalsIgnoreCase(plugin.tagName())) {
-					artifactId = plugin.text();
-				} else if ("version".equalsIgnoreCase(plugin.tagName())) {
-					version = plugin.text();
+	protected String modifySurefireVersion(String content) throws IOException, DocumentException {
+		org.dom4j.Document document = DocumentHelper.parseText(content);
+		org.dom4j.Element root = document.getRootElement();
+		
+		List<org.dom4j.Element> elements = new ArrayList<org.dom4j.Element>();
+		elements.add(root);
+		boolean find = false;
+		do {
+			find = false;
+			List<org.dom4j.Element> _elements = new ArrayList<org.dom4j.Element>();
+			for (org.dom4j.Element element : elements) {
+				for (Iterator<?> it = element.elementIterator(); it.hasNext();) {
+					org.dom4j.Element plugin_candidate = (org.dom4j.Element) it.next();
+					if ("plugin".equals(plugin_candidate.getName())) {
+						org.dom4j.Element artifactId = null;
+						org.dom4j.Element version = null;
+						for (Iterator<?> _it = plugin_candidate.elementIterator(); _it.hasNext();) {
+							org.dom4j.Element artifact_version_candidate = (org.dom4j.Element) _it.next();
+							if ("artifactId".equals(artifact_version_candidate.getName())) {
+								if ("maven-surefire-plugin".equalsIgnoreCase(artifact_version_candidate.getText())) {
+									artifactId = artifact_version_candidate;
+								}
+							} else if ("version".equals(artifact_version_candidate.getName())) {
+								version = artifact_version_candidate;
+							}
+						}
+						if (artifactId != null) {
+							if (version == null) {									
+								plugin_candidate.addElement("version").setText("2.18.1");
+							} else if (version.getText().startsWith("3")) {
+								version.setText("2.18.1");
+								System.out.println(plugin_candidate.getPath());
+							}
+						}
+					} else if (plugin_candidate.asXML().contains("<plugin>")) {
+						find = true;
+						_elements.add(plugin_candidate);
+					}
 				}
 			}
-			// Modify
-			if ("maven-surefire-plugin".equalsIgnoreCase(artifactId)) {
-				if (version == null) {
-					content = content.replace("<artifactId>maven-surefire-plugin</artifactId>",
-							"<artifactId>maven-surefire-plugin</artifactId><version>2.18.1</version>");
-				} else if (version.startsWith("3")) {
-					content = content.replace("<version>" + version + "</version>", "<version>2.18.1</version>");
-				}
-			}
-		}
-		return content;
+			elements = _elements;
+		} while (find);
+		return document.asXML();
 	}
 
 	/**
