@@ -41,7 +41,16 @@ public class CLI {
 		} else if ("cov".equals(args[0])) {
 			String subjectId = args[1];
 			String pathToSubject = args[2];
-			cov(subjectId, pathToSubject, config);
+			CheckoutConductor.Type type = CheckoutConductor.Type.valueOf(args[3]);
+			String commitId = args[4];
+			// Specific commit(s)
+			if (type != null && commitId != null) {
+				cov(subjectId, pathToSubject, type, commitId, config);
+			}
+			// All commits
+			else {
+				cov(subjectId, pathToSubject, config);
+			}
 		} else if ("detect".equals(args[0])) {
 			String subjectId = args[1];
 			String pathToSubject = args[2];
@@ -64,6 +73,13 @@ public class CLI {
 		CheckoutConductor cc = new CheckoutConductor(git, new File(config.getOutputDir(), subjectId));
 		cc.addListener(new TestRunner(subjectId, new File(pathToSubject), config));
 		cc.checkout();
+	}
+
+	private static void cov(String subjectId, String pathToSubject, CheckoutConductor.Type type, String commitId, Config config) throws IOException, ParseException, GitAPIException {
+		Git git = GitUtils.getGit(pathToSubject);
+		CheckoutConductor cc = new CheckoutConductor(git, new File(config.getOutputDir(), subjectId));
+		cc.addListener(new TestRunner(subjectId, new File(pathToSubject), config));
+		cc.checkout(type, commitId);
 	}
 	
 	private static void detect(String subjectId, String pathToSubject, Config config) throws IOException, ParseException, GitAPIException {
