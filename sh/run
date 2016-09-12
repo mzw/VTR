@@ -16,7 +16,6 @@
 COMMAND=${1}
 SUBJECT=${2}
 PATH_TO_SUBJECT=${3}
-REF_TO_COMPARE=${4}
 
 ## Create class path
 VTR_CP="target/classes:target/test-classes:target/dependency/*"
@@ -25,6 +24,6 @@ VTR_CP="target/classes:target/test-classes:target/dependency/*"
 /usr/bin/java \
   -Xms6400m \
   -cp ${VTR_CP} \
-  jp.mzw.vtr.CLI ${COMMAND} ${SUBJECT} ${PATH_TO_SUBJECT} ${REF_TO_COMPARE}
+  jp.mzw.vtr.CLI ${COMMAND} ${SUBJECT} ${PATH_TO_SUBJECT} ${4} ${5}
 
 echo "Finish"
