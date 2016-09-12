@@ -41,9 +41,9 @@ public class CLI {
 		} else if ("cov".equals(args[0])) {
 			String subjectId = args[1];
 			String pathToSubject = args[2];
-			if (args[3] == null) { // All commits
+			if (args.length == 3) { // All commits
 				cov(subjectId, pathToSubject, config);
-			} else if (args[3] != null && args[4] != null) {
+			} else if (args.length == 5) {
 				CheckoutConductor.Type type = CheckoutConductor.Type.valueOf(args[3]);
 				String commitId = args[4];
 				cov(subjectId, pathToSubject, type, commitId, config);
