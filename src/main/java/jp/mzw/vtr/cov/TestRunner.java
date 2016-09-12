@@ -36,6 +36,7 @@ public class TestRunner implements CheckoutConductor.Listener {
 
 	/**
 	 * Run Maven test cases and measure code coverage
+	 * 
 	 * @param commit
 	 */
 	@Override
@@ -72,7 +73,8 @@ public class TestRunner implements CheckoutConductor.Listener {
 						// Compile
 						MavenUtils.maven(this.subject, Arrays.asList("clean", "compile", "test-compile"), this.config.getMavenHome());
 						// Run
-						MavenUtils.maven(this.subject, Arrays.asList("-Dtest=" + method, "jacoco:prepare-agent", "test", "jacoco:report"), this.config.getMavenHome());
+						MavenUtils.maven(this.subject, Arrays.asList("-Dtest=" + method, "org.jacoco:jacoco-maven-plugin:prepare-agent", "test",
+								"org.jacoco:jacoco-maven-plugin:report"), this.config.getMavenHome());
 						// Copy
 						File src = new File(this.subject, "target/jacoco.exec");
 						if (src.exists()) {
