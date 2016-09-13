@@ -77,6 +77,27 @@ public class JacocoInstrumenterTest {
 	}
 
 	@Test
+	public void testModifyJunitVersion() throws IOException, DocumentException {
+		JacocoInstrumenter ji = new JacocoInstrumenter(new File("src/test/resources/jacoco-test"));
+		String modified = ji.modifyJunitVersion(ji.originalPomContent);
+		Document modifiedDocument = Jsoup.parse(modified, "", Parser.xmlParser());
+		for (Element plugins : modifiedDocument.select("plugins plugin")) {
+			Element artifactId = null;
+			Element version = null;
+			for (Element plugin : plugins.children()) {
+				if ("artifactId".equalsIgnoreCase(plugin.tagName())) {
+					artifactId = plugin;
+				} else if ("version".equalsIgnoreCase(plugin.tagName())) {
+					version = plugin;
+				}
+			}
+			if (artifactId != null && "junit".equalsIgnoreCase(artifactId.text())) {
+				Assert.assertArrayEquals("4.12".toCharArray(), version.text().toCharArray());
+			}
+		}
+	}
+
+	@Test
 	public void testModifySurefireVersion() throws IOException, DocumentException {
 		JacocoInstrumenter ji = new JacocoInstrumenter(new File("src/test/resources/jacoco-test"));
 		String modified = ji.modifySurefireVersion(ji.originalPomContent);

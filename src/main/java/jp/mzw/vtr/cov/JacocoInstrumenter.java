@@ -10,17 +10,10 @@ import java.util.List;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-import org.dom4j.DocumentException;
-import org.dom4j.DocumentHelper;
 import org.jacoco.core.analysis.Analyzer;
 import org.jacoco.core.analysis.CoverageBuilder;
 import org.jacoco.core.analysis.ICounter;
 import org.jacoco.core.tools.ExecFileLoader;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.parser.Parser;
-import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,7 +24,6 @@ public class JacocoInstrumenter {
 
 	protected File pom;
 	protected String originalPomContent;
-	protected Document document;
 
 	public JacocoInstrumenter(File dir) throws IOException {
 		this.pom = new File(dir, FILENAME_POM);
@@ -39,14 +31,13 @@ public class JacocoInstrumenter {
 			throw new FileNotFoundException("pom.xml not found");
 		}
 		this.originalPomContent = FileUtils.readFileToString(pom);
-		this.document = Jsoup.parse(this.originalPomContent, "", Parser.xmlParser());
 	}
 
 	public void revert() throws IOException {
 		FileUtils.writeStringToFile(this.pom, this.originalPomContent);
 	}
 
-	public boolean instrument() throws IOException, DocumentException {
+	public boolean instrument() throws IOException, org.dom4j.DocumentException {
 		String modified = String.copyValueOf(this.originalPomContent.toCharArray());
 		modified = this.modifyJunitVersion(modified);
 		modified = this.modifySurefireVersion(modified);
@@ -65,31 +56,51 @@ public class JacocoInstrumenter {
 	 * @param content
 	 *            POM content under modify
 	 * @return Modified POM content
+	 * @throws DocumentException
 	 */
-	protected String modifyJunitVersion(String content) {
-		for (Element dependencies : this.document.select("dependencies dependency")) {
-			// Detect
-			Element artifactId = null;
-			Element version = null;
-			for (Element dependency : dependencies.children()) {
-				if ("artifactId".equalsIgnoreCase(dependency.tagName())) {
-					artifactId = dependency;
-				} else if ("version".equalsIgnoreCase(dependency.tagName())) {
-					version = dependency;
+	protected String modifyJunitVersion(String content) throws org.dom4j.DocumentException {
+		org.dom4j.Document document = org.dom4j.DocumentHelper.parseText(content);
+		org.dom4j.Element root = document.getRootElement();
+		List<org.dom4j.Element> elements = new ArrayList<org.dom4j.Element>();
+		elements.add(root);
+		boolean find = false;
+		do {
+			find = false;
+			List<org.dom4j.Element> _elements = new ArrayList<org.dom4j.Element>();
+			for (org.dom4j.Element element : elements) {
+				for (Iterator<?> it = element.elementIterator(); it.hasNext();) {
+					org.dom4j.Element plugin_candidate = (org.dom4j.Element) it.next();
+					if ("dependency".equals(plugin_candidate.getName())) {
+						org.dom4j.Element artifactId = null;
+						org.dom4j.Element version = null;
+						for (Iterator<?> _it = plugin_candidate.elementIterator(); _it.hasNext();) {
+							org.dom4j.Element artifact_version_candidate = (org.dom4j.Element) _it.next();
+							if ("artifactId".equals(artifact_version_candidate.getName())) {
+								if ("junit".equalsIgnoreCase(artifact_version_candidate.getText())) {
+									artifactId = artifact_version_candidate;
+								}
+							} else if ("version".equals(artifact_version_candidate.getName())) {
+								version = artifact_version_candidate;
+							}
+						}
+						if (artifactId != null) {
+							if (version == null) {
+								plugin_candidate.addElement("version").setText("4.12");
+								LOGGER.info("Add JUnit version");
+							} else if (version.getText().startsWith("3")) {
+								version.setText("4.12");
+								LOGGER.info("Change JUnit version from {} to 4.12", version);
+							}
+						}
+					} else if (plugin_candidate.asXML().contains("<plugin>")) {
+						find = true;
+						_elements.add(plugin_candidate);
+					}
 				}
 			}
-			// Modify
-			if (artifactId != null && "junit".equalsIgnoreCase(artifactId.text())) {
-				if (version == null) {
-					dependencies.append("<version>4.12</version>");
-					LOGGER.info("Add JUnit version");
-				} else if (version.text().startsWith("3")) {
-					version.text("4.12");
-					LOGGER.info("Change JUnit version from {} to 4.12", version);
-				}
-			}
-		}
-		return content;
+			elements = _elements;
+		} while (find);
+		return document.asXML();
 	}
 
 	/**
@@ -98,13 +109,12 @@ public class JacocoInstrumenter {
 	 * @param content
 	 *            POM content under modify
 	 * @return modified POM content
-	 * @throws IOException 
-	 * @throws DocumentException 
+	 * @throws IOException
+	 * @throws DocumentException
 	 */
-	protected String modifySurefireVersion(String content) throws IOException, DocumentException {
-		org.dom4j.Document document = DocumentHelper.parseText(content);
+	protected String modifySurefireVersion(String content) throws IOException, org.dom4j.DocumentException {
+		org.dom4j.Document document = org.dom4j.DocumentHelper.parseText(content);
 		org.dom4j.Element root = document.getRootElement();
-		
 		List<org.dom4j.Element> elements = new ArrayList<org.dom4j.Element>();
 		elements.add(root);
 		boolean find = false;
@@ -128,11 +138,10 @@ public class JacocoInstrumenter {
 							}
 						}
 						if (artifactId != null) {
-							if (version == null) {									
+							if (version == null) {
 								plugin_candidate.addElement("version").setText("2.18.1");
 							} else if (version.getText().startsWith("3")) {
 								version.setText("2.18.1");
-								System.out.println(plugin_candidate.getPath());
 							}
 						}
 					} else if (plugin_candidate.asXML().contains("<plugin>")) {
@@ -159,15 +168,16 @@ public class JacocoInstrumenter {
 		InputStream in = JacocoInstrumenter.class.getClassLoader().getResourceAsStream("jacoco.pom.txt");
 		String jacoco = IOUtils.toString(in);
 		// Modify
-		Elements build = this.document.getElementsByTag("build");
+		org.jsoup.nodes.Document document = org.jsoup.Jsoup.parse(content, "", org.jsoup.parser.Parser.xmlParser());
+		org.jsoup.select.Elements build = document.getElementsByTag("build");
 		if (build.size() == 0) {
 			LOGGER.info("Add Jacoco plugin");
 			return content.replace("</project>", "<build><plugins>" + jacoco + "</plugins></build></project>");
 		}
 		boolean found = false;
-		for (Element plugins : this.document.select("build plugins plugin")) {
+		for (org.jsoup.nodes.Element plugins : document.select("build plugins plugin")) {
 			String artifactId = null;
-			for (Element plugin : plugins.children()) {
+			for (org.jsoup.nodes.Element plugin : plugins.children()) {
 				if ("artifactId".equalsIgnoreCase(plugin.tagName())) {
 					artifactId = plugin.text();
 				}
@@ -186,10 +196,10 @@ public class JacocoInstrumenter {
 		// Return
 		return content;
 	}
-	
-	
+
 	/**
 	 * Parse coverage results
+	 * 
 	 * @param exec
 	 * @param targetClasses
 	 * @return
@@ -203,14 +213,15 @@ public class JacocoInstrumenter {
 		analyzer.analyzeAll(targetClasses);
 		return builder;
 	}
-	
+
 	/**
 	 * Determine whether given line is covered by test cases
+	 * 
 	 * @param status
 	 * @return
 	 */
 	public static boolean isCoveredLine(int status) {
-		switch(status) {
+		switch (status) {
 		case ICounter.PARTLY_COVERED:
 		case ICounter.FULLY_COVERED:
 			return true;
@@ -219,5 +230,5 @@ public class JacocoInstrumenter {
 		}
 		return false;
 	}
-	
+
 }
