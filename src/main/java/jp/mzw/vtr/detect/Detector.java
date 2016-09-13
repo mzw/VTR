@@ -24,13 +24,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import jp.mzw.vtr.core.Config;
-import jp.mzw.vtr.cov.JacocoInstrumenter;
 import jp.mzw.vtr.dict.DictionaryBase;
 import jp.mzw.vtr.dict.DictionaryParser;
 import jp.mzw.vtr.git.CheckoutConductor;
 import jp.mzw.vtr.git.Commit;
 import jp.mzw.vtr.git.GitUtils;
 import jp.mzw.vtr.git.Tag;
+import jp.mzw.vtr.maven.JacocoInstrumenter;
 import jp.mzw.vtr.maven.MavenUtils;
 import jp.mzw.vtr.maven.TestCase;
 import jp.mzw.vtr.maven.TestSuite;

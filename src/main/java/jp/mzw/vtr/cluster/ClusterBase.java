@@ -15,7 +15,7 @@ import java.util.Properties;
 
 import javax.xml.bind.DatatypeConverter;
 
-import jp.mzw.vtr.Utils;
+import jp.mzw.vtr.core.Utils;
 
 import org.apache.commons.io.IOUtils;
 import org.jsoup.Jsoup;

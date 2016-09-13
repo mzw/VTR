@@ -13,79 +13,60 @@ import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 
 public class TestSuite {
-	
+
 	protected File testBaseDir;
 	protected File testFile;
 	String testClassName;
 	List<TestCase> testCases;
-	
+
 	public TestSuite(File testBaseDir, File testFile) {
 		this.testBaseDir = testBaseDir;
 		this.testFile = testFile;
-		
-		String pathToTestFile = testFile.getAbsolutePath().substring(testBaseDir.getAbsolutePath().length()+1);
+
+		String pathToTestFile = testFile.getAbsolutePath().substring(testBaseDir.getAbsolutePath().length() + 1);
 		this.testClassName = pathToTestFile.replace(".java", "").replaceAll("/", ".");
-		
+
 		this.testCases = new ArrayList<TestCase>();
 	}
-	
+
 	public TestSuite parseJuitTestCaseList() throws IOException {
 		ArrayList<Character> _source = new ArrayList<Character>();
 		FileReader reader = new FileReader(testFile);
 		int ch;
-		while((ch = reader.read()) != -1) {
-			_source.add((char)ch);
+		while ((ch = reader.read()) != -1) {
+			_source.add((char) ch);
 		}
 		reader.close();
-		
+
 		char[] source = new char[_source.size()];
-		for(int i = 0; i < _source.size(); i++) {
+		for (int i = 0; i < _source.size(); i++) {
 			source[i] = _source.get(i);
 		}
 
 		ASTParser parser = ASTParser.newParser(AST.JLS8);
 		parser.setSource(source);
 		CompilationUnit cu = (CompilationUnit) parser.createAST(new NullProgressMonitor());
-		
+
 		AllMethodFindVisitor visitor = new AllMethodFindVisitor();
 		cu.accept(visitor);
 		List<MethodDeclaration> methods = visitor.getFoundMethods();
-		
-		
-		for(MethodDeclaration method : methods) {
-			if(MavenUtils.isJUnitTest(method)) {
+
+		for (MethodDeclaration method : methods) {
+			if (MavenUtils.isJUnitTest(method)) {
 				TestCase testcase = new TestCase(method.getName().getIdentifier(), testClassName, method, cu, this);
 				testCases.add(testcase);
 			}
 		}
-		
+
 		return this;
 	}
-	
+
 	public File getTestFile() {
 		return this.testFile;
 	}
-	
+
 	public List<TestCase> getTestCases() {
 		return this.testCases;
-	}
-	
-	public String toXML() {
-		StringBuilder builder = new StringBuilder();
-		builder.append("<testsuite>").append("\n");
-		for(TestCase testcase : this.testCases) {
-			builder.append("\t").append(testcase.toXML()).append("\n");
-		}
-		builder.append("</testsuite>");
-		return builder.toString();
-	}
-	
-	public String toMavenTestCommands() {
-		StringBuilder builder = new StringBuilder();
-		for(TestCase testcase : this.testCases) {
-			builder.append("\t").append(testcase.toMavenTestCommand()).append("\n");
-		}
-		return builder.toString();
 	}
 
 }

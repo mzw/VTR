@@ -1,4 +1,4 @@
-package jp.mzw.vtr.cov;
+package jp.mzw.vtr.maven;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -10,9 +10,6 @@ import java.util.List;
 import jp.mzw.vtr.core.Config;
 import jp.mzw.vtr.git.CheckoutConductor;
 import jp.mzw.vtr.git.Commit;
-import jp.mzw.vtr.maven.MavenUtils;
-import jp.mzw.vtr.maven.TestCase;
-import jp.mzw.vtr.maven.TestSuite;
 
 import org.apache.maven.shared.invoker.MavenInvocationException;
 import org.dom4j.DocumentException;

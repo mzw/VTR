@@ -1,4 +1,4 @@
-package jp.mzw.vtr.cov;
+package jp.mzw.vtr.maven;
 
 import java.io.File;
 import java.io.IOException;
@@ -9,6 +9,7 @@ import jp.mzw.vtr.core.Config;
 import jp.mzw.vtr.git.CheckoutConductor;
 import jp.mzw.vtr.git.Commit;
 import jp.mzw.vtr.git.GitUtils;
+import jp.mzw.vtr.maven.TestRunner;
 
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;

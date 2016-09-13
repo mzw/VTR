@@ -1,4 +1,4 @@
-package jp.mzw.vtr.cov;
+package jp.mzw.vtr.maven;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.util.Arrays;
 
 import jp.mzw.vtr.core.Config;
+import jp.mzw.vtr.maven.JacocoInstrumenter;
 import jp.mzw.vtr.maven.MavenUtils;
 
 import org.apache.commons.io.FileUtils;

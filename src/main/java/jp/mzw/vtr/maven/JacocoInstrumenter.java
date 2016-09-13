@@ -1,4 +1,4 @@
-package jp.mzw.vtr.cov;
+package jp.mzw.vtr.maven;
 
 import java.io.File;
 import java.io.FileNotFoundException;

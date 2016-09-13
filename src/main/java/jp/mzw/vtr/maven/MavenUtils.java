@@ -4,9 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -22,9 +20,7 @@ import org.eclipse.jdt.core.dom.Modifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import jp.mzw.vtr.Project;
-import jp.mzw.vtr.Utils;
-import jp.mzw.vtr.cov.JacocoInstrumenter;
+import jp.mzw.vtr.core.Utils;
 
 public class MavenUtils {
 	static Logger LOGGER = LoggerFactory.getLogger(MavenUtils.class);
@@ -102,33 +98,15 @@ public class MavenUtils {
 		return null;
 	}
 
-	public static boolean compile(Project project, Properties config) throws IOException, InterruptedException {
-		LOGGER.info("Maven-compile: " + project.getBaseDir().getAbsolutePath());
-		List<String> results = Utils.exec(project.getBaseDir(), Arrays.asList(Utils.getPathToMaven(config), "clean", "compile", "test-compile"));
-		for (String result : results) {
-			if (result.startsWith("[ERROR]")) {
-				return false;
-			}
-		}
-		return true;
-	}
-
-	public static List<String> clean(Project project, Properties config) throws IOException, InterruptedException {
-		LOGGER.info("Maven-clean: " + project.getBaseDir().getAbsolutePath());
-		return Utils.exec(project.getBaseDir(), Arrays.asList(Utils.getPathToMaven(config), "clean"));
-	}
-
 	public static boolean isMavenTest(File file) {
-		if (file == null)
+		if (file == null) {
 			return false;
-
+		}
 		String filename = file.getName();
-
 		Matcher matcher = Pattern.compile(".*Test(Case)?.*\\.java").matcher(filename);
-		if (matcher.find()) { // && !filename.startsWith("Abstract")) {
+		if (matcher.find()) {
 			return true;
 		}
-
 		return false;
 	}
 

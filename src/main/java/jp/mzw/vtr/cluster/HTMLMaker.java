@@ -2,13 +2,14 @@ package jp.mzw.vtr.cluster;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Properties;
 
-import jp.mzw.vtr.Utils;
+import jp.mzw.vtr.core.Utils;
 
 import org.apache.commons.io.FileUtils;
 
@@ -25,7 +26,9 @@ import com.hp.gagawa.java.elements.Ul;
 
 public class HTMLMaker extends ClusterBase {
 	public static void main(String[] args) throws IOException {
-		Properties config = Utils.getConfig("vtr.properties");
+		InputStream is = HTMLMaker.class.getClassLoader().getResourceAsStream("vtr.properties");
+		Properties config = new Properties();
+		config.load(is);
 		new HTMLMaker(config).make();
 	}
 

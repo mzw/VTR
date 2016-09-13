@@ -15,11 +15,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import jp.mzw.vtr.core.Config;
-import jp.mzw.vtr.cov.TestRunner;
 import jp.mzw.vtr.detect.Detector;
 import jp.mzw.vtr.dict.DictionaryMaker;
 import jp.mzw.vtr.git.CheckoutConductor;
 import jp.mzw.vtr.git.GitUtils;
+import jp.mzw.vtr.maven.TestRunner;
 
 public class CLI {
 	static Logger LOGGER = LoggerFactory.getLogger(CLI.class);

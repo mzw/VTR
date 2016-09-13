@@ -2,7 +2,7 @@ package jp.mzw.vtr.validate;
 
 import java.io.File;
 
-import jp.mzw.vtr.Project;
+import jp.mzw.vtr.core.Project;
 
 import com.github.javaparser.ast.body.MethodDeclaration;
 

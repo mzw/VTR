@@ -2,6 +2,7 @@ package jp.mzw.vtr.cluster;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -13,13 +14,15 @@ import org.rosuda.JRI.Rengine;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import jp.mzw.vtr.Utils;
+import jp.mzw.vtr.core.Utils;
 
 public class LCSAnalyzer extends ClusterBase {
 	protected static Logger log = LoggerFactory.getLogger(LCSAnalyzer.class);
 	
 	public static void main(String[] args) throws NoSuchAlgorithmException, IOException {
-		Properties config = Utils.getConfig("vtr.properties");
+		InputStream is = LCSAnalyzer.class.getClassLoader().getResourceAsStream("vtr.properties");
+		Properties config = new Properties();
+		config.load(is);
 		new LCSAnalyzer(config).analyze().saveClusteringResults();
 	}
 	

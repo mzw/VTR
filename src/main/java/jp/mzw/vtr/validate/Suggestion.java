@@ -1,6 +1,6 @@
 package jp.mzw.vtr.validate;
 
-import jp.mzw.vtr.Project;
+import jp.mzw.vtr.core.Project;
 
 public class Suggestion {
 
