@@ -1,15 +1,17 @@
 package jp.mzw.vtr.core;
 
 import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Properties;
 
-public class Utils {
+public class VTRUtils {
 
+	/**
+	 * Make Collection corresponding to given Iterable
+	 * @param iter Given Iterable
+	 * @return Corresponding Collection
+	 */
 	public static <E> Collection<E> makeCollection(Iterable<E> iter) {
 		Collection<E> list = new ArrayList<>();
 		for (E item : iter) {
@@ -18,6 +20,11 @@ public class Utils {
 		return list;
 	}
 
+	/**
+	 * Get files under given directory recursively
+	 * @param dir Given Directory
+	 * @return File found
+	 */
 	public static List<File> getFiles(File dir) {
 		ArrayList<File> ret = new ArrayList<File>();
 		if (!dir.exists()) {
@@ -33,10 +40,4 @@ public class Utils {
 		return ret;
 	}
 	
-	public static Properties getConfig(String filename) throws IOException {
-		InputStream is = Utils.class.getClassLoader().getResourceAsStream(filename);
-		Properties config = new Properties();
-		config.load(is);
-		return config;
-	}
 }

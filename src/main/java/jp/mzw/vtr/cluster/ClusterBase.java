@@ -15,7 +15,7 @@ import java.util.Properties;
 
 import javax.xml.bind.DatatypeConverter;
 
-import jp.mzw.vtr.core.Utils;
+import jp.mzw.vtr.core.VTRUtils;
 
 import org.apache.commons.io.IOUtils;
 import org.jsoup.Jsoup;
@@ -103,7 +103,7 @@ public class ClusterBase {
 	
 	public int getClusterNum() throws IOException {
 		int num = 0;
-		for(File file : Utils.getFiles(new File(log_dir))) {
+		for(File file : VTRUtils.getFiles(new File(log_dir))) {
 			if(isHtmlReportFile(file)) {
 				List<String> prev_lines = read(file, ".prev");
 				if(prev_lines.size() == 0) {

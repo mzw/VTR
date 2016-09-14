@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Properties;
 
 import jp.mzw.vtr.core.Project;
-import jp.mzw.vtr.core.Utils;
+import jp.mzw.vtr.core.VTRUtils;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -47,7 +47,7 @@ public class Suggester {
 	protected static Logger log = LoggerFactory.getLogger(Suggester.class);
 
 	public static void main(String[] args) throws Exception {
-		Properties config = Utils.getConfig("vtr.properties");
+//		Properties config = Utils.getConfig("vtr.properties");
 //		Suggester suggester = new Suggester(config);
 //		suggester.suggest(Project.make(config));
 		
