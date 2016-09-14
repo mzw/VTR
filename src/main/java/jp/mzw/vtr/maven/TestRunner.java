@@ -19,19 +19,16 @@ import org.slf4j.LoggerFactory;
 public class TestRunner implements CheckoutConductor.Listener {
 	static Logger LOGGER = LoggerFactory.getLogger(TestRunner.class);
 
-	protected Project project;
-	
 	protected String projectId;
 	protected File projectDir;
-	
+
 	protected File outputDir;
-	
+
 	protected File mavenHome;
 
 	protected JacocoInstrumenter ji;
 
 	public TestRunner(Project project) throws IOException {
-		this.project = project;
 		this.projectId = project.getProjectId();
 		this.projectDir = project.getProjectDir();
 		this.outputDir = project.getOutputDir();
@@ -43,7 +40,7 @@ public class TestRunner implements CheckoutConductor.Listener {
 	 * Run Maven test cases and measure code coverage
 	 * 
 	 * @param commit
-	 * @throws DocumentException 
+	 * @throws DocumentException
 	 */
 	@Override
 	public void onCheckout(Commit commit) {

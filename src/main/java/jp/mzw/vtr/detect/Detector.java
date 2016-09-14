@@ -40,8 +40,6 @@ public class Detector implements CheckoutConductor.Listener {
 
 	public static final String DETECT_DIR = "detect";
 
-	protected Project project;
-
 	protected String projectId;
 	protected String pathToProjectDir;
 
@@ -52,13 +50,12 @@ public class Detector implements CheckoutConductor.Listener {
 	protected Map<Tag, List<Commit>> dict;
 
 	public Detector(Project project) throws IOException, ParseException {
-		this.project = project;
-		this.projectId = this.project.getProjectId();
-		this.pathToProjectDir = this.project.getPathToProject();
-		this.outputDir = this.project.getOutputDir();
-		this.mavenHome = this.project.getMavenHome();
+		this.projectId = project.getProjectId();
+		this.pathToProjectDir = project.getPathToProject();
+		this.outputDir = project.getOutputDir();
+		this.mavenHome = project.getMavenHome();
 		this.git = GitUtils.getGit(this.pathToProjectDir);
-		this.dict = DictionaryParser.parseDictionary(new File(this.project.getOutputDir(), projectId));
+		this.dict = DictionaryParser.parseDictionary(new File(this.outputDir, this.projectId));
 	}
 
 	@Override
