@@ -23,7 +23,7 @@ import org.jacoco.core.analysis.IClassCoverage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import jp.mzw.vtr.core.Config;
+import jp.mzw.vtr.core.Project;
 import jp.mzw.vtr.dict.DictionaryBase;
 import jp.mzw.vtr.dict.DictionaryParser;
 import jp.mzw.vtr.git.CheckoutConductor;
@@ -40,18 +40,25 @@ public class Detector implements CheckoutConductor.Listener {
 
 	public static final String DETECT_DIR = "detect";
 
-	protected String subjectId;
-	protected String pathToSubject;
-	protected Config config;
+	protected Project project;
+
+	protected String projectId;
+	protected String pathToProjectDir;
+
+	protected File outputDir;
+	protected File mavenHome;
+
 	protected Git git;
 	protected Map<Tag, List<Commit>> dict;
 
-	public Detector(String subjectId, String pathToSubject, Config config) throws IOException, ParseException {
-		this.subjectId = subjectId;
-		this.pathToSubject = pathToSubject;
-		this.config = config;
-		this.git = GitUtils.getGit(this.pathToSubject);
-		this.dict = DictionaryParser.parseDictionary(new File(config.getOutputDir(), subjectId));
+	public Detector(Project project) throws IOException, ParseException {
+		this.project = project;
+		this.projectId = this.project.getProjectId();
+		this.pathToProjectDir = this.project.getPathToProject();
+		this.outputDir = this.project.getOutputDir();
+		this.mavenHome = this.project.getMavenHome();
+		this.git = GitUtils.getGit(this.pathToProjectDir);
+		this.dict = DictionaryParser.parseDictionary(new File(this.project.getOutputDir(), projectId));
 	}
 
 	@Override
@@ -81,7 +88,7 @@ public class Detector implements CheckoutConductor.Listener {
 			return;
 		}
 		// Output file
-		File outputSubjectDir = new File(this.config.getOutputDir(), subjectId);
+		File outputSubjectDir = new File(this.outputDir, this.projectId);
 		File outputDetectDir = new File(outputSubjectDir, DETECT_DIR);
 		if (!outputDetectDir.exists()) {
 			outputDetectDir.mkdirs();
@@ -99,7 +106,7 @@ public class Detector implements CheckoutConductor.Listener {
 			Map<File, List<Integer>> covered = tc.getCoveredClassLinesMap();
 			Element coveredElement = tcmElement.addElement("Covered");
 			for (File src : covered.keySet()) {
-				Element srcElement = coveredElement.addElement("Source").addAttribute("path", getFilePath(new File(this.pathToSubject), src));
+				Element srcElement = coveredElement.addElement("Source").addAttribute("path", getFilePath(new File(this.pathToProjectDir), src));
 				List<Integer> lines = covered.get(src);
 				for (Integer line : lines) {
 					srcElement.addElement("Line").addAttribute("number", line.toString());
@@ -114,12 +121,12 @@ public class Detector implements CheckoutConductor.Listener {
 	 * Parse coverage results (jacoco.exec) and set them into each test case
 	 * 
 	 * @param commit
-	 * @param subject
+	 * @param projectDir
 	 * @throws IOException
 	 */
 	private List<TestSuite> setCoverageResults(Commit commit) throws IOException {
-		File subject = new File(this.pathToSubject);
-		File commitDir = getJacocoCommitDir(this.config.getOutputDir(), this.subjectId, commit);
+		File subject = new File(this.pathToProjectDir);
+		File commitDir = getJacocoCommitDir(this.outputDir, this.projectId, commit);
 		List<TestSuite> testSuites = MavenUtils.getTestSuites(subject);
 		for (TestSuite ts : testSuites) {
 			for (TestCase tc : ts.getTestCases()) {
@@ -165,7 +172,7 @@ public class Detector implements CheckoutConductor.Listener {
 	 */
 	private List<TestCaseModification> detect(Commit commit, List<TestSuite> testSuites) throws IOException, GitAPIException {
 		List<TestCaseModification> ret = new ArrayList<>();
-		File subject = new File(this.pathToSubject);
+		File subject = new File(this.pathToProjectDir);
 		Tag curTag = DictionaryBase.getTagBy(commit, this.dict);
 		BlameCommand bc = new BlameCommand(this.git.getRepository());
 		for (TestSuite ts : testSuites) {
@@ -226,7 +233,7 @@ public class Detector implements CheckoutConductor.Listener {
 	 */
 	private void beforeDetect() {
 		try {
-			MavenUtils.maven(new File(this.pathToSubject), Arrays.asList("compile"), this.config.getMavenHome());
+			MavenUtils.maven(new File(this.pathToProjectDir), Arrays.asList("compile"), this.mavenHome);
 		} catch (MavenInvocationException e) {
 			LOGGER.warn("Failed to compile subject");
 			return;
@@ -238,7 +245,7 @@ public class Detector implements CheckoutConductor.Listener {
 	 */
 	private void afterDetect() {
 		try {
-			MavenUtils.maven(new File(this.pathToSubject), Arrays.asList("clean"), this.config.getMavenHome());
+			MavenUtils.maven(new File(this.pathToProjectDir), Arrays.asList("clean"), this.mavenHome);
 		} catch (MavenInvocationException e) {
 			LOGGER.warn("Failed to clean subject");
 			return;

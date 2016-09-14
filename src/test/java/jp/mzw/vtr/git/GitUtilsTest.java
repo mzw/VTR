@@ -14,19 +14,19 @@ import org.junit.Test;
 
 public class GitUtilsTest {
 
-	public static final String pathToGitRepo = "src/test/resources/vtr-example";
+	public static final String PATH_TO_PROJECT_DIR = "src/test/resources/vtr-example";
 	protected Git git;
 	
 	@Before
 	public void setup() throws IOException {
 		FileRepositoryBuilder builder = new FileRepositoryBuilder();
-		Repository repository = builder.setGitDir(new File(pathToGitRepo, GitUtils.DOT_GIT)).readEnvironment().findGitDir().build();
+		Repository repository = builder.setGitDir(new File(PATH_TO_PROJECT_DIR, GitUtils.DOT_GIT)).readEnvironment().findGitDir().build();
 		this.git = new Git(repository);
 	}
 	
 	@Test
 	public void testGetGit() throws IOException {
-		Git git = GitUtils.getGit(pathToGitRepo);
+		Git git = GitUtils.getGit(PATH_TO_PROJECT_DIR);
 		Assert.assertNotNull(git);
 	}
 	

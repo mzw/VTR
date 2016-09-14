@@ -7,7 +7,7 @@ import java.nio.file.Files;
 import java.util.Arrays;
 import java.util.List;
 
-import jp.mzw.vtr.core.Config;
+import jp.mzw.vtr.core.Project;
 import jp.mzw.vtr.git.CheckoutConductor;
 import jp.mzw.vtr.git.Commit;
 
@@ -19,17 +19,24 @@ import org.slf4j.LoggerFactory;
 public class TestRunner implements CheckoutConductor.Listener {
 	static Logger LOGGER = LoggerFactory.getLogger(TestRunner.class);
 
-	protected String subjectId;
-	protected File subject;
-	protected Config config;
+	protected Project project;
+	
+	protected String projectId;
+	protected File projectDir;
+	
+	protected File outputDir;
+	
+	protected File mavenHome;
 
 	protected JacocoInstrumenter ji;
 
-	public TestRunner(String subjectId, File subject, Config config) throws IOException {
-		this.subjectId = subjectId;
-		this.subject = subject;
-		this.config = config;
-		this.ji = new JacocoInstrumenter(this.subject);
+	public TestRunner(Project project) throws IOException {
+		this.project = project;
+		this.projectId = project.getProjectId();
+		this.projectDir = project.getProjectDir();
+		this.outputDir = project.getOutputDir();
+		this.mavenHome = project.getMavenHome();
+		this.ji = new JacocoInstrumenter(this.projectDir);
 	}
 
 	/**
@@ -45,7 +52,7 @@ public class TestRunner implements CheckoutConductor.Listener {
 			modified = ji.instrument();
 			if (modified) {
 				// Create directories
-				File subjectDir = new File(this.config.getOutputDir(), this.subjectId);
+				File subjectDir = new File(this.outputDir, this.projectId);
 				if (!subjectDir.exists()) {
 					subjectDir.mkdirs();
 				}
@@ -58,7 +65,7 @@ public class TestRunner implements CheckoutConductor.Listener {
 					commitDir.mkdirs();
 				}
 				// Measure coverage
-				List<TestSuite> testSuites = MavenUtils.getTestSuites(this.subject);
+				List<TestSuite> testSuites = MavenUtils.getTestSuites(this.projectDir);
 				for (TestSuite ts : testSuites) {
 					for (TestCase tc : ts.getTestCases()) {
 						// Skip if coverage is already measured
@@ -70,12 +77,12 @@ public class TestRunner implements CheckoutConductor.Listener {
 						}
 						LOGGER.info("Measure coverage: {}", tc.getFullName());
 						// Compile
-						MavenUtils.maven(this.subject, Arrays.asList("clean", "compile", "test-compile"), this.config.getMavenHome());
+						MavenUtils.maven(this.projectDir, Arrays.asList("clean", "compile", "test-compile"), this.mavenHome);
 						// Run
-						MavenUtils.maven(this.subject, Arrays.asList("-Dtest=" + method, "org.jacoco:jacoco-maven-plugin:prepare-agent", "test",
-								"org.jacoco:jacoco-maven-plugin:report"), this.config.getMavenHome());
+						MavenUtils.maven(this.projectDir, Arrays.asList("-Dtest=" + method, "org.jacoco:jacoco-maven-plugin:prepare-agent", "test",
+								"org.jacoco:jacoco-maven-plugin:report"), this.mavenHome);
 						// Copy
-						File src = new File(this.subject, "target/jacoco.exec");
+						File src = new File(this.projectDir, "target/jacoco.exec");
 						if (src.exists()) {
 							LOGGER.info("Found coverage results: {}", src.getAbsolutePath());
 							boolean copy = dst.exists() ? dst.delete() : true;

@@ -31,7 +31,7 @@ public class ExpectedException extends Suggestion {
 	public String toXml() {
 		StringBuilder builder = new StringBuilder();
 		builder.append("<Suggestion type=\"ExpectedException\">");
-		builder.append("<Project>").append(project.getProjectName()).append("</Project>");
+		builder.append("<Project>").append(project.getProjectId()).append("</Project>");
 		builder.append("<CommitId>").append(commit).append("</CommitId>");
 		builder.append("<FilePath>").append(file.getPath()).append("</FilePath>");
 		builder.append("<MethodName>").append(method.getName()).append("</MethodName>");

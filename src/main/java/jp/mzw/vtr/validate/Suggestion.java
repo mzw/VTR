@@ -23,7 +23,7 @@ public class Suggestion {
 	public String toXml() {
 		StringBuilder builder = new StringBuilder();
 		builder.append("<Suggestion>");
-		builder.append("<Project>").append(project.getProjectName()).append("</Project>");
+		builder.append("<Project>").append(project.getProjectId()).append("</Project>");
 		builder.append("<CommitId>").append(commit).append("</CommitId>");
 		builder.append("</Suggestion>");
 		return builder.toString();

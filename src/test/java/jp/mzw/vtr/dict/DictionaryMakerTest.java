@@ -24,7 +24,7 @@ import org.junit.Test;
 
 public class DictionaryMakerTest {
 
-	public static final String PATH_TO_GIT_REPO = "src/test/resources/vtr-example";
+	public static final String PATH_TO_PROJECT_DIR = "src/test/resources/vtr-example";
 	public static final String REF_TO_COMPARE = "refs/heads/master";
 	
 	protected Git git;
@@ -32,7 +32,7 @@ public class DictionaryMakerTest {
 	@Before
 	public void setup() throws IOException {
 		FileRepositoryBuilder builder = new FileRepositoryBuilder();
-		Repository repository = builder.setGitDir(new File(PATH_TO_GIT_REPO, GitUtils.DOT_GIT)).readEnvironment().findGitDir().build();
+		Repository repository = builder.setGitDir(new File(PATH_TO_PROJECT_DIR, GitUtils.DOT_GIT)).readEnvironment().findGitDir().build();
 		this.git = new Git(repository);
 	}
 
