@@ -1,5 +1,8 @@
 package jp.mzw.vtr.detect;
 
+import java.util.List;
+import java.util.Map;
+
 import jp.mzw.vtr.git.Commit;
 import jp.mzw.vtr.maven.TestCase;
 
@@ -19,6 +22,16 @@ public class TestCaseModification {
 
 	public TestCase getTestCase() {
 		return this.testCase;
+	}
+
+	protected Map<String, List<Integer>> covered;
+
+	public void setCoveredLines(Map<String, List<Integer>> covered) {
+		this.covered = covered;
+	}
+
+	public Map<String, List<Integer>> getCoveredLines() {
+		return this.covered;
 	}
 
 }

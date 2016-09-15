@@ -5,7 +5,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Arrays;
 
-import jp.mzw.vtr.core.Project;
+import jp.mzw.vtr.VtrTestBase;
 import jp.mzw.vtr.maven.JacocoInstrumenter;
 import jp.mzw.vtr.maven.MavenUtils;
 
@@ -18,21 +18,9 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.parser.Parser;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 
-public class JacocoInstrumenterTest {
-
-	public static final String PROJECT_ID = "vtr-example";
-	public static final String PATH_TO_PROJECT_DIR = "src/test/resources/vtr-example";
-
-	protected Project project;
-
-	@Before
-	public void setup() throws IOException {
-		this.project = new Project(PROJECT_ID, PATH_TO_PROJECT_DIR);
-		this.project.setConfig("config.properties");
-	}
+public class JacocoInstrumenterTest extends VtrTestBase {
 
 	@Test
 	public void testConstructor() throws IOException {

@@ -19,6 +19,8 @@ import jp.mzw.vtr.core.VTRUtils;
 public class LCSAnalyzer extends ClusterBase {
 	protected static Logger log = LoggerFactory.getLogger(LCSAnalyzer.class);
 	
+	
+	
 	public static void main(String[] args) throws NoSuchAlgorithmException, IOException {
 		InputStream is = LCSAnalyzer.class.getClassLoader().getResourceAsStream("vtr.properties");
 		Properties config = new Properties();

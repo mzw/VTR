@@ -5,30 +5,14 @@ import java.io.IOException;
 import java.text.ParseException;
 import java.util.List;
 
+import jp.mzw.vtr.VtrTestBase;
 import jp.mzw.vtr.git.CheckoutConductor;
 import jp.mzw.vtr.git.Commit;
-import jp.mzw.vtr.git.GitUtils;
 
-import org.eclipse.jgit.api.Git;
-import org.eclipse.jgit.lib.Repository;
-import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 
-public class CheckoutConductorTest {
-
-	public static final String PATH_TO_PROJECT_DIR = "src/test/resources/vtr-example";
-	public static final String PATH_TO_OUTPUT_DIR = "src/test/resources/output/vtr-example";
-
-	protected Git git;
-
-	@Before
-	public void setup() throws IOException {
-		FileRepositoryBuilder builder = new FileRepositoryBuilder();
-		Repository repository = builder.setGitDir(new File(PATH_TO_PROJECT_DIR, GitUtils.DOT_GIT)).readEnvironment().findGitDir().build();
-		this.git = new Git(repository);
-	}
+public class CheckoutConductorTest extends VtrTestBase {
 
 	@Test
 	public void testGetCommitsAfterInitialRelease() throws IOException, ParseException {
@@ -36,7 +20,7 @@ public class CheckoutConductorTest {
 		List<Commit> commits = cc.getCommitsAfterInitialRelease();
 		Assert.assertEquals(2, commits.size());
 	}
-	
+
 	@Test
 	public void testGetCommitsAfter() throws IOException, ParseException {
 		CheckoutConductor cc = new CheckoutConductor(git, new File(PATH_TO_OUTPUT_DIR));
@@ -71,5 +55,5 @@ public class CheckoutConductorTest {
 		Commit commit = cc.getLatestCommit();
 		Assert.assertArrayEquals("fcf9382884874b7ceecc16cd2155ab73b1346931".toCharArray(), commit.id.toCharArray());
 	}
-	
+
 }
