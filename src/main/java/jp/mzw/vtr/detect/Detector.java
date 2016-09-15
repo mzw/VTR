@@ -193,6 +193,9 @@ public class Detector implements CheckoutConductor.Listener {
 				// Determine whether this modified test cases covered only
 				// previously-committed source program parts
 				Map<File, List<Integer>> coveredClassLinesMap = tc.getCoveredClassLinesMap();
+				if (coveredClassLinesMap == null) {
+					continue;
+				}
 				boolean previous = true;
 				for (File src : coveredClassLinesMap.keySet()) {
 					BlameResult br4src = bc.setFilePath(getFilePath(subject, src)).call();
