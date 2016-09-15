@@ -3,43 +3,37 @@ Written by [Yuta Maezawa](mailto:maezawa@nii.ac.jp) and greatest contributors
 
 ## Get Started
 
+
 ### Configuration
-You can configure VTR for your environment.
+Need to describe local configurations at `src/main/resources/config.properties`.
 ```
-$ make config
+path_to_output_dir = output
+maven_home = /usr/local/apache-maven-3.3.*
 ```
-Then, write your configuration at ```src/main/resources/vtr.properties``
-that indicates file has several properties, as follows.
-```
-# Command
-path_to_git = /usr/local/bin/git
-path_to_mvn = /usr/local/bin/mvn
 
-# Example
-path_to_project = subjects/vtr-example
-ref_to_compare	= refs/heads/master
-github_username = mzw
-github_projname = vtr-example
-
-# Log
-path_to_log_dir = log
-```
+Additionally, need to configure environmental variables below.
+- JAVA_HOME
 
 ### Compile
 ```
-$ make compile
+$ mvn compile test-compile dependency:copy-dependencies
 ```
 
 ### Run
-VTR has two phases: in-advance and in-use.
-For validating your test cases, you can ignore the in-advance phase and just run ```$ make subjects``` and ```$ make validate```.
 
-#### Sophisticate "test-case modifications towards software release" patterns
-For this purpose, you can run VTR for collecting and clustering test-case modifications for previously released source programs.
+#### Make Dictionary
 ```
-$ make subjects
-$ make detect
-$ make cluster
+$ sh/run dict <project ID> <path to project> <reference to compare branch>
+```
+
+### Measure Coverage
+```
+$ sh/run cov <project ID> <path to project>
+```
+
+### Detect Test-Case Modifications
+```
+$ sh/run detect <project ID> <path to project>
 ```
 
 Enjoy!
