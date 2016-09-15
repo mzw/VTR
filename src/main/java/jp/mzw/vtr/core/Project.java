@@ -28,7 +28,7 @@ public class Project {
 	 */
 	public Project(String projectId, String pathToProject) {
 		this.projectId = projectId;
-		this.pathToOutputDir = pathToProject;
+		this.pathToProject = pathToProject;
 	}
 
 	/**
