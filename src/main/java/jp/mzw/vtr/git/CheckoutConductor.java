@@ -4,19 +4,25 @@ import java.io.File;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 
+import org.apache.maven.shared.invoker.MavenInvocationException;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.revwalk.RevCommit;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import jp.mzw.vtr.dict.DictionaryParser;
+import jp.mzw.vtr.maven.MavenUtils;
 
 public class CheckoutConductor {
+	protected static Logger LOGGER = LoggerFactory.getLogger(CheckoutConductor.class);
 
 	/**
 	 * Listener interface for Observer pattern
@@ -127,6 +133,32 @@ public class CheckoutConductor {
 		}
 		git.checkout().setName(commit.getId()).call();
 	}
+	
+
+	/**
+	 * Maven compile to obtain source programs covered by test cases
+	 */
+	public static void before(File projectDir, File mavenHome) {
+		try {
+			MavenUtils.maven(projectDir, Arrays.asList("compile", "test-compile"), mavenHome);
+		} catch (MavenInvocationException e) {
+			LOGGER.warn("Failed to compile subject");
+			return;
+		}
+	}
+
+	/**
+	 * Maven clean to initialize
+	 */
+	public static void after(File projectDir, File mavenHome) {
+		try {
+			MavenUtils.maven(projectDir, Arrays.asList("clean"), mavenHome);
+		} catch (MavenInvocationException e) {
+			LOGGER.warn("Failed to clean subject");
+			return;
+		}
+	}
+	
 
 	/**
 	 * Get commits after initial release

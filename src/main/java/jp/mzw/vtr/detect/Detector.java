@@ -4,13 +4,11 @@ import java.io.File;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.maven.shared.invoker.MavenInvocationException;
 import org.dom4j.Document;
 import org.dom4j.DocumentHelper;
 import org.dom4j.Element;
@@ -42,6 +40,7 @@ public class Detector implements CheckoutConductor.Listener {
 
 	protected String projectId;
 	protected String pathToProjectDir;
+	protected File projectDir;
 
 	protected File outputDir;
 	protected File mavenHome;
@@ -52,6 +51,7 @@ public class Detector implements CheckoutConductor.Listener {
 	public Detector(Project project) throws IOException, ParseException {
 		this.projectId = project.getProjectId();
 		this.pathToProjectDir = project.getPathToProject();
+		this.projectDir = project.getProjectDir();
 		this.outputDir = project.getOutputDir();
 		this.mavenHome = project.getMavenHome();
 		this.git = GitUtils.getGit(this.pathToProjectDir);
@@ -61,11 +61,11 @@ public class Detector implements CheckoutConductor.Listener {
 	@Override
 	public void onCheckout(Commit commit) {
 		try {
-			beforeDetect();
+			CheckoutConductor.before(projectDir, mavenHome);
 			List<TestSuite> ts = setCoverageResults(commit);
 			List<TestCaseModification> tcmList = detect(commit, ts);
 			output(commit, tcmList);
-			afterDetect();
+			CheckoutConductor.after(projectDir, mavenHome);
 		} catch (IOException | GitAPIException e) {
 			LOGGER.warn(e.toString());
 		}
@@ -244,30 +244,6 @@ public class Detector implements CheckoutConductor.Listener {
 	 */
 	protected static String getFilePath(File subject, File target) {
 		return subject.toURI().relativize(target.toURI()).toString();
-	}
-
-	/**
-	 * Maven compile to obtain source programs covered by test cases
-	 */
-	private void beforeDetect() {
-		try {
-			MavenUtils.maven(new File(this.pathToProjectDir), Arrays.asList("compile", "test-compile"), this.mavenHome);
-		} catch (MavenInvocationException e) {
-			LOGGER.warn("Failed to compile subject");
-			return;
-		}
-	}
-
-	/**
-	 * Maven clean to initialize
-	 */
-	private void afterDetect() {
-		try {
-			MavenUtils.maven(new File(this.pathToProjectDir), Arrays.asList("clean"), this.mavenHome);
-		} catch (MavenInvocationException e) {
-			LOGGER.warn("Failed to clean subject");
-			return;
-		}
 	}
 
 	/**
