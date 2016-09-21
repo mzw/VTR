@@ -42,33 +42,31 @@ public class TestCaseModificationParser {
 		File outputSubjectDir = new File(this.outputDir, this.projectId);
 		File outputDetectDir = new File(outputSubjectDir, Detector.DETECT_DIR);
 		File file = new File(outputDetectDir, commit.getId() + ".xml");
+		if (!file.exists()) {
+			return ret;
+		}
 		// Output content
 		String content = FileUtils.readFileToString(file);
 		Document document = Jsoup.parse(content, "", Parser.xmlParser());
 		// Parse
-		for (Element eTCM : document.select("TestCaseModification")) {
+		for (Element testCaseModification : document.select("TestCaseModification")) {
+			String clazz = testCaseModification.attr("class");
+			String method = testCaseModification.attr("method");
+			TestCase tc = new TestCase(method, clazz, null, null, null);
+			TestCaseModification tcm = new TestCaseModification(commit, tc);
 			// Test cases
-			for (Element eTC : eTCM.select("TestCase")) {
-				String clazz = eTC.attr("class");
-				String method = eTC.attr("method");
-				TestCase tc = new TestCase(method, clazz, null, null, null);
-				TestCaseModification tcm = new TestCaseModification(commit, tc);
-				// Covered lines
-				Map<String, List<Integer>> covered = new HashMap<>();
-				for (Element eCovered : eTCM.select("covered")) {
-					for (Element eSrc : eCovered.select("source")) {
-						String path = eSrc.attr("path");
-						List<Integer> lines = new ArrayList<>();
-						for (Element eLine : eSrc.select("line")) {
-							String lineno = eLine.attr("number");
-							lines.add(Integer.parseInt(lineno));
-						}
-						covered.put(path, lines);
-					}
+			Map<String, List<Integer>> coveredFilepathLinesMap = new HashMap<>();
+			for (Element covered : testCaseModification.select("Covered")) {
+				String path = covered.attr("path");
+				List<Integer> lines = new ArrayList<>();
+				for (Element line : covered.select("line")) {
+					Integer lineno = Integer.parseInt(line.attr("number"));
+					lines.add(lineno);
 				}
-				tcm.setCoveredLines(covered);
-				ret.add(tcm);
+				coveredFilepathLinesMap.put(path, lines);
 			}
+			tcm.setCoveredLines(coveredFilepathLinesMap);
+			ret.add(tcm);
 		}
 		// Return
 		return ret;

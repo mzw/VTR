@@ -67,7 +67,7 @@ public class Detector implements CheckoutConductor.Listener {
 			output(commit, tcmList);
 			afterDetect();
 		} catch (IOException | GitAPIException e) {
-			// NOP
+			LOGGER.warn(e.toString());
 		}
 	}
 
@@ -84,34 +84,53 @@ public class Detector implements CheckoutConductor.Listener {
 		if (tcmList.size() < 1) {
 			return;
 		}
-		// Output file
+		// Output
+		File file = this.getOutputFile(commit);
+		String xml = this.getXml(tcmList);
+		FileUtils.writeStringToFile(file, xml);
+	}
+	
+	/**
+	 * 
+	 * @param commit
+	 * @return
+	 */
+	protected File getOutputFile(Commit commit) {
 		File outputSubjectDir = new File(this.outputDir, this.projectId);
 		File outputDetectDir = new File(outputSubjectDir, DETECT_DIR);
 		if (!outputDetectDir.exists()) {
 			outputDetectDir.mkdirs();
 		}
-		File file = new File(outputDetectDir, commit.getId() + ".xml");
-		// Output content
+		return new File(outputDetectDir, commit.getId() + ".xml");
+	}
+	
+	/**
+	 * 
+	 * @param tcmList
+	 * @return
+	 */
+	protected String getXml(List<TestCaseModification> tcmList) {
 		Document document = DocumentHelper.createDocument();
 		Element root = document.addElement("TestCaseModifications");
 		for (TestCaseModification tcm : tcmList) {
-			Element tcmElement = root.addElement("TestCaseModification");
-			// Test case
 			TestCase tc = tcm.getTestCase();
-			tcmElement.addElement("TestCase").addAttribute("class", tc.getClassName()).addAttribute("method", tc.getName());
-			// Covered source code
+			Element tcmElement = root.addElement("TestCaseModification");
+			tcmElement.addAttribute("class", tc.getClassName()).addAttribute("method", tc.getName());
 			Map<File, List<Integer>> covered = tc.getCoveredClassLinesMap();
-			Element coveredElement = tcmElement.addElement("Covered");
 			for (File src : covered.keySet()) {
-				Element srcElement = coveredElement.addElement("Source").addAttribute("path", getFilePath(new File(this.pathToProjectDir), src));
+				boolean valid = false; // whether containing covered lines
+				Element srcElement = tcmElement.addElement("Covered").addAttribute("path", Detector.getFilePath(new File(this.pathToProjectDir), src));
 				List<Integer> lines = covered.get(src);
 				for (Integer line : lines) {
+					valid = true;
 					srcElement.addElement("Line").addAttribute("number", line.toString());
+				}
+				if (!valid) {
+					tcmElement.remove(srcElement);
 				}
 			}
 		}
-		// Output
-		FileUtils.writeStringToFile(file, document.asXML());
+		return document.asXML();
 	}
 
 	/**
@@ -121,7 +140,7 @@ public class Detector implements CheckoutConductor.Listener {
 	 * @param projectDir
 	 * @throws IOException
 	 */
-	private List<TestSuite> setCoverageResults(Commit commit) throws IOException {
+	protected List<TestSuite> setCoverageResults(Commit commit) throws IOException {
 		File subject = new File(this.pathToProjectDir);
 		File commitDir = getJacocoCommitDir(this.outputDir, this.projectId, commit);
 		List<TestSuite> testSuites = MavenUtils.getTestSuites(subject);
@@ -138,18 +157,17 @@ public class Detector implements CheckoutConductor.Listener {
 				CoverageBuilder cb = JacocoInstrumenter.parse(cov, MavenUtils.getTargetClassesDir(subject));
 				for (IClassCoverage cc : cb.getClasses()) {
 					// Class
-					File src = MavenUtils.getSrcFile(subject, cc.getName());
-					if (src == null) {
+					File dir = new File(this.pathToProjectDir, "src/main/java");
+					File src = new File(dir, cc.getName() + ".java");
+					if (!src.exists()) {
 						LOGGER.warn("File covered does not exit: {}", cc.getName());
 						continue;
 					}
 					// Lines
 					List<Integer> coveredLines = new ArrayList<>();
-					if (0 < cc.getLineCounter().getCoveredCount()) {
-						for (int lineno = cc.getFirstLine(); lineno <= cc.getLastLine(); lineno++) {
-							if (JacocoInstrumenter.isCoveredLine(cc.getLine(lineno).getStatus())) {
-								coveredLines.add(lineno);
-							}
+					for (int lineno = cc.getFirstLine(); lineno <= cc.getLastLine(); lineno++) {
+						if (JacocoInstrumenter.isCoveredLine(cc.getLine(lineno).getStatus())) {
+							coveredLines.add(lineno);
 						}
 					}
 					coveredClassLinesMap.put(src, coveredLines);
@@ -167,7 +185,7 @@ public class Detector implements CheckoutConductor.Listener {
 	 * @throws IOException
 	 * @throws GitAPIException
 	 */
-	private List<TestCaseModification> detect(Commit commit, List<TestSuite> testSuites) throws IOException, GitAPIException {
+	protected List<TestCaseModification> detect(Commit commit, List<TestSuite> testSuites) throws IOException, GitAPIException {
 		List<TestCaseModification> ret = new ArrayList<>();
 		File subject = new File(this.pathToProjectDir);
 		Tag curTag = DictionaryBase.getTagBy(commit, this.dict);
@@ -224,7 +242,7 @@ public class Detector implements CheckoutConductor.Listener {
 	 *            File
 	 * @return relative path from Git root directory to target file
 	 */
-	private static String getFilePath(File subject, File target) {
+	protected static String getFilePath(File subject, File target) {
 		return subject.toURI().relativize(target.toURI()).toString();
 	}
 
@@ -233,7 +251,7 @@ public class Detector implements CheckoutConductor.Listener {
 	 */
 	private void beforeDetect() {
 		try {
-			MavenUtils.maven(new File(this.pathToProjectDir), Arrays.asList("compile"), this.mavenHome);
+			MavenUtils.maven(new File(this.pathToProjectDir), Arrays.asList("compile", "test-compile"), this.mavenHome);
 		} catch (MavenInvocationException e) {
 			LOGGER.warn("Failed to compile subject");
 			return;
