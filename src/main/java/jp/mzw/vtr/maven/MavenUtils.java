@@ -20,7 +20,7 @@ import org.eclipse.jdt.core.dom.Modifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import jp.mzw.vtr.core.VTRUtils;
+import jp.mzw.vtr.core.VtrUtils;
 
 public class MavenUtils {
 	static Logger LOGGER = LoggerFactory.getLogger(MavenUtils.class);
@@ -64,7 +64,7 @@ public class MavenUtils {
 		File testDir = new File(subjectDir, "src/test/java");
 		// Determine
 		ArrayList<File> mvnTestFileList = new ArrayList<File>();
-		for (File file : VTRUtils.getFiles(testDir)) {
+		for (File file : VtrUtils.getFiles(testDir)) {
 			if (Pattern.compile(".*Test(Case)?.*\\.java").matcher(file.getName()).find()) {
 				mvnTestFileList.add(file);
 			}
@@ -89,7 +89,7 @@ public class MavenUtils {
 	 */
 	public static File getSrcFile(File subjectDir, String className) {
 		File srcDir = new File(subjectDir, "src/main/java");
-		for (File file : VTRUtils.getFiles(srcDir)) {
+		for (File file : VtrUtils.getFiles(srcDir)) {
 			URI relative = srcDir.toURI().relativize(file.toURI());
 			if (relative.toString().equals(className + ".java")) {
 				return file;

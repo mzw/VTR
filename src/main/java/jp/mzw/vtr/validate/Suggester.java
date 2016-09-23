@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Properties;
 
 import jp.mzw.vtr.core.Project;
-import jp.mzw.vtr.core.VTRUtils;
+import jp.mzw.vtr.core.VtrUtils;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;

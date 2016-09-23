@@ -14,7 +14,7 @@ import org.rosuda.JRI.Rengine;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import jp.mzw.vtr.core.VTRUtils;
+import jp.mzw.vtr.core.VtrUtils;
 
 public class LCSAnalyzer extends ClusterBase {
 	protected static Logger log = LoggerFactory.getLogger(LCSAnalyzer.class);
@@ -36,7 +36,7 @@ public class LCSAnalyzer extends ClusterBase {
 		log.info("Start to analyze LCS-based similarity");
 		
 		ArrayList<File> files = new ArrayList<>();
-		for(File file : VTRUtils.getFiles(new File(log_dir))) {
+		for(File file : VtrUtils.getFiles(new File(log_dir))) {
 			if(isHtmlReportFile(file)) {
 				List<String> prev_lines = read(file, ".prev");
 				if(prev_lines.size() == 0) {

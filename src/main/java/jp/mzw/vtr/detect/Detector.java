@@ -22,6 +22,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import jp.mzw.vtr.core.Project;
+import jp.mzw.vtr.core.VtrUtils;
 import jp.mzw.vtr.dict.DictionaryBase;
 import jp.mzw.vtr.dict.DictionaryParser;
 import jp.mzw.vtr.git.CheckoutConductor;
@@ -119,7 +120,7 @@ public class Detector implements CheckoutConductor.Listener {
 			Map<File, List<Integer>> covered = tc.getCoveredClassLinesMap();
 			for (File src : covered.keySet()) {
 				boolean valid = false; // whether containing covered lines
-				Element srcElement = tcmElement.addElement("Covered").addAttribute("path", Detector.getFilePath(new File(this.pathToProjectDir), src));
+				Element srcElement = tcmElement.addElement("Covered").addAttribute("path", VtrUtils.getFilePath(new File(this.pathToProjectDir), src));
 				List<Integer> lines = covered.get(src);
 				for (Integer line : lines) {
 					valid = true;
@@ -195,7 +196,7 @@ public class Detector implements CheckoutConductor.Listener {
 				// If this test case was NOT changed at this commit
 				// Skip to detect because we focus on test-case modification
 				// towards software release (i.e., tag)
-				BlameResult br4test = bc.setFilePath(getFilePath(subject, tc.getTestFile())).call();
+				BlameResult br4test = bc.setFilePath(VtrUtils.getFilePath(subject, tc.getTestFile())).call();
 				boolean modified = false;
 				for (int lineno = tc.getStartLineNumber(); lineno <= tc.getEndLineNumber(); lineno++) {
 					Tag tag = DictionaryBase.getTagBy(new Commit(br4test.getSourceCommit(lineno - 1)), this.dict);
@@ -216,7 +217,7 @@ public class Detector implements CheckoutConductor.Listener {
 				}
 				boolean previous = true;
 				for (File src : coveredClassLinesMap.keySet()) {
-					BlameResult br4src = bc.setFilePath(getFilePath(subject, src)).call();
+					BlameResult br4src = bc.setFilePath(VtrUtils.getFilePath(subject, src)).call();
 					List<Integer> linenoList = coveredClassLinesMap.get(src);
 					for (Integer lineno : linenoList) {
 						Tag tag = DictionaryBase.getTagBy(new Commit(br4src.getSourceCommit(lineno - 1)), this.dict);
@@ -231,19 +232,6 @@ public class Detector implements CheckoutConductor.Listener {
 			}
 		}
 		return ret;
-	}
-
-	/**
-	 * Get relative path from subject directory to target file
-	 * 
-	 * @param subject
-	 *            Git root directory
-	 * @param target
-	 *            File
-	 * @return relative path from Git root directory to target file
-	 */
-	protected static String getFilePath(File subject, File target) {
-		return subject.toURI().relativize(target.toURI()).toString();
 	}
 
 	/**

@@ -9,7 +9,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Properties;
 
-import jp.mzw.vtr.core.VTRUtils;
+import jp.mzw.vtr.core.VtrUtils;
 
 import org.apache.commons.io.FileUtils;
 
@@ -38,7 +38,7 @@ public class HTMLMaker extends ClusterBase {
 	
 	public HTMLMaker make() throws IOException {
 		ArrayList<File> files = new ArrayList<>();
-		for(File file : VTRUtils.getFiles(new File(log_dir))) {
+		for(File file : VtrUtils.getFiles(new File(log_dir))) {
 			if(isHtmlReportFile(file)) {
 				List<String> prev_lines = read(file, ".prev");
 				if(prev_lines.size() == 0) {

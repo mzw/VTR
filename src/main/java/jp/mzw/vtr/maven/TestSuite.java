@@ -68,5 +68,9 @@ public class TestSuite {
 	public List<TestCase> getTestCases() {
 		return this.testCases;
 	}
+	
+	public void setTestCases(List<TestCase> testCases) {
+		this.testCases = testCases;
+	}
 
 }

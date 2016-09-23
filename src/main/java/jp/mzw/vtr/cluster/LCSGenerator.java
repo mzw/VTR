@@ -21,7 +21,7 @@ import org.jsoup.nodes.Element;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import jp.mzw.vtr.core.VTRUtils;
+import jp.mzw.vtr.core.VtrUtils;
 
 public class LCSGenerator extends ClusterBase {
 	protected static Logger log = LoggerFactory.getLogger(LCSGenerator.class);

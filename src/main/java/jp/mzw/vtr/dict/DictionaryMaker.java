@@ -8,7 +8,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
-import jp.mzw.vtr.core.VTRUtils;
+import jp.mzw.vtr.core.VtrUtils;
 import jp.mzw.vtr.git.GitUtils;
 
 import org.apache.commons.io.FileUtils;
@@ -50,7 +50,7 @@ public class DictionaryMaker extends DictionaryBase {
 			IncorrectObjectTypeException {
 		Map<Ref, Collection<RevCommit>> tagCommitMap = new HashMap<>();
 
-		Collection<RevCommit> commits = VTRUtils.makeCollection(this.git.log().call());
+		Collection<RevCommit> commits = VtrUtils.makeCollection(this.git.log().call());
 		Collection<RevCommit> registered = new ArrayList<>();
 		Collection<RevCommit> unregistered = new ArrayList<>();
 
@@ -60,7 +60,7 @@ public class DictionaryMaker extends DictionaryBase {
 			Collection<RevCommit> relevantCommits = new ArrayList<>();
 			// Get commits which are necessary to be included for achieving
 			// ref-to-compare from this tag
-			Collection<RevCommit> commitsToCompare = VTRUtils.makeCollection(this.git.log().addRange(tag.getPeeledObjectId(), compare.getObjectId()).call());
+			Collection<RevCommit> commitsToCompare = VtrUtils.makeCollection(this.git.log().addRange(tag.getPeeledObjectId(), compare.getObjectId()).call());
 			for (RevCommit commit : commits) {
 				boolean relevant = true;
 				for (RevCommit commitToCompare : commitsToCompare) {
@@ -95,7 +95,7 @@ public class DictionaryMaker extends DictionaryBase {
 	 */
 	public Collection<Ref> getTags(String refToCompare) throws GitAPIException {
 		Ref compare = GitUtils.getBranch(this.git, refToCompare);
-		Collection<Ref> tags = VTRUtils.makeCollection(this.git.tagList().call());
+		Collection<Ref> tags = VtrUtils.makeCollection(this.git.tagList().call());
 		tags.add(compare);
 		return tags;
 	}

@@ -6,8 +6,14 @@ import java.util.List;
 
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.errors.AmbiguousObjectException;
+import org.eclipse.jgit.errors.IncorrectObjectTypeException;
+import org.eclipse.jgit.errors.RevisionSyntaxException;
+import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.Repository;
+import org.eclipse.jgit.revwalk.RevCommit;
+import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,4 +52,19 @@ public class GitUtils {
 		return null;
 	}
 
+	/**
+	 * Get RevCommit by given Commit
+	 * @param repository
+	 * @param commit
+	 * @return
+	 * @throws RevisionSyntaxException
+	 * @throws AmbiguousObjectException
+	 * @throws IncorrectObjectTypeException
+	 * @throws IOException
+	 */
+	public static RevCommit getCommit(Repository repository, Commit commit) throws RevisionSyntaxException, AmbiguousObjectException, IncorrectObjectTypeException, IOException {
+		ObjectId id = repository.resolve(commit.getId());
+		RevWalk walk = new RevWalk(repository);
+		return walk.parseCommit(id);
+	}
 }
