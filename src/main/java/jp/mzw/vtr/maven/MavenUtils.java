@@ -97,6 +97,23 @@ public class MavenUtils {
 		}
 		return null;
 	}
+	
+	/**
+	 * Traverse given test suites and find test case whose full name is equals to given test case
+	 * @param testSuites
+	 * @param testCase
+	 * @return
+	 */
+	public static TestCase getTestCaseInBy(List<TestSuite> testSuites, TestCase testCase) {
+		for (TestSuite ts : testSuites) {
+			for (TestCase tc : ts.getTestCases()) {
+				if (tc.getFullName().equals(testCase.getFullName())) {
+					return tc;
+				}
+			}
+		}
+		return null;
+	}
 
 	public static boolean isMavenTest(File file) {
 		if (file == null) {

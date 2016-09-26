@@ -18,6 +18,8 @@ public class TestSuite {
 	protected File testFile;
 	String testClassName;
 	List<TestCase> testCases;
+	
+	protected CompilationUnit cu;
 
 	public TestSuite(File testBaseDir, File testFile) {
 		this.testBaseDir = testBaseDir;
@@ -45,7 +47,7 @@ public class TestSuite {
 
 		ASTParser parser = ASTParser.newParser(AST.JLS8);
 		parser.setSource(source);
-		CompilationUnit cu = (CompilationUnit) parser.createAST(new NullProgressMonitor());
+		this.cu = (CompilationUnit) parser.createAST(new NullProgressMonitor());
 
 		AllMethodFindVisitor visitor = new AllMethodFindVisitor();
 		cu.accept(visitor);
@@ -60,6 +62,10 @@ public class TestSuite {
 
 		return this;
 	}
+	
+	public CompilationUnit getCompilationUnit() {
+		return this.cu;
+	}
 
 	public File getTestFile() {
 		return this.testFile;
@@ -71,6 +77,15 @@ public class TestSuite {
 	
 	public void setTestCases(List<TestCase> testCases) {
 		this.testCases = testCases;
+	}
+	
+	public TestCase getTestCaseBy(String clazz, String method) {
+		for (TestCase tc : this.testCases) {
+			if (tc.getClassName().equals(clazz) && tc.getName().equals(method)) {
+				return tc;
+			}
+		}
+		return null;
 	}
 
 }

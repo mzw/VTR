@@ -230,5 +230,29 @@ public class CheckoutConductor {
 		return this.commits.get(index);
 	}
 	
+	/**
+	 * 
+	 * @return
+	 */
+	public Commit getOneBeforeInitialRelease() {
+		Commit prev = null;
+		for (Commit commit : this.commits) {
+			// Skip until initial release
+			boolean init = true;
+			for (Tag tag : dict.keySet()) {
+				if (commit.getDate().after(tag.getDate())) {
+					init = false;
+					break;
+				}
+			}
+			if (init) {
+				prev = commit;
+				continue;
+			}
+			return prev;
+		}
+		return null;
+		
+	}
 	
 }
