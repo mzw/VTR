@@ -146,7 +146,7 @@ public class DiffAnalyzer implements CheckoutConductor.Listener {
 	protected void setTestCaseModificationContent(Commit commit, TestCase testCase) throws GitAPIException, IOException {
 		List<Integer> modifiedLines = this.getModifiedLines(commit, testCase);
 		if (!modifiedLines.isEmpty()) {
-			this.setOldNewChunks(commit, modifiedLines, testCase);
+			this.setPatchDelta(commit, modifiedLines, testCase);
 		}
 	}
 	
@@ -182,7 +182,7 @@ public class DiffAnalyzer implements CheckoutConductor.Listener {
 	 * @throws IncorrectObjectTypeException
 	 * @throws IOException
 	 */
-	protected void setOldNewChunks(Commit commit, List<Integer> modifiedLines, TestCase testCase) throws RevisionSyntaxException, AmbiguousObjectException, IncorrectObjectTypeException, IOException {
+	protected void setPatchDelta(Commit commit, List<Integer> modifiedLines, TestCase testCase) throws RevisionSyntaxException, AmbiguousObjectException, IncorrectObjectTypeException, IOException {
 		// Get current content to determine whether a patch delta corresponds to this test case
 		List<String> lines = FileUtils.readLines(testCase.getTestFile());
 		// Set
@@ -197,6 +197,10 @@ public class DiffAnalyzer implements CheckoutConductor.Listener {
 				List<ChunkTagRest> revisedLines = revised.getLines();
 				for(int offset = 0; offset < revisedLines.size(); offset++) {
 					int pos = revised.getPosition() + offset + 1;
+					if (lines.size() < pos) {
+						corr = false;
+						break;
+					}
 					String line = lines.get(pos - 1);
 					String revisedLine = revisedLines.get(offset).getRest();
 					if (line.equals(revisedLine)) {
@@ -281,11 +285,18 @@ public class DiffAnalyzer implements CheckoutConductor.Listener {
 			List<TestSuite> modifiedTestSuites = this.getModifiedTestSuites(curTestSuites, testCaseModifications);
 			for (TestSuite ts : modifiedTestSuites) {
 				for (TestCase tc : ts.getTestCases()) {
+					if (tc.getDelta() == null) {
+						LOGGER.info("Found test-case modification but no patch delta: {}", tc.getFullName());
+						continue;
+					}
 					// Revised
 					List<ASTNode> revisedNodes = tc.getRevisedNodes();
 					// Original
 					TestCase prvTestCase = MavenUtils.getTestCaseInBy(prvTestSuites, tc);
-					List<ASTNode> originalNodes = prvTestCase.getOriginalNodes(tc.getDelta());
+					List<ASTNode> originalNodes = new ArrayList<>();
+					if (prvTestCase != null) { // not test-case addition but modification
+						originalNodes = prvTestCase.getOriginalNodes(tc.getDelta());
+					}
 					// Output
 					output(commit, tc, revisedNodes, originalNodes);
 				}
