@@ -5,6 +5,7 @@ log/
 *.properties
 output/
 sh/ba.sh
+docker/
 
 # Maven
 target/
