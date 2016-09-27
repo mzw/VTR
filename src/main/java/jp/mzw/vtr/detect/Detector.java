@@ -86,9 +86,11 @@ public class Detector implements CheckoutConductor.Listener {
 			return;
 		}
 		// Output
-		File file = this.getOutputFile(commit);
 		String xml = this.getXml(tcmList);
-		FileUtils.writeStringToFile(file, xml);
+		if (xml != null) {
+			File file = this.getOutputFile(commit);
+			FileUtils.writeStringToFile(file, xml);
+		}
 	}
 	
 	/**
@@ -111,27 +113,53 @@ public class Detector implements CheckoutConductor.Listener {
 	 * @return
 	 */
 	protected String getXml(List<TestCaseModification> tcmList) {
+		boolean output = false;
 		Document document = DocumentHelper.createDocument();
 		Element root = document.addElement("TestCaseModifications");
 		for (TestCaseModification tcm : tcmList) {
 			TestCase tc = tcm.getTestCase();
+			if (!hasCoveredLines(tc)) {
+				continue;
+			} else {
+				output = true;
+			}
 			Element tcmElement = root.addElement("TestCaseModification");
 			tcmElement.addAttribute("class", tc.getClassName()).addAttribute("method", tc.getName());
 			Map<File, List<Integer>> covered = tc.getCoveredClassLinesMap();
 			for (File src : covered.keySet()) {
-				boolean valid = false; // whether containing covered lines
-				Element srcElement = tcmElement.addElement("Covered").addAttribute("path", VtrUtils.getFilePath(new File(this.pathToProjectDir), src));
 				List<Integer> lines = covered.get(src);
+				Element srcElement = tcmElement.addElement("Covered").addAttribute("path", VtrUtils.getFilePath(new File(this.pathToProjectDir), src));
 				for (Integer line : lines) {
-					valid = true;
 					srcElement.addElement("Line").addAttribute("number", line.toString());
-				}
-				if (!valid) {
-					tcmElement.remove(srcElement);
 				}
 			}
 		}
+		if (!output) {
+			return null;
+		}
 		return document.asXML();
+	}
+	
+	/**
+	 * Determine whether given test case has covered line(s)
+	 * @param testCase
+	 * @return
+	 */
+	protected static boolean hasCoveredLines(TestCase testCase) {
+		if (testCase == null) {
+			return false;
+		}
+		Map<File, List<Integer>> covered = testCase.getCoveredClassLinesMap();
+		if (covered == null) {
+			return false;
+		}
+		for (File src : covered.keySet()) {
+			List<Integer> lines = covered.get(src);
+			if (!lines.isEmpty()) { // has
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/**
