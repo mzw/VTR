@@ -61,6 +61,8 @@ public class TestRunner implements CheckoutConductor.Listener {
 				if (!commitDir.exists()) {
 					commitDir.mkdirs();
 				}
+				// Compile
+				MavenUtils.maven(this.projectDir, Arrays.asList("clean", "compile", "test-compile"), this.mavenHome);
 				// Measure coverage
 				List<TestSuite> testSuites = MavenUtils.getTestSuites(this.projectDir);
 				for (TestSuite ts : testSuites) {
@@ -73,8 +75,6 @@ public class TestRunner implements CheckoutConductor.Listener {
 							continue;
 						}
 						LOGGER.info("Measure coverage: {}", tc.getFullName());
-						// Compile
-						MavenUtils.maven(this.projectDir, Arrays.asList("clean", "compile", "test-compile"), this.mavenHome);
 						// Run
 						MavenUtils.maven(this.projectDir, Arrays.asList("-Dtest=" + method, "org.jacoco:jacoco-maven-plugin:prepare-agent", "test",
 								"org.jacoco:jacoco-maven-plugin:report"), this.mavenHome);
@@ -91,6 +91,8 @@ public class TestRunner implements CheckoutConductor.Listener {
 						} else {
 							LOGGER.warn("Failed to measure coverage: {}", src.getAbsolutePath());
 						}
+						// Clean
+						MavenUtils.maven(this.projectDir, Arrays.asList("clean"), this.mavenHome);
 					}
 				}
 			}
