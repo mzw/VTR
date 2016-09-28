@@ -46,7 +46,7 @@ public class TestRunnerTest extends VtrTestBase {
 	}
 
 	// @Test
-	public void testOnCheckout() {
+	public void testOnCheckout() throws ParseException {
 		try {
 			TestRunner tr = new TestRunner(this.project);
 			tr.onCheckout(new Commit("fcf9382884874b7ceecc16cd2155ab73b1346931", new Date()));
@@ -56,7 +56,7 @@ public class TestRunnerTest extends VtrTestBase {
 	}
 
 	@Test
-	public void testGetOutputDir() throws IOException {
+	public void testGetOutputDir() throws IOException, ParseException {
 		TestRunner tr = new TestRunner(this.project);
 		File dir = tr.getOutputDir(this.commit);
 		assertArrayEquals("output/vtr-example/jacoco/fcf9382884874b7ceecc16cd2155ab73b1346931".toCharArray(), dir.getPath().toCharArray());

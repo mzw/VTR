@@ -4,15 +4,26 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.text.ParseException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import jp.mzw.vtr.core.Project;
+import jp.mzw.vtr.core.VtrUtils;
+import jp.mzw.vtr.dict.DictionaryBase;
+import jp.mzw.vtr.dict.DictionaryParser;
 import jp.mzw.vtr.git.CheckoutConductor;
 import jp.mzw.vtr.git.Commit;
+import jp.mzw.vtr.git.GitUtils;
+import jp.mzw.vtr.git.Tag;
 
 import org.apache.maven.shared.invoker.MavenInvocationException;
 import org.dom4j.DocumentException;
+import org.eclipse.jgit.api.BlameCommand;
+import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.blame.BlameResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,6 +31,7 @@ public class TestRunner implements CheckoutConductor.Listener {
 	static Logger LOGGER = LoggerFactory.getLogger(TestRunner.class);
 
 	protected String projectId;
+	protected String pathToProjectDir;
 	protected File projectDir;
 
 	protected File outputDir;
@@ -27,13 +39,18 @@ public class TestRunner implements CheckoutConductor.Listener {
 	protected File mavenHome;
 
 	protected JacocoInstrumenter ji;
+	protected Map<Tag, List<Commit>> dict;
+	protected Git git;
 
-	public TestRunner(Project project) throws IOException {
+	public TestRunner(Project project) throws IOException, ParseException {
 		this.projectId = project.getProjectId();
+		this.pathToProjectDir = project.getPathToProject();
 		this.projectDir = project.getProjectDir();
 		this.outputDir = project.getOutputDir();
 		this.mavenHome = project.getMavenHome();
 		this.ji = new JacocoInstrumenter(this.projectDir);
+		this.dict = DictionaryParser.parseDictionary(new File(this.outputDir, this.projectId));
+		this.git = GitUtils.getGit(this.pathToProjectDir);
 	}
 
 	/**
@@ -51,16 +68,19 @@ public class TestRunner implements CheckoutConductor.Listener {
 			CheckoutConductor.before(this.projectDir, this.mavenHome);
 			// Measure coverage
 			List<TestSuite> testSuites = MavenUtils.getTestSuites(this.projectDir);
+			BlameCommand blame = new BlameCommand(this.git.getRepository());
 			for (TestSuite ts : testSuites) {
 				for (TestCase tc : ts.getTestCases()) {
 					File src = new File(this.projectDir, "target/jacoco.exec");
 					File dst = new File(dir, tc.getFullName() + "!jacoco.exec");
-					if (skip(dst)) {
+					if (already(dst)) {
 						continue;
 					}
-					run(tc);
-					copy(src, dst);
-					clean(src);
+					if (modified(commit, blame, tc)) {
+						run(tc);
+						copy(src, dst);
+						clean(src);
+					}
 				}
 			}
 			// Revert
@@ -72,14 +92,17 @@ public class TestRunner implements CheckoutConductor.Listener {
 		// Not found "pom.xml" meaning not Maven project
 		catch (FileNotFoundException e) {
 			LOGGER.info("Not Maven project b/c 'pom.xml' was not found");
+			LOGGER.debug(e.getMessage());
 			return;
-		} catch (IOException | MavenInvocationException | DocumentException e) {
+		} catch (IOException | MavenInvocationException | DocumentException | GitAPIException e) {
+			LOGGER.debug(e.getMessage());
 			try {
 				if (modified) {
 					ji.revert();
 				}
 			} catch (IOException _e) {
-				LOGGER.warn("Failed to revert even though test running exception");
+				LOGGER.warn("Failed to revert even though exception while running test cases");
+				LOGGER.debug(e.getMessage());
 			}
 		}
 	}
@@ -105,7 +128,7 @@ public class TestRunner implements CheckoutConductor.Listener {
 	 * @param dst
 	 * @return
 	 */
-	protected boolean skip(File dst) {
+	protected boolean already(File dst) {
 		if (dst.exists()) {
 			LOGGER.info("Skip to measure coverage b/c already done: {}", dst.getPath());
 			return true;
@@ -136,6 +159,7 @@ public class TestRunner implements CheckoutConductor.Listener {
 
 	/**
 	 * Run test case to measure its coverage
+	 * 
 	 * @param testCase
 	 * @throws MavenInvocationException
 	 */
@@ -148,6 +172,7 @@ public class TestRunner implements CheckoutConductor.Listener {
 
 	/**
 	 * Clean measured coverage data
+	 * 
 	 * @param src
 	 * @throws MavenInvocationException
 	 */
@@ -155,5 +180,28 @@ public class TestRunner implements CheckoutConductor.Listener {
 		if (src.exists()) {
 			src.delete();
 		}
+	}
+
+	/**
+	 * 
+	 * @param commit
+	 * @param testSuites
+	 * @throws IOException
+	 * @throws GitAPIException
+	 */
+	protected boolean modified(Commit commit, BlameCommand blame, TestCase testCase) throws IOException, GitAPIException {
+		// Blame
+		String filePath = VtrUtils.getFilePath(this.projectDir, testCase.getTestFile());
+		BlameResult result = blame.setFilePath(filePath).call();
+		// Determine
+		Tag curTag = DictionaryBase.getTagBy(commit, this.dict);
+		for (int lineno = testCase.getStartLineNumber(); lineno <= testCase.getEndLineNumber(); lineno++) {
+			Tag tag = DictionaryBase.getTagBy(new Commit(result.getSourceCommit(lineno - 1)), this.dict);
+			if (curTag.getDate().equals(tag.getDate())) {
+				LOGGER.info("Detect test modification: {}", testCase.getFullName());
+				return true;
+			}
+		}
+		return false;
 	}
 }
