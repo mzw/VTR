@@ -315,9 +315,11 @@ public class DiffAnalyzer implements CheckoutConductor.Listener {
 	 * @throws IOException 
 	 */
 	public void output(Commit commit, TestCase testCase, List<ASTNode> revisedNodes, List<ASTNode> originalNodes) throws IOException {
-		File file = getOutputFile(commit, testCase);
 		String content = getXml(revisedNodes, originalNodes);
-		FileUtils.writeStringToFile(file, content);
+		if (content != null) {
+			File file = getOutputFile(commit, testCase);
+			FileUtils.writeStringToFile(file, content);
+		}
 	}
 	
 	/**
@@ -328,13 +330,7 @@ public class DiffAnalyzer implements CheckoutConductor.Listener {
 	 */
 	protected File getOutputFile(Commit commit, TestCase testCase) {
 		File projectDir = new File(this.outputDir, this.projectId);
-		if (!projectDir.exists()) {
-			projectDir.mkdirs();
-		}
 		File diffDir = new File(projectDir, "diff");
-		if (!diffDir.exists()) {
-			diffDir.mkdirs();
-		}
 		File dir = new File(diffDir, commit.getId());
 		if (!dir.exists()) {
 			dir.mkdirs();
@@ -349,11 +345,13 @@ public class DiffAnalyzer implements CheckoutConductor.Listener {
 	 * @return
 	 */
 	protected String getXml(List<ASTNode> revisedNodes, List<ASTNode> originalNodes) {
+		boolean valid = false;
 		Document document = DocumentHelper.createDocument();
 		Element root = document.addElement("ModifiedTestCaseNodes");
 		// Revised
 		Element revised = root.addElement("RevisedNodes");
 		for (ASTNode node : revisedNodes) {
+			valid = true;
 			Element element = revised.addElement("Node");
 			element.addAttribute("startPosition", String.valueOf(node.getStartPosition()));
 			element.addAttribute("length", String.valueOf(node.getLength()));
@@ -363,11 +361,15 @@ public class DiffAnalyzer implements CheckoutConductor.Listener {
 		// Original
 		Element original = root.addElement("OriginalNodes");
 		for (ASTNode node : originalNodes) {
+			valid = true;
 			Element element = original.addElement("Node");
 			element.addAttribute("startPosition", String.valueOf(node.getStartPosition()));
 			element.addAttribute("length", String.valueOf(node.getLength()));
 			element.addAttribute("class", node.getClass().getName());
 			element.addText(StringEscapeUtils.escapeXml10(node.toString()));
+		}
+		if (!valid) {
+			return null;
 		}
 		return document.asXML();
 	}
