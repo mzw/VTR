@@ -44,75 +44,116 @@ public class TestRunner implements CheckoutConductor.Listener {
 	 */
 	@Override
 	public void onCheckout(Commit commit) {
+		File dir = this.getOutputDir(commit);
 		boolean modified = false;
 		try {
 			modified = ji.instrument();
-			if (modified) {
-				// Create directories
-				File subjectDir = new File(this.outputDir, this.projectId);
-				if (!subjectDir.exists()) {
-					subjectDir.mkdirs();
-				}
-				File jacocoDir = new File(subjectDir, "jacoco");
-				if (!jacocoDir.exists()) {
-					jacocoDir.mkdirs();
-				}
-				File commitDir = new File(jacocoDir, commit.getId());
-				if (!commitDir.exists()) {
-					commitDir.mkdirs();
-				}
-				// Compile
-				MavenUtils.maven(this.projectDir, Arrays.asList("clean", "compile", "test-compile"), this.mavenHome);
-				// Measure coverage
-				List<TestSuite> testSuites = MavenUtils.getTestSuites(this.projectDir);
-				for (TestSuite ts : testSuites) {
-					for (TestCase tc : ts.getTestCases()) {
-						// Skip if coverage is already measured
-						String method = tc.getClassName() + "#" + tc.getName();
-						File dst = new File(commitDir, method + "!jacoco.exec");
-						if (dst.exists()) {
-							LOGGER.info("Skip to measure coverage: {}", tc.getFullName());
-							continue;
-						}
-						LOGGER.info("Measure coverage: {}", tc.getFullName());
-						// Run
-						MavenUtils.maven(this.projectDir, Arrays.asList("-Dtest=" + method, "org.jacoco:jacoco-maven-plugin:prepare-agent", "test",
-								"org.jacoco:jacoco-maven-plugin:report"), this.mavenHome);
-						// Copy
-						File src = new File(this.projectDir, "target/jacoco.exec");
-						if (src.exists()) {
-							LOGGER.info("Found coverage results: {}", src.getAbsolutePath());
-							boolean copy = dst.exists() ? dst.delete() : true;
-							if (copy) {
-								Files.copy(src.toPath(), dst.toPath());
-							} else {
-								LOGGER.error("Cannot copy: " + dst);
-							}
-						} else {
-							LOGGER.warn("Failed to measure coverage: {}", src.getAbsolutePath());
-						}
-						// Clean
-						MavenUtils.maven(this.projectDir, Arrays.asList("clean"), this.mavenHome);
+			CheckoutConductor.before(this.projectDir, this.mavenHome);
+			// Measure coverage
+			List<TestSuite> testSuites = MavenUtils.getTestSuites(this.projectDir);
+			for (TestSuite ts : testSuites) {
+				for (TestCase tc : ts.getTestCases()) {
+					File src = new File(this.projectDir, "target/jacoco.exec");
+					File dst = new File(dir, tc.getFullName() + "!jacoco.exec");
+					if (skip(dst)) {
+						continue;
 					}
+					run(tc);
+					copy(src, dst);
+					clean(src);
 				}
 			}
-			ji.revert();
+			// Revert
+			if (modified) {
+				ji.revert();
+			}
+			CheckoutConductor.after(this.projectDir, this.mavenHome);
 		}
 		// Not found "pom.xml" meaning not Maven project
 		catch (FileNotFoundException e) {
-			e.printStackTrace();
+			LOGGER.info("Not Maven project b/c 'pom.xml' was not found");
 			return;
 		} catch (IOException | MavenInvocationException | DocumentException e) {
-			e.printStackTrace();
 			try {
 				if (modified) {
 					ji.revert();
 				}
 			} catch (IOException _e) {
-				e.printStackTrace();
 				LOGGER.warn("Failed to revert even though test running exception");
 			}
 		}
 	}
 
+	/**
+	 * 
+	 * @param commit
+	 * @return
+	 */
+	protected File getOutputDir(Commit commit) {
+		File subjectDir = new File(this.outputDir, this.projectId);
+		File jacocoDir = new File(subjectDir, "jacoco");
+		File commitDir = new File(jacocoDir, commit.getId());
+		if (!commitDir.exists()) {
+			commitDir.mkdirs();
+		}
+		return commitDir;
+	}
+
+	/**
+	 * Determine skip to measure coverage if already done
+	 * 
+	 * @param dst
+	 * @return
+	 */
+	protected boolean skip(File dst) {
+		if (dst.exists()) {
+			LOGGER.info("Skip to measure coverage b/c already done: {}", dst.getPath());
+			return true;
+		}
+		return false;
+	}
+
+	/**
+	 * Copy measured coverage data to output directory
+	 * 
+	 * @param src
+	 * @param dst
+	 * @throws IOException
+	 */
+	protected void copy(File src, File dst) throws IOException {
+		if (src.exists()) {
+			LOGGER.info("Found coverage results: {}", src.getAbsolutePath());
+			boolean copy = dst.exists() ? dst.delete() : true;
+			if (copy) {
+				Files.copy(src.toPath(), dst.toPath());
+			} else {
+				LOGGER.error("Cannot copy: " + dst);
+			}
+		} else {
+			LOGGER.warn("Failed to measure coverage: {}", src.getAbsolutePath());
+		}
+	}
+
+	/**
+	 * Run test case to measure its coverage
+	 * @param testCase
+	 * @throws MavenInvocationException
+	 */
+	protected void run(TestCase testCase) throws MavenInvocationException {
+		LOGGER.info("Measure coverage: {}", testCase.getFullName());
+		String each = "-Dtest=" + testCase.getFullName();
+		List<String> args = Arrays.asList(each, "org.jacoco:jacoco-maven-plugin:prepare-agent", "test", "org.jacoco:jacoco-maven-plugin:report");
+		MavenUtils.maven(this.projectDir, args, this.mavenHome);
+	}
+
+	/**
+	 * Clean measured coverage data
+	 * @param src
+	 * @throws MavenInvocationException
+	 */
+	protected void clean(File src) throws MavenInvocationException {
+		if (src.exists()) {
+			src.delete();
+		}
+	}
 }

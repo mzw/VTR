@@ -170,9 +170,8 @@ public class Detector implements CheckoutConductor.Listener {
 	 * @throws IOException
 	 */
 	protected List<TestSuite> setCoverageResults(Commit commit) throws IOException {
-		File subject = new File(this.pathToProjectDir);
 		File commitDir = getJacocoCommitDir(this.outputDir, this.projectId, commit);
-		List<TestSuite> testSuites = MavenUtils.getTestSuites(subject);
+		List<TestSuite> testSuites = MavenUtils.getTestSuites(this.projectDir);
 		for (TestSuite ts : testSuites) {
 			for (TestCase tc : ts.getTestCases()) {
 				String method = tc.getClassName() + "#" + tc.getName();
@@ -183,7 +182,7 @@ public class Detector implements CheckoutConductor.Listener {
 				}
 				// Each source class
 				Map<File, List<Integer>> coveredClassLinesMap = new HashMap<>();
-				CoverageBuilder cb = JacocoInstrumenter.parse(cov, MavenUtils.getTargetClassesDir(subject));
+				CoverageBuilder cb = JacocoInstrumenter.parse(cov, new File(this.projectDir, "target/classes"));
 				for (IClassCoverage cc : cb.getClasses()) {
 					// Class
 					File dir = new File(this.pathToProjectDir, "src/main/java");

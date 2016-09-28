@@ -132,6 +132,7 @@ public class CheckoutConductor {
 			git.stashDrop().setStashRef(0).call();
 		}
 		git.checkout().setName(commit.getId()).call();
+		LOGGER.info("Checkout: {}", commit.getId());
 	}
 	
 

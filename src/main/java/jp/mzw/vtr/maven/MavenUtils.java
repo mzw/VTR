@@ -77,10 +77,6 @@ public class MavenUtils {
 		return testSuites;
 	}
 
-	public static File getTargetClassesDir(File subjectDir) {
-		return new File(subjectDir, "target/classes");
-	}
-
 	/**
 	 * 
 	 * @param subjectDir
