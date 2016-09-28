@@ -91,7 +91,7 @@ public class TestRunner implements CheckoutConductor.Listener {
 		}
 		// Not found "pom.xml" meaning not Maven project
 		catch (FileNotFoundException e) {
-			LOGGER.info("Not Maven project b/c 'pom.xml' was not found");
+			LOGGER.info("Not Maven project because 'pom.xml' was not found");
 			LOGGER.debug(e.getMessage());
 			return;
 		} catch (IOException | MavenInvocationException | DocumentException | GitAPIException e) {
@@ -202,6 +202,7 @@ public class TestRunner implements CheckoutConductor.Listener {
 				return true;
 			}
 		}
+		LOGGER.info("Not modified: {}", testCase.getFullName());
 		return false;
 	}
 }
