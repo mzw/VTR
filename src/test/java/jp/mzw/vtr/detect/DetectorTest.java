@@ -44,44 +44,44 @@ public class DetectorTest extends VtrTestBase {
 		this.cc.checkout(CheckoutConductor.Type.At, "refs/heads/master");
 	}
 
-	@Test
-	public void testSetCoverageResults() throws IOException, MavenInvocationException, ParseException, GitAPIException {
-		Detector detector = new Detector(this.project);
-		List<TestSuite> ts = detector.setCoverageResults(this.commit);
-		Assert.assertFalse(ts.isEmpty());
-		for (TestCase tc : ts.get(0).getTestCases()) {
-			Map<File, List<Integer>> map = tc.getCoveredClassLinesMap();
-			for (File key : map.keySet()) {
-				List<Integer> lines = map.get(key);
-				Assert.assertFalse(lines.isEmpty());
-			}
-		}
-	}
-
-	@Test
-	public void testDetect() throws IOException, MavenInvocationException, ParseException, GitAPIException {
-		Detector detector = new Detector(this.project);
-		List<TestSuite> ts = detector.setCoverageResults(this.commit);
-		List<TestCaseModification> tcmList = detector.detect(this.commit, ts);
-		Assert.assertEquals(1, tcmList.size());
-		TestCaseModification tcm = tcmList.get(0);
-		Assert.assertArrayEquals("jp.mzw.vtr.example.FileUtilsTest#testNonExistFile".toCharArray(), tcm.getTestCase().getFullName().toCharArray());
-		Map<File, List<Integer>> map = tcm.getTestCase().getCoveredClassLinesMap();
-		for (File key : map.keySet()) {
-			List<Integer> lines = map.get(key);
-			Assert.assertFalse(lines.isEmpty());
-		}
-	}
-	
-	@Test
-	public void testOutput() throws IOException, MavenInvocationException, ParseException, GitAPIException {
-		Detector detector = new Detector(this.project);
-		File file = detector.getOutputFile(commit);
-		Assert.assertArrayEquals("fcf9382884874b7ceecc16cd2155ab73b1346931.xml".toCharArray(), file.getName().toCharArray());
-		List<TestSuite> ts = detector.setCoverageResults(this.commit);
-		List<TestCaseModification> tcmList = detector.detect(this.commit, ts);
-		String xml = detector.getXml(tcmList);
-		Assert.assertTrue(xml.contains("<Line number=\"12\""));
-	}
+//	@Test
+//	public void testSetCoverageResults() throws IOException, MavenInvocationException, ParseException, GitAPIException {
+//		Detector detector = new Detector(this.project);
+//		List<TestSuite> ts = detector.setCoverageResults(this.commit);
+//		Assert.assertFalse(ts.isEmpty());
+//		for (TestCase tc : ts.get(0).getTestCases()) {
+//			Map<File, List<Integer>> map = tc.getCoveredClassLinesMap();
+//			for (File key : map.keySet()) {
+//				List<Integer> lines = map.get(key);
+//				Assert.assertFalse(lines.isEmpty());
+//			}
+//		}
+//	}
+//
+//	@Test
+//	public void testDetect() throws IOException, MavenInvocationException, ParseException, GitAPIException {
+//		Detector detector = new Detector(this.project);
+//		List<TestSuite> ts = detector.setCoverageResults(this.commit);
+//		List<TestCaseModification> tcmList = detector.detect(this.commit, ts);
+//		Assert.assertEquals(1, tcmList.size());
+//		TestCaseModification tcm = tcmList.get(0);
+//		Assert.assertArrayEquals("jp.mzw.vtr.example.FileUtilsTest#testNonExistFile".toCharArray(), tcm.getTestCase().getFullName().toCharArray());
+//		Map<File, List<Integer>> map = tcm.getTestCase().getCoveredClassLinesMap();
+//		for (File key : map.keySet()) {
+//			List<Integer> lines = map.get(key);
+//			Assert.assertFalse(lines.isEmpty());
+//		}
+//	}
+//	
+//	@Test
+//	public void testOutput() throws IOException, MavenInvocationException, ParseException, GitAPIException {
+//		Detector detector = new Detector(this.project);
+//		File file = detector.getOutputFile(commit);
+//		Assert.assertArrayEquals("fcf9382884874b7ceecc16cd2155ab73b1346931.xml".toCharArray(), file.getName().toCharArray());
+//		List<TestSuite> ts = detector.setCoverageResults(this.commit);
+//		List<TestCaseModification> tcmList = detector.detect(this.commit, ts);
+//		String xml = detector.getXml(tcmList);
+//		Assert.assertTrue(xml.contains("<Line number=\"12\""));
+//	}
 	
 }

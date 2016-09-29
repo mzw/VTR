@@ -103,6 +103,7 @@ public class CheckoutConductor {
 			return;
 		}
 		checkout(commits);
+		LOGGER.info("Complete to checkout given commits");
 	}
 
 	/**

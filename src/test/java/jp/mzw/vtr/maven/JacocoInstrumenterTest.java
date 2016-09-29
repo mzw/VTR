@@ -3,16 +3,12 @@ package jp.mzw.vtr.maven;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.Arrays;
 
 import jp.mzw.vtr.VtrTestBase;
 import jp.mzw.vtr.maven.JacocoInstrumenter;
-import jp.mzw.vtr.maven.MavenUtils;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.maven.shared.invoker.MavenInvocationException;
 import org.dom4j.DocumentException;
-import org.jacoco.core.analysis.CoverageBuilder;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -48,23 +44,6 @@ public class JacocoInstrumenterTest extends VtrTestBase {
 	public void testPomNotFound() throws IOException {
 		File dir = new File("src/test/resouces/output");
 		new JacocoInstrumenter(dir);
-	}
-
-	@Test
-	public void testParse() throws IOException, MavenInvocationException {
-		// Subject
-		File subject = new File(PATH_TO_PROJECT_DIR);
-		File targetClasses = new File(subject, "target/Classes");
-		// Coverage results
-		File jacocoDir = new File("src/test/resources/output/vtr-example/jacoco");
-		File commitDir = new File(jacocoDir, "7fcfdfa99bf9f220b9643f372c36609ca35c60b3");
-		File exec = new File(commitDir, "jp.mzw.vtr.example.FileUtilsTest#testGetFiles!jacoco.exec");
-
-		MavenUtils.maven(new File(PATH_TO_PROJECT_DIR), Arrays.asList("compile"), this.project.getMavenHome());
-		CoverageBuilder builder = JacocoInstrumenter.parse(exec, targetClasses);
-		MavenUtils.maven(new File(PATH_TO_PROJECT_DIR), Arrays.asList("clean"), this.project.getMavenHome());
-
-		Assert.assertNotNull(builder);
 	}
 
 	@Test

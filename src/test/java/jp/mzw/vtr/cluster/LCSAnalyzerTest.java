@@ -22,13 +22,13 @@ public class LCSAnalyzerTest {
 		this.lcsAnalyzer = new LCSAnalyzer(this.outputDir);
 	}
 	
-	@Test
+//	@Test
 	public void testGetDiffFiles() {
 		List<File> files = this.lcsAnalyzer.getDiffFiles();
 		Assert.assertTrue(0 < files.size());
 	}
 	
-	@Test
+//	@Test
 	public void testParse() {
 		List<File> files = this.lcsAnalyzer.getDiffFiles();
 		Assert.assertTrue(0 < files.size());
@@ -41,14 +41,24 @@ public class LCSAnalyzerTest {
 	}
 	
 	@Test
-	public void testLcs() {
-		
+	public void testDiff() throws IOException {
+		File dir = new File("output/commons-exec/diff/12b4a201cb887fccb7d396f6ed19566795a60d12");
+		File file = new File(dir, "");
+		DiffResult result = this.lcsAnalyzer.parse(file);
+		for (String clazz : result.getOriginalNodeClasses()) {
+			System.out.println(clazz);
+		}
 	}
 	
-	@Test
-	public void testAnalyze() throws IOException {
-		this.lcsAnalyzer.analyze();
-		
-		
-	}
+//	@Test
+//	public void testLcs() {
+//		
+//	}
+	
+//	@Test
+//	public void testAnalyze() throws IOException {
+//		this.lcsAnalyzer.analyze();
+//		
+//		
+//	}
 }
