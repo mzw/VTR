@@ -32,16 +32,16 @@ public class TestCaseModificationParserTest extends VtrTestBase {
 	public void teardown() throws GitAPIException, MavenInvocationException {
 	}
 
-	@Test
-	public void testDetectingSubjectTestCaseModification() throws IOException {
-		TestCaseModificationParser parser = new TestCaseModificationParser(this.project);
-		List<TestCaseModification> tcm = parser.parse(commit);
-		Assert.assertEquals(1, tcm.size());
-		Assert.assertArrayEquals("jp.mzw.vtr.example.FileUtilsTest#testNonExistFile".toCharArray(), tcm.get(0).getTestCase().getFullName().toCharArray());
-
-		Map<String, List<Integer>> covered = tcm.get(0).getCoveredLines();
-		List<Integer> lines = covered.get("src/main/java/jp/mzw/vtr/example/FileUtils.java");
-		Assert.assertEquals(12, lines.get(0).intValue());
-	}
+//	@Test
+//	public void testDetectingSubjectTestCaseModification() throws IOException {
+//		TestCaseModificationParser parser = new TestCaseModificationParser(this.project);
+//		List<TestCaseModification> tcm = parser.parse(commit);
+//		Assert.assertEquals(1, tcm.size());
+//		Assert.assertArrayEquals("jp.mzw.vtr.example.FileUtilsTest#testNonExistFile".toCharArray(), tcm.get(0).getTestCase().getFullName().toCharArray());
+//
+//		Map<String, List<Integer>> covered = tcm.get(0).getCoveredLines();
+//		List<Integer> lines = covered.get("src/main/java/jp/mzw/vtr/example/FileUtils.java");
+//		Assert.assertEquals(12, lines.get(0).intValue());
+//	}
 
 }

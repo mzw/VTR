@@ -14,7 +14,6 @@ import org.eclipse.jgit.revwalk.RevCommit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import jp.mzw.vtr.cluster.DiffAnalyzer;
 import jp.mzw.vtr.core.Project;
 import jp.mzw.vtr.detect.Detector;
 import jp.mzw.vtr.dict.DictionaryMaker;
@@ -59,8 +58,8 @@ public class CLI {
 			}
 		} else if ("detect".equals(command)) {
 			detect(project);
-		} else if ("diff".equals(command)) {
-			diff(project);
+		} else if ("lcs".equals(command)) {
+			lcs(project);
 		}
 
 	}
@@ -96,10 +95,7 @@ public class CLI {
 		cc.checkout();
 	}
 	
-	private static void diff(Project project) throws IOException, ParseException, GitAPIException {
-		Git git = GitUtils.getGit(project.getPathToProject());
-		CheckoutConductor cc = new CheckoutConductor(git, new File(project.getOutputDir(), project.getProjectId()));
-		cc.addListener(new DiffAnalyzer(project));
-		cc.checkout(CheckoutConductor.Type.After, cc.getOneBeforeInitialRelease().getId());
+	private static void lcs(Project project) {
+		
 	}
 }

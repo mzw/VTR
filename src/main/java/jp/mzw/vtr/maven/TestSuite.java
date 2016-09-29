@@ -88,4 +88,21 @@ public class TestSuite {
 		return null;
 	}
 
+	/**
+	 * Get test case having the same (class + method) as that of given test case from given test suites
+	 * @param testSuites Search space
+	 * @param testCase Provides specific (class + method)
+	 * @return Found test case or null if not found
+	 */
+	public static TestCase getTestCaseWithClassMethodName(List<TestSuite> testSuites, TestCase testCase) {
+		for (TestSuite ts : testSuites) {
+			for (TestCase tc : ts.getTestCases()) {
+				if (tc.getFullName().equals(testCase.getFullName())) {
+					return tc;
+				}
+			}
+		}
+		return null;
+	}
+	
 }

@@ -76,7 +76,7 @@ public class CheckoutConductor {
 	/**
 	 * Types representing checkout after or at given commit ID
 	 * 
-	 * @author yuta
+	 * @author Yuta Maezawa
 	 *
 	 */
 	public static enum Type {

@@ -1,4 +1,4 @@
-package jp.mzw.vtr.detect.difflib;
+package jp.mzw.vtr.maven;
 
 import java.util.ArrayList;
 import java.util.List;

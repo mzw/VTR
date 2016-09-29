@@ -1,6 +1,7 @@
 package jp.mzw.vtr.maven;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
@@ -8,9 +9,16 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import jp.mzw.vtr.git.Commit;
+
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.jacoco.core.analysis.Analyzer;
+import org.jacoco.core.analysis.CoverageBuilder;
 import org.jacoco.core.analysis.ICounter;
+import org.jacoco.core.data.ExecutionDataReader;
+import org.jacoco.core.data.ExecutionDataStore;
+import org.jacoco.core.data.SessionInfoStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -192,6 +200,47 @@ public class JacocoInstrumenter {
 		}
 		// Return
 		return content;
+	}
+
+	/**
+	 * Get directory where VTR previously stored coverage results
+	 * 
+	 * @param outputDir
+	 * @param projectId
+	 * @param commit
+	 * @return
+	 */
+	public static File getJacocoCommitDir(File outputDir, String projectId, Commit commit) {
+		File projectDir = new File(outputDir, projectId);
+		File jacocoDir = new File(projectDir, "jacoco");
+		File commitDir = new File(jacocoDir, commit.getId());
+		return commitDir;
+	}
+	
+	/**
+	 * Get coverage builder
+	 * @param exec
+	 * @return
+	 * @throws IOException
+	 */
+	public static CoverageBuilder getCoverageBuilder(File projectDir, File exec) throws IOException {
+		// Prepare
+		FileInputStream fis = new FileInputStream(exec);
+		ExecutionDataStore eds = new ExecutionDataStore();
+		SessionInfoStore sis = new SessionInfoStore();
+		// Read
+		ExecutionDataReader edr = new ExecutionDataReader(fis);
+		edr.setExecutionDataVisitor(eds);
+		edr.setSessionInfoVisitor(sis);
+		while (edr.read())
+			;
+		fis.close();
+		// Build
+		CoverageBuilder builder = new CoverageBuilder();
+		Analyzer analyzer = new Analyzer(eds, builder);
+		analyzer.analyzeAll(new File(projectDir, "target/classes"));
+		// Return
+		return builder;
 	}
 	
 	/**
