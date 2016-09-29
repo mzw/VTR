@@ -28,7 +28,7 @@ public class TestCaseModification {
 		this.newNodes = newNodes;
 		this.oldNodes = oldNodes;
 	}
-	
+
 	public Commit getCommit() {
 		return this.commit;
 	}
@@ -45,16 +45,46 @@ public class TestCaseModification {
 		return this.oldNodes;
 	}
 
-	protected File file;
-	protected List<String> revisedNodeClasses;
-	protected List<String> originalNodeClasses;
+	// Above for Detector
+	// --------------------------------------------------
+	// Below for Cluster
 
-	public TestCaseModification(File file) {
+	private File file;
+	private List<String> revisedNodeClasses;
+	private List<String> originalNodeClasses;
+	
+	private String projectId;
+	private String commitId;
+	private String clazz;
+	private String method;
+
+	public TestCaseModification(File file, String projectId, String commitId, String clazz, String method) throws IOException {
 		this.file = file;
+		this.projectId = projectId;
+		this.commitId = commitId;
+		this.clazz = clazz;
+		this.method = method;
 		this.revisedNodeClasses = new ArrayList<>();
 		this.originalNodeClasses = new ArrayList<>();
+		parse();
+	}
+	
+	public String getProjectId() {
+		return this.projectId;
 	}
 
+	public String getCommitId() {
+		return this.commitId;
+	}
+	
+	public String getClassName() {
+		return this.clazz;
+	}
+	
+	public String getMethodName() {
+		return this.method;
+	}
+	
 	public TestCaseModification parse() throws IOException {
 		String content = FileUtils.readFileToString(file);
 		Document document = Jsoup.parse(content, "", Parser.xmlParser());

@@ -4,14 +4,10 @@ import java.io.File;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import jp.mzw.vtr.detect.Detector;
 import jp.mzw.vtr.detect.TestCaseModification;
-import jp.mzw.vtr.dict.DictionaryParser;
-import jp.mzw.vtr.git.Commit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,71 +31,45 @@ public class LCSAnalyzer {
 	public void setSkipProjectId(String projectId) {
 		this.skipProjectIdList.add(projectId);
 	}
-
-	protected List<Project> getProjects() throws IOException, ParseException {
-		List<Project> ret = new ArrayList<>();
-		for (File projectDir : this.outputDir.listFiles()) {
-			if (projectDir.isDirectory()) {
-				Project project = new Project(projectDir.getName(), projectDir);
-				if (!this.skipProjectIdList.contains(project.getId())) {
-					project.findTestCaseModiciations();
-					ret.add(project);
+	
+	protected List<TestCaseModification> parseTestCaseModifications() throws IOException {
+		List<TestCaseModification> ret = new ArrayList<>();
+		for (File outputProjectDir : this.outputDir.listFiles()) {
+			if (!outputProjectDir.isDirectory()) {
+				continue;
+			}
+			String projectId = outputProjectDir.getName();
+			if (this.skipProjectIdList.contains(projectId)) {
+				continue;
+			}
+			File outputDetectDir = new File(outputProjectDir, Detector.DETECT_DIR);
+			if (outputDetectDir.exists()) {
+				for (File outputCommitDir : outputDetectDir.listFiles()) {
+					if (!outputCommitDir.isDirectory()) {
+						continue;
+					}
+					String commitId = outputCommitDir.getName();
+					for (File file : outputCommitDir.listFiles()) {
+						if (!file.isFile()) {
+							continue;
+						}
+						String fullname = file.getName().replace(".xml", "");
+						String[] split = fullname.split("#");
+						String clazz = split[0];
+						String method = split[1];
+						// new and add
+						TestCaseModification tcm = new TestCaseModification(file, projectId, commitId, clazz, method); 
+						ret.add(tcm);
+					}
 				}
 			}
 		}
 		return ret;
 	}
 	
-	private static class Project {
-		private String projectId;
-		private File outputProjectDir;
-		private File outputDetectDir;
-		private List<Commit> commits;
-		private Map<Commit, List<TestCaseModification>> results;
-		private Project(String projectId, File outputProjectDir) throws IOException, ParseException {
-			this.projectId = projectId;
-			this.outputProjectDir = outputProjectDir;
-			this.commits = DictionaryParser.parseCommits(this.outputProjectDir);
-			this.outputDetectDir = new File(outputProjectDir, Detector.DETECT_DIR);
-			this.results = new HashMap<>();
-		}
-		public String getId() {
-			return this.projectId;
-		}
-		public Project findTestCaseModiciations() throws IOException {
-			for (File dir : outputDetectDir.listFiles()) {
-				if (dir.isDirectory()) {
-					Commit commit = Commit.getCommitBy(dir.getName(), this.commits);
-					List<TestCaseModification> tcmList = new ArrayList<>();
-					for (File file : dir.listFiles()) {
-						if (file.isFile()) {
-							TestCaseModification tcm = new TestCaseModification(file).parse();
-							if (tcm != null) {
-								tcmList.add(tcm);
-							}
-						}
-					}
-					if (!tcmList.isEmpty()) {
-						this.results.put(commit, tcmList);
-					}
-				}
-			}
-			return this;
-		}
-		public Map<Commit, List<TestCaseModification>> getTestCaseModifications() {
-			return this.results;
-		}
-	}
-	
 	public void analyze() throws IOException, ParseException {
 		// Set results
-		List<TestCaseModification> tcmList = new ArrayList<>();
-		for (Project project : this.getProjects()) {
-			Map<Commit, List<TestCaseModification>> tcmMap = project.getTestCaseModifications();
-			for (Commit key : tcmMap.keySet()) {
-				tcmList.addAll(tcmMap.get(key));
-			}
-		}
+		List<TestCaseModification> tcmList = this.parseTestCaseModifications();
 		// Measure LCS
 		for (int i = 0; i < tcmList.size() - 1; i++) {
 			TestCaseModification result1 = tcmList.get(i);
