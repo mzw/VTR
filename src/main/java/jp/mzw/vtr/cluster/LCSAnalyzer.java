@@ -3,18 +3,23 @@ package jp.mzw.vtr.cluster;
 import java.io.File;
 import java.io.IOException;
 import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 
 import jp.mzw.vtr.detect.Detector;
 import jp.mzw.vtr.detect.TestCaseModification;
 
+import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class LCSAnalyzer {
 	protected static Logger LOGGER = LoggerFactory.getLogger(LCSAnalyzer.class);
 
+	public static final String LCS_DIR = "lcs";
+	
 	private File outputDir;
 	
 	private List<String> skipProjectIdList;
@@ -67,10 +72,11 @@ public class LCSAnalyzer {
 		return ret;
 	}
 	
-	public void analyze() throws IOException, ParseException {
+	public LCSMap analyze() throws IOException, ParseException {
 		// Set results
 		List<TestCaseModification> tcmList = this.parseTestCaseModifications();
 		// Measure LCS
+		LCSMap map = new LCSMap(tcmList);
 		for (int i = 0; i < tcmList.size() - 1; i++) {
 			TestCaseModification result1 = tcmList.get(i);
 			for (int j = i + 1; j < tcmList.size(); j++) {
@@ -78,9 +84,30 @@ public class LCSAnalyzer {
 				double sim1 = sim(result1.getRevisedNodeClasses(), result2.getRevisedNodeClasses());
 				double sim2 = sim(result1.getOriginalNodeClasses(), result2.getOriginalNodeClasses());
 				double dist = 1.0 - (sim1 + sim2) / 2.0;
-				System.out.println(dist);
+				map.add(dist, i, j);
 			}
 		}
+		return map;
+	}
+	
+	public void output(LCSMap map) throws IOException {
+		// root
+		File rootDir = new File(this.outputDir, LCS_DIR);
+		// with time-stamp
+	    Calendar c = Calendar.getInstance();
+	    SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddHHmm");
+	    String timestamp = sdf.format(c.getTime());
+	    File tsDir = new File(rootDir, timestamp);
+	    // latest
+	    File latestDir = new File(rootDir, "latest");
+	    // output
+		output(tsDir, map);
+		output(latestDir, map);
+	}
+	
+	private void output(File dir, LCSMap map) throws IOException  {
+		FileUtils.writeStringToFile(new File(this.outputDir, "dist.csv"), map.getCsv());
+		FileUtils.writeStringToFile(new File(this.outputDir, "hashcode.csv"), map.getHashcodeCsv());
 	}
 
 	/**
@@ -126,10 +153,14 @@ public class LCSAnalyzer {
 	 * @return
 	 */
 	protected double sim(List<String> src, List<String> dst) {
-		double lcs = (double) lcs(src, dst).size();
-		double s = (double) src.size();
-		double d = (double) dst.size();
-		return lcs / (s + d - lcs);
+		List<String> lcs = lcs(src, dst);
+		if (lcs.isEmpty()) {
+			return 0.0;
+		}
+		double _lcs = (double) lcs.size();
+		double _s = (double) src.size();
+		double _d = (double) dst.size();
+		return _lcs / (_s + _d - _lcs);
 	}
 
 }

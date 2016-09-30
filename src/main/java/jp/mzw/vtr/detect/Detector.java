@@ -188,7 +188,8 @@ public class Detector implements CheckoutConductor.Listener {
 		for (TestCase tc : testCases) {
 			List<Integer> methodLineRange = tc.getLineRange();
 			List<ModifiedLineRange> modifiedLineRanges = analyzer.getModifiedLineRanges(tc.getTestFile());
-			if (modifiedLineRanges == null) {
+			if (modifiedLineRanges == null) { // TODO Need to check why 'modifiedLineRanges' can be 'null'
+				LOGGER.warn("TODO Need to check why 'modifiedLineRanges' can be 'null'", tc.getTestFile().getPath());
 				continue;
 			}
 			// Analyze new lines that are in this test case AND are modified in this commit

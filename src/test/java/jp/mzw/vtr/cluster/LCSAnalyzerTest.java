@@ -31,7 +31,7 @@ public class LCSAnalyzerTest extends VtrTestBase {
 	public void testConstructor() throws IOException {
 		LCSAnalyzer analyzer = new LCSAnalyzer(this.project.getOutputDir());
 		List<TestCaseModification> tcmList = analyzer.parseTestCaseModifications();
-		assertEquals(1, tcmList.size());
+		assertEquals(37, tcmList.size());
 	}
 	
 	@Test

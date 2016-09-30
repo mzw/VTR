@@ -15,6 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import jp.mzw.vtr.cluster.LCSAnalyzer;
+import jp.mzw.vtr.cluster.LCSMap;
 import jp.mzw.vtr.core.Project;
 import jp.mzw.vtr.detect.Detector;
 import jp.mzw.vtr.dict.DictionaryMaker;
@@ -27,16 +28,22 @@ public class CLI {
 
 	public static void main(String[] args) throws IOException, NoHeadException, GitAPIException, ParseException {
 
-		if (args.length < 3) {
+		if (args.length < 1) {
 			// Invalid usage
 			LOGGER.info("Ex) $ java -cp=CLASSPATH jp.mzw.vtr.CLI dict vtr-example subjects/vtr-example refs/heads/master");
 			LOGGER.info("Ex) $ java -cp=CLASSPATH jp.mzw.vtr.CLI cov vtr-example subjects/vtr-example");
 			LOGGER.info("Ex) $ java -cp=CLASSPATH jp.mzw.vtr.CLI detect vtr-example subjects/vtr-example");
-			LOGGER.info("Ex) $ java -cp=CLASSPATH jp.mzw.vtr.CLI diff vtr-example subjects/vtr-example");
+			LOGGER.info("Ex) $ java -cp=CLASSPATH jp.mzw.vtr.CLI lcs");
 			return;
 		}
 
 		String command = args[0];
+		if ("lcs".equals(command)) {
+			Project project = new Project(null, null);
+			lcs(project);
+			return;
+		}
+		
 		String projectId = args[1];
 		String pathToProject = args[2];
 		Project project = new Project(projectId, pathToProject);
@@ -59,8 +66,6 @@ public class CLI {
 			}
 		} else if ("detect".equals(command)) {
 			detect(project);
-		} else if ("lcs".equals(command)) {
-			lcs(project);
 		}
 
 	}
@@ -98,6 +103,7 @@ public class CLI {
 	
 	private static void lcs(Project project) throws IOException, ParseException {
 		LCSAnalyzer analyzer = new LCSAnalyzer(project.getOutputDir());
-		analyzer.analyze();
+		LCSMap map = analyzer.analyze();
+		analyzer.output(map);
 	}
 }
