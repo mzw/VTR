@@ -102,6 +102,11 @@ public class Detector implements CheckoutConductor.Listener {
 					LOGGER.info("Coverage file does not exist: {}", exec.getAbsolutePath());
 					continue;
 				}
+				File result = this.getOutputFile(commit, tc);
+				if (result.exists()) {
+					LOGGER.info("Detection result is found: {}", result.getPath());
+					continue;
+				}
 				if (detect(cur, blame, exec)) {
 					ret.add(tc);
 					LOGGER.info("Detect subject test-case modification: {} @ {}", tc.getFullName(), commit.getId());
