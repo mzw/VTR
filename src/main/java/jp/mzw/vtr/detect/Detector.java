@@ -284,14 +284,16 @@ public class Detector implements CheckoutConductor.Listener {
 			element.addText(StringEscapeUtils.escapeXml10(node.toString()));
 		}
 		// Original
-		Element original = root.addElement("OriginalNodes");
-		for (ASTNode node : originalNodes) {
-			valid = true;
-			Element element = original.addElement("Node");
-			element.addAttribute("startPosition", String.valueOf(node.getStartPosition()));
-			element.addAttribute("length", String.valueOf(node.getLength()));
-			element.addAttribute("class", node.getClass().getName());
-			element.addText(StringEscapeUtils.escapeXml10(node.toString()));
+		if (originalNodes != null) {
+			Element original = root.addElement("OriginalNodes");
+			for (ASTNode node : originalNodes) {
+				valid = true;
+				Element element = original.addElement("Node");
+				element.addAttribute("startPosition", String.valueOf(node.getStartPosition()));
+				element.addAttribute("length", String.valueOf(node.getLength()));
+				element.addAttribute("class", node.getClass().getName());
+				element.addText(StringEscapeUtils.escapeXml10(node.toString()));
+			}
 		}
 		if (!valid) {
 			return null;
