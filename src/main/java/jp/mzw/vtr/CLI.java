@@ -14,6 +14,7 @@ import org.eclipse.jgit.revwalk.RevCommit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import jp.mzw.vtr.cluster.LCSAnalyzer;
 import jp.mzw.vtr.core.Project;
 import jp.mzw.vtr.detect.Detector;
 import jp.mzw.vtr.dict.DictionaryMaker;
@@ -95,7 +96,8 @@ public class CLI {
 		cc.checkout();
 	}
 	
-	private static void lcs(Project project) {
-		
+	private static void lcs(Project project) throws IOException, ParseException {
+		LCSAnalyzer analyzer = new LCSAnalyzer(project.getOutputDir());
+		analyzer.analyze();
 	}
 }
