@@ -2,6 +2,7 @@ package jp.mzw.vtr.core;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Properties;
 
 import org.slf4j.Logger;
@@ -70,7 +71,10 @@ public class Project {
 	public void setConfig(String filename) throws IOException {
 		// load
 		this.config = new Properties();
-		this.config.load(CLI.class.getClassLoader().getResourceAsStream(filename));
+		InputStream is = CLI.class.getClassLoader().getResourceAsStream(filename);
+		if (is != null) {
+			this.config.load(is);
+		}
 		// read
 		this.pathToOutputDir = config.getProperty("path_to_output_dir") != null ? config.getProperty("path_to_output_dir") : "output";
 		this.mavenHome = config.getProperty("maven_home") != null ? config.getProperty("maven_home") : System.getenv("M2_HOME");
