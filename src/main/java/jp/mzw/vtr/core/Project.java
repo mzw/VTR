@@ -66,7 +66,7 @@ public class Project {
 	protected String pathToOutputDir = "output";
 
 	/** Maven home (default: $M2_HOME) */
-	protected String mavenHome = System.getenv("M2_HOME");
+	protected String mavenHome = "/usr/local/apache-maven-3.3.9";
 
 	public void setConfig(String filename) throws IOException {
 		// load
@@ -77,7 +77,7 @@ public class Project {
 		}
 		// read
 		this.pathToOutputDir = config.getProperty("path_to_output_dir") != null ? config.getProperty("path_to_output_dir") : "output";
-		this.mavenHome = config.getProperty("maven_home") != null ? config.getProperty("maven_home") : System.getenv("M2_HOME");
+		this.mavenHome = config.getProperty("maven_home") != null ? config.getProperty("maven_home") : "/usr/local/apache-maven-3.3.9";
 	}
 
 	/**
