@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 
@@ -18,7 +17,8 @@ import org.eclipse.jgit.revwalk.RevCommit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import jp.mzw.vtr.dict.DictionaryParser;
+import jp.mzw.vtr.core.Project;
+import jp.mzw.vtr.dict.Dictionary;
 import jp.mzw.vtr.maven.MavenUtils;
 
 public class CheckoutConductor {
@@ -54,13 +54,11 @@ public class CheckoutConductor {
 	}
 
 	Git git;
-	List<Commit> commits;
-	Map<Tag, List<Commit>> dict;
+	Dictionary dict;
 
-	public CheckoutConductor(Git git, File dir) throws IOException, ParseException {
-		this.git = git;
-		commits = DictionaryParser.parseCommits(dir);
-		dict = DictionaryParser.parseDictionary(dir);
+	public CheckoutConductor(Project project) throws IOException, ParseException {
+		this.git = GitUtils.getGit(project.getPathToProject());
+		this.dict = new Dictionary(project.getOutputDir(), project.getProjectId()).parse();
 	}
 
 	/**
@@ -169,10 +167,10 @@ public class CheckoutConductor {
 	 */
 	protected List<Commit> getCommitsAfterInitialRelease() {
 		List<Commit> ret = new ArrayList<>();
-		for (Commit commit : this.commits) {
+		for (Commit commit : this.dict.getCommits()) {
 			// Skip until initial release
 			boolean init = true;
-			for (Tag tag : dict.keySet()) {
+			for (Tag tag : dict.getTags()) {
 				if (commit.getDate().after(tag.getDate())) {
 					init = false;
 					break;
@@ -194,7 +192,7 @@ public class CheckoutConductor {
 	protected List<Commit> getCommitsAfter(String commitId) {
 		List<Commit> ret = new ArrayList<>();
 		boolean detect = false;
-		for (Commit commit : this.commits) {
+		for (Commit commit : this.dict.getCommits()) {
 			if (commit.getId().equals(commitId)) {
 				detect = true;
 			}
@@ -214,7 +212,7 @@ public class CheckoutConductor {
 	 */
 	protected List<Commit> getCommitAt(String commitId) {
 		List<Commit> ret = new ArrayList<>();
-		for (Commit commit : this.commits) {
+		for (Commit commit : this.dict.getCommits()) {
 			if (commit.getId().equals(commitId)) {
 				ret.add(commit);
 				return ret;
@@ -228,8 +226,8 @@ public class CheckoutConductor {
 	 * @return latest commit
 	 */
 	public Commit getLatestCommit() {
-		int index = this.commits.size() - 1;
-		return this.commits.get(index);
+		int index = this.dict.getCommits().size() - 1;
+		return this.dict.getCommits().get(index);
 	}
 	
 	/**
@@ -238,10 +236,10 @@ public class CheckoutConductor {
 	 */
 	public Commit getOneBeforeInitialRelease() {
 		Commit prev = null;
-		for (Commit commit : this.commits) {
+		for (Commit commit : this.dict.getCommits()) {
 			// Skip until initial release
 			boolean init = true;
-			for (Tag tag : dict.keySet()) {
+			for (Tag tag : dict.getTags()) {
 				if (commit.getDate().after(tag.getDate())) {
 					init = false;
 					break;

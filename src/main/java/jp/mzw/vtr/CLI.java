@@ -81,22 +81,19 @@ public class CLI {
 	}
 
 	private static void cov(Project project) throws IOException, ParseException, GitAPIException {
-		Git git = GitUtils.getGit(project.getPathToProject());
-		CheckoutConductor cc = new CheckoutConductor(git, new File(project.getOutputDir(), project.getProjectId()));
+		CheckoutConductor cc = new CheckoutConductor(project);
 		cc.addListener(new TestRunner(project));
 		cc.checkout();
 	}
 
 	private static void cov(Project project, CheckoutConductor.Type type, String commitId) throws IOException, ParseException, GitAPIException {
-		Git git = GitUtils.getGit(project.getPathToProject());
-		CheckoutConductor cc = new CheckoutConductor(git, new File(project.getOutputDir(), project.getProjectId()));
+		CheckoutConductor cc = new CheckoutConductor(project);
 		cc.addListener(new TestRunner(project));
 		cc.checkout(type, commitId);
 	}
 
 	private static void detect(Project project) throws IOException, ParseException, GitAPIException {
-		Git git = GitUtils.getGit(project.getPathToProject());
-		CheckoutConductor cc = new CheckoutConductor(git, new File(project.getOutputDir(), project.getProjectId()));
+		CheckoutConductor cc = new CheckoutConductor(project);
 		cc.addListener(new Detector(project));
 		cc.checkout();
 	}

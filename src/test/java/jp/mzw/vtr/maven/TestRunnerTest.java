@@ -31,7 +31,7 @@ public class TestRunnerTest extends VtrTestBase {
 
 	// @Test
 	public void testRevertGitRepository() throws IOException, ParseException, GitAPIException {
-		CheckoutConductor cc = new CheckoutConductor(git, new File(PATH_TO_OUTPUT_DIR));
+		CheckoutConductor cc = new CheckoutConductor(this.project);
 		cc.addListener(new TestRunner(this.project));
 		cc.checkout();
 		Iterable<RevCommit> commits = this.git.log().call();

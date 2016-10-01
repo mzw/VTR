@@ -3,10 +3,20 @@ package jp.mzw.vtr.dict;
 import java.io.File;
 import java.io.IOException;
 import java.text.ParseException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
+import org.apache.commons.io.FileUtils;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.parser.Parser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,26 +24,98 @@ import jp.mzw.vtr.git.Commit;
 import jp.mzw.vtr.git.Tag;
 import jp.mzw.vtr.maven.TestSuite;
 
-public class Dictionary {
+public class Dictionary extends DictionaryBase {
 	protected static Logger LOGGER = LoggerFactory.getLogger(Dictionary.class);
 
 	protected File outputDir;
 	protected String projectId;
-	
-	protected Map<Tag, List<Commit>> contents;
-	protected Map<String, Commit> prevCommitByCommitId;
-	protected Map<String, List<TestSuite>> testSuitesByCommitId;
-	
+
+	private Map<Tag, List<Commit>> contents;
+	private List<Commit> commits;
+	private Map<String, Commit> prevCommitByCommitId;
+	private Map<String, List<TestSuite>> testSuitesByCommitId;
+
 	public Dictionary(File outputDir, String projectId) {
 		this.outputDir = outputDir;
 		this.projectId = projectId;
 	}
-	
+
 	public Dictionary parse() throws IOException, ParseException {
-		this.contents = DictionaryParser.parseDictionary(new File(this.outputDir, this.projectId));
+		parseTagCommits();
+		parseCommits();
 		return this;
 	}
-	
+
+	/**
+	 * Parse relationships among tags and commits
+	 * 
+	 * @throws IOException
+	 * @throws ParseException
+	 */
+	private void parseTagCommits() throws IOException, ParseException {
+		File dir = new File(this.outputDir, this.projectId);
+		File file = new File(dir, FILENAME_DICT_XML);
+		this.contents = new HashMap<>();
+		String content = FileUtils.readFileToString(file);
+		Document doc = Jsoup.parse(content, "", Parser.xmlParser());
+		for (Element _tag : doc.getElementsByTag("Tag")) {
+			// Tag
+			String tag_id = _tag.attr("id");
+			Date tag_date = SDF.parse(_tag.attr("date"));
+			Tag tag = new Tag(tag_id, tag_date);
+			// Relevant commits
+			List<Commit> commits = new ArrayList<>();
+			for (Element _commit : _tag.getElementsByTag("Commit")) {
+				String id = _commit.attr("id");
+				Date date = SDF.parse(_commit.attr("date"));
+				Commit commit = new Commit(id, date);
+				commits.add(commit);
+			}
+			this.contents.put(tag, commits);
+		}
+	}
+
+	/**
+	 * Parse all commits
+	 * 
+	 * @return
+	 * @throws IOException
+	 * @throws ParseException
+	 */
+	private void parseCommits() throws IOException, ParseException {
+		File dir = new File(this.outputDir, this.projectId);
+		File file = new File(dir, FILENAME_COMMITS_XML);
+		// Read
+		this.commits = new ArrayList<>();
+		String content = FileUtils.readFileToString(file);
+		Document doc = Jsoup.parse(content, "", Parser.xmlParser());
+		for (Element commit : doc.getElementsByTag("Commit")) {
+			String id = commit.attr("id");
+			Date date = SDF.parse(commit.attr("date"));
+			this.commits.add(new Commit(id, date));
+		}
+		// Sort
+		Collections.sort(this.commits, new Comparator<Commit>() {
+			@Override
+			public int compare(Commit c1, Commit c2) {
+				if (c1.getDate().before(c2.getDate()))
+					return -1;
+				else if (c1.getDate().after(c2.getDate()))
+					return 1;
+				return 0;
+			}
+		});
+	}
+
+	/**
+	 * Get all commits
+	 * 
+	 * @return List of all commits
+	 */
+	public List<Commit> getCommits() {
+		return this.commits;
+	}
+
 	/**
 	 * Create previous commit by given commit ID
 	 * 
@@ -43,18 +125,25 @@ public class Dictionary {
 	 */
 	public Dictionary createPrevCommitByCommitIdMap() throws IOException, ParseException {
 		this.prevCommitByCommitId = new HashMap<>();
-		File dir = new File(this.outputDir, this.projectId);
-		List<Commit> commits = DictionaryParser.parseCommits(dir);
-		if (commits.size() < 3) {
+		if (this.commits.size() < 3) {
 			return null;
 		}
-		Commit prv = commits.get(0);
-		for (int i = 1; i < commits.size(); i++) {
-			Commit cur = commits.get(i);
+		Commit prv = this.commits.get(0);
+		for (int i = 1; i < this.commits.size(); i++) {
+			Commit cur = this.commits.get(i);
 			this.prevCommitByCommitId.put(cur.getId(), prv);
 			prv = cur;
 		}
 		return this;
+	}
+
+	/**
+	 * Get all tags parsed
+	 * 
+	 * @return
+	 */
+	public Set<Tag> getTags() {
+		return this.contents.keySet();
 	}
 
 	/**
@@ -80,12 +169,12 @@ public class Dictionary {
 	 * 
 	 * @param commitId
 	 * @return
-	 * @throws ParseException 
-	 * @throws IOException 
+	 * @throws ParseException
+	 * @throws IOException
 	 */
 	public Commit getPrevCommitBy(String commitId) throws IOException, ParseException {
 		if (this.prevCommitByCommitId == null) {
-			this.createPrevCommitByCommitIdMap();
+			this.parse().createPrevCommitByCommitIdMap();
 		}
 		return this.prevCommitByCommitId.get(commitId);
 	}
@@ -116,5 +205,5 @@ public class Dictionary {
 		}
 		this.testSuitesByCommitId.put(commit.getId(), testSuites);
 	}
-	
+
 }

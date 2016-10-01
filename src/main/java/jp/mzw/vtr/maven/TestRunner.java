@@ -7,12 +7,10 @@ import java.nio.file.Files;
 import java.text.ParseException;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
 import jp.mzw.vtr.core.Project;
 import jp.mzw.vtr.core.VtrUtils;
-import jp.mzw.vtr.dict.DictionaryBase;
-import jp.mzw.vtr.dict.DictionaryParser;
+import jp.mzw.vtr.dict.Dictionary;
 import jp.mzw.vtr.git.CheckoutConductor;
 import jp.mzw.vtr.git.Commit;
 import jp.mzw.vtr.git.GitUtils;
@@ -30,17 +28,17 @@ import org.slf4j.LoggerFactory;
 public class TestRunner implements CheckoutConductor.Listener {
 	static Logger LOGGER = LoggerFactory.getLogger(TestRunner.class);
 
-	protected String projectId;
-	protected String pathToProjectDir;
-	protected File projectDir;
+	private String projectId;
+	private String pathToProjectDir;
+	private File projectDir;
 
-	protected File outputDir;
+	private File outputDir;
 
-	protected File mavenHome;
+	private File mavenHome;
 
-	protected JacocoInstrumenter ji;
-	protected Map<Tag, List<Commit>> dict;
-	protected Git git;
+	private JacocoInstrumenter ji;
+	private Dictionary dict;
+	private Git git;
 
 	public TestRunner(Project project) throws IOException, ParseException {
 		this.projectId = project.getProjectId();
@@ -49,7 +47,7 @@ public class TestRunner implements CheckoutConductor.Listener {
 		this.outputDir = project.getOutputDir();
 		this.mavenHome = project.getMavenHome();
 		this.ji = new JacocoInstrumenter(this.projectDir);
-		this.dict = DictionaryParser.parseDictionary(new File(this.outputDir, this.projectId));
+		this.dict = new Dictionary(this.outputDir, this.projectId).parse();
 		this.git = GitUtils.getGit(this.pathToProjectDir);
 	}
 
@@ -194,9 +192,9 @@ public class TestRunner implements CheckoutConductor.Listener {
 		String filePath = VtrUtils.getFilePath(this.projectDir, testCase.getTestFile());
 		BlameResult result = blame.setFilePath(filePath).call();
 		// Determine
-		Tag curTag = DictionaryBase.getTagBy(commit, this.dict);
+		Tag curTag = this.dict.getTagBy(commit);
 		for (int lineno = testCase.getStartLineNumber(); lineno <= testCase.getEndLineNumber(); lineno++) {
-			Tag tag = DictionaryBase.getTagBy(new Commit(result.getSourceCommit(lineno - 1)), this.dict);
+			Tag tag = this.dict.getTagBy(new Commit(result.getSourceCommit(lineno - 1)));
 			if (curTag.getDate().equals(tag.getDate())) {
 				LOGGER.info("Detect test modification: {}", testCase.getFullName());
 				return true;

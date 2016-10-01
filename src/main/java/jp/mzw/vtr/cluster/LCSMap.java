@@ -13,9 +13,9 @@ public class LCSMap {
 	private List<TestCaseModification> tcmList;
 	private int size;
 	private int[] hashcodes;
-	
+
 	private double[][] map;
-	
+
 	public LCSMap(List<TestCaseModification> tcmList) {
 		this.tcmList = tcmList;
 		this.size = tcmList.size();
@@ -30,7 +30,7 @@ public class LCSMap {
 			}
 		}
 	}
-	
+
 	public void add(double value, int i, int j) {
 		if (!isRange(i) || !isRange(j)) {
 			LOGGER.warn("Invalid LCS map addition: size={}, i={}, j={}", this.size, i, j);
@@ -38,18 +38,18 @@ public class LCSMap {
 		}
 		this.map[i][j] = value;
 	}
-	
+
 	private boolean isRange(int i) {
 		if (i < 0 || size <= i) {
 			return false;
 		}
 		return true;
 	}
-	
+
 	public double[][] getMap() {
 		return this.map;
 	}
-	
+
 	public String getCsv() {
 		StringBuilder builder = new StringBuilder();
 		for (int i = 0; i < size; i++) {
@@ -66,7 +66,7 @@ public class LCSMap {
 		}
 		return builder.toString();
 	}
-	
+
 	public String getHashcodeCsv() {
 		StringBuilder builder = new StringBuilder();
 		for (TestCaseModification tcm : this.tcmList) {
@@ -78,12 +78,5 @@ public class LCSMap {
 		}
 		return builder.toString();
 	}
-	
-	public void print() {
 
-		System.out.println(getCsv());
-		System.out.println(getHashcodeCsv());
-		
-		
-	}
 }

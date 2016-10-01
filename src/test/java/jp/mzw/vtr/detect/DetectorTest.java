@@ -33,7 +33,7 @@ public class DetectorTest extends VtrTestBase {
 	@Before
 	public void setup() throws IOException, MavenInvocationException, ParseException, GitAPIException {
 		this.commit = new Commit(COMMIT_ID, DictionaryBase.SDF.parse(COMMIT_DATE));
-		this.cc = new CheckoutConductor(this.git, new File(PATH_TO_OUTPUT_DIR));
+		this.cc = new CheckoutConductor(this.project);
 		this.cc.checkout(CheckoutConductor.Type.At, commit.getId());
 		MavenUtils.maven(this.project.getProjectDir(), Arrays.asList("compile"), this.project.getMavenHome());
 	}
