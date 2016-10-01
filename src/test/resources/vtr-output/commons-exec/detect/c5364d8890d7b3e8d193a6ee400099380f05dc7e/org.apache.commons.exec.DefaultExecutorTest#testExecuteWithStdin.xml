@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ModifiedTestCaseNodes><RevisedNodes><Node startPosition="14189" length="43" class="org.eclipse.jdt.core.dom.TextElement">Exception to notify the user (see EXEC-33).</Node></RevisedNodes><OriginalNodes><Node startPosition="14189" length="29" class="org.eclipse.jdt.core.dom.TextElement">Exception to notify the user.</Node></OriginalNodes></ModifiedTestCaseNodes>

@@ -59,7 +59,7 @@ public class TestRunnerTest extends VtrTestBase {
 	public void testGetOutputDir() throws IOException, ParseException {
 		TestRunner tr = new TestRunner(this.project);
 		File dir = tr.getOutputDir(this.commit);
-		assertArrayEquals("output/vtr-example/jacoco/fcf9382884874b7ceecc16cd2155ab73b1346931".toCharArray(), dir.getPath().toCharArray());
+		assertArrayEquals("src/test/resources/vtr-output/vtr-example/jacoco/fcf9382884874b7ceecc16cd2155ab73b1346931".toCharArray(), dir.getPath().toCharArray());
 	}
 
 }

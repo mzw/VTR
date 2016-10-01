@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ModifiedTestCaseNodes><RevisedNodes><Node startPosition="3928" length="266" class="org.eclipse.jdt.core.dom.Javadoc">/** 
+ * Accessing environment variables is case-sensitive or not depending on the operating system but the values of the environment variable are always case-sensitive. So make sure that this assumption holds on all operating systems.
+ */
+</Node><Node startPosition="3939" length="247" class="org.eclipse.jdt.core.dom.TagElement">
+ * Accessing environment variables is case-sensitive or not depending on the operating system but the values of the environment variable are always case-sensitive. So make sure that this assumption holds on all operating systems.</Node><Node startPosition="3939" length="66" class="org.eclipse.jdt.core.dom.TextElement">Accessing environment variables is case-sensitive or not depending</Node><Node startPosition="4013" length="66" class="org.eclipse.jdt.core.dom.TextElement">on the operating system but the values of the environment variable</Node><Node startPosition="4087" length="66" class="org.eclipse.jdt.core.dom.TextElement">are always case-sensitive. So make sure that this assumption holds</Node><Node startPosition="4161" length="25" class="org.eclipse.jdt.core.dom.TextElement">on all operating systems.</Node></RevisedNodes><OriginalNodes/></ModifiedTestCaseNodes>

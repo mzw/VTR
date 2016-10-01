@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ModifiedTestCaseNodes><RevisedNodes><Node startPosition="1161" length="125" class="org.eclipse.jdt.core.dom.Javadoc">/** 
+ * Tests the behaviour of the EnvironmentUtils.toStrings() when using a &amp;lt;code&amp;gt;null&amp;lt;/code&amp;gt; environment.
+ */
+</Node><Node startPosition="1172" length="106" class="org.eclipse.jdt.core.dom.TagElement">
+ * Tests the behaviour of the EnvironmentUtils.toStrings() when using a &amp;lt;code&amp;gt;null&amp;lt;/code&amp;gt; environment.</Node><Node startPosition="1172" length="55" class="org.eclipse.jdt.core.dom.TextElement">Tests the behaviour of the EnvironmentUtils.toStrings()</Node><Node startPosition="1235" length="43" class="org.eclipse.jdt.core.dom.TextElement">when using a &amp;lt;code&amp;gt;null&amp;lt;/code&amp;gt; environment.</Node></RevisedNodes><OriginalNodes/></ModifiedTestCaseNodes>

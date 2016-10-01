@@ -21,7 +21,7 @@ public class VtrTestBase {
 	public void _setup() throws IOException {
 		this.git = GitUtils.getGit(PATH_TO_PROJECT_DIR);
 		this.project = new Project(PROJECT_ID, PATH_TO_PROJECT_DIR);
-		this.project.setConfig("config.properties");
+		this.project.setConfig("test-config.properties");
 	}
 	
 }
