@@ -14,9 +14,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 public class LCSAnalyzerTest extends VtrTestBase {
-
-	public static final String PATH_TO_OUTPUT_DIR = "src/test/resources/output";
-//	public static final String PATH_TO_OUTPUT_DIR = "output";
 	
 	protected File outputDir;
 	protected LCSAnalyzer lcsAnalyzer;
@@ -37,47 +34,11 @@ public class LCSAnalyzerTest extends VtrTestBase {
 	@Test
 	public void testMeasureLcs() throws IOException, ParseException {
 		LCSAnalyzer analyzer = new LCSAnalyzer(this.project.getOutputDir());
-		analyzer.analyze();
-		
+		LCSMap map = analyzer.analyze();
+		assertEquals(-1.0, map.getMap()[0][0], 0.0);
+		assertEquals(0.9127906976744186, map.getMap()[0][1], 0.0);
+		assertEquals(-1.0, map.getMap()[1][0], 0.0);
+		assertEquals(-1.0, map.getMap()[1][1], 0.0);
 	}
 	
-//	@Test
-//	public void testGetDiffFiles() {
-//		List<File> files = this.lcsAnalyzer.getDiffFiles();
-//		Assert.assertTrue(0 < files.size());
-//	}
-	
-////	@Test
-//	public void testParse() {
-//		List<File> files = this.lcsAnalyzer.getDiffFiles();
-//		Assert.assertTrue(0 < files.size());
-//		File file = files.get(0);
-//		try {
-//			this.lcsAnalyzer.parse(file);
-//		} catch (IOException e) {
-//			Assert.fail();
-//		}
-//	}
-//	
-//	@Test
-//	public void testDiff() throws IOException {
-//		File dir = new File("output/commons-exec/diff/12b4a201cb887fccb7d396f6ed19566795a60d12");
-//		File file = new File(dir, "");
-//		DiffResult result = this.lcsAnalyzer.parse(file);
-//		for (String clazz : result.getOriginalNodeClasses()) {
-//			System.out.println(clazz);
-//		}
-//	}
-	
-//	@Test
-//	public void testLcs() {
-//		
-//	}
-	
-//	@Test
-//	public void testAnalyze() throws IOException {
-//		this.lcsAnalyzer.analyze();
-//		
-//		
-//	}
 }

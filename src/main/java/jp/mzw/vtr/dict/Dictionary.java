@@ -117,27 +117,6 @@ public class Dictionary extends DictionaryBase {
 	}
 
 	/**
-	 * Create previous commit by given commit ID
-	 * 
-	 * @return
-	 * @throws IOException
-	 * @throws ParseException
-	 */
-	public Dictionary createPrevCommitByCommitIdMap() throws IOException, ParseException {
-		this.prevCommitByCommitId = new HashMap<>();
-		if (this.commits.size() < 3) {
-			return null;
-		}
-		Commit prv = this.commits.get(0);
-		for (int i = 1; i < this.commits.size(); i++) {
-			Commit cur = this.commits.get(i);
-			this.prevCommitByCommitId.put(cur.getId(), prv);
-			prv = cur;
-		}
-		return this;
-	}
-
-	/**
 	 * Get all tags parsed
 	 * 
 	 * @return
@@ -162,6 +141,27 @@ public class Dictionary extends DictionaryBase {
 			}
 		}
 		return null;
+	}
+
+	/**
+	 * Create previous commit by given commit ID
+	 * 
+	 * @return
+	 * @throws IOException
+	 * @throws ParseException
+	 */
+	public Dictionary createPrevCommitByCommitIdMap() throws IOException, ParseException {
+		this.prevCommitByCommitId = new HashMap<>();
+		if (this.commits.size() < 3) {
+			return null;
+		}
+		Commit prv = this.commits.get(0);
+		for (int i = 1; i < this.commits.size(); i++) {
+			Commit cur = this.commits.get(i);
+			this.prevCommitByCommitId.put(cur.getId(), prv);
+			prv = cur;
+		}
+		return this;
 	}
 
 	/**
