@@ -138,24 +138,24 @@ public class CheckoutConductor {
 	/**
 	 * Maven compile to obtain source programs covered by test cases
 	 */
-	public static void before(File projectDir, File mavenHome) {
+	public static int before(File projectDir, File mavenHome) {
 		try {
-			MavenUtils.maven(projectDir, Arrays.asList("compile", "test-compile"), mavenHome);
+			return MavenUtils.maven(projectDir, Arrays.asList("compile", "test-compile"), mavenHome);
 		} catch (MavenInvocationException e) {
 			LOGGER.warn("Failed to compile subject");
-			return;
+			return -1;
 		}
 	}
 
 	/**
 	 * Maven clean to initialize
 	 */
-	public static void after(File projectDir, File mavenHome) {
+	public static int after(File projectDir, File mavenHome) {
 		try {
-			MavenUtils.maven(projectDir, Arrays.asList("clean"), mavenHome);
+			return MavenUtils.maven(projectDir, Arrays.asList("clean"), mavenHome);
 		} catch (MavenInvocationException e) {
 			LOGGER.warn("Failed to clean subject");
-			return;
+			return -1;
 		}
 	}
 	

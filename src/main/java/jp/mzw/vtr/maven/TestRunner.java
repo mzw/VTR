@@ -63,27 +63,31 @@ public class TestRunner implements CheckoutConductor.Listener {
 		boolean modified = false;
 		try {
 			modified = ji.instrument();
-			CheckoutConductor.before(this.projectDir, this.mavenHome);
-			// Measure coverage
-			List<TestSuite> testSuites = MavenUtils.getTestSuites(this.projectDir);
-			BlameCommand blame = new BlameCommand(this.git.getRepository());
-			for (TestSuite ts : testSuites) {
-				for (TestCase tc : ts.getTestCases()) {
-					File src = new File(this.projectDir, "target/jacoco.exec");
-					File dst = new File(dir, tc.getFullName() + "!jacoco.exec");
-					if (already(dst)) {
-						continue;
-					}
-					if (modified(commit, blame, tc)) {
-						run(tc);
-						copy(src, dst);
-						clean(src);
+			int before = CheckoutConductor.before(this.projectDir, this.mavenHome);
+			if (before == 0) { // succeeded to compile
+				// Measure coverage
+				List<TestSuite> testSuites = MavenUtils.getTestSuites(this.projectDir);
+				BlameCommand blame = new BlameCommand(this.git.getRepository());
+				for (TestSuite ts : testSuites) {
+					for (TestCase tc : ts.getTestCases()) {
+						File src = new File(this.projectDir, "target/jacoco.exec");
+						File dst = new File(dir, tc.getFullName() + "!jacoco.exec");
+						if (already(dst)) {
+							continue;
+						}
+						if (modified(commit, blame, tc)) {
+							run(tc);
+							copy(src, dst);
+							clean(src);
+						}
 					}
 				}
-			}
-			// Revert
-			if (modified) {
-				ji.revert();
+				// Revert
+				if (modified) {
+					ji.revert();
+				}
+			} else {
+				LOGGER.warn("Failed to compile subject: {}", commit.getId());
 			}
 			CheckoutConductor.after(this.projectDir, this.mavenHome);
 		}

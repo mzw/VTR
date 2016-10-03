@@ -12,6 +12,7 @@ import org.apache.maven.shared.invoker.DefaultInvocationRequest;
 import org.apache.maven.shared.invoker.DefaultInvoker;
 import org.apache.maven.shared.invoker.InvocationOutputHandler;
 import org.apache.maven.shared.invoker.InvocationRequest;
+import org.apache.maven.shared.invoker.InvocationResult;
 import org.apache.maven.shared.invoker.Invoker;
 import org.apache.maven.shared.invoker.MavenInvocationException;
 import org.eclipse.jdt.core.dom.MarkerAnnotation;
@@ -33,7 +34,7 @@ public class MavenUtils {
 	 * @param mavenHome
 	 * @throws MavenInvocationException
 	 */
-	public static void maven(File subject, List<String> goals, File mavenHome) throws MavenInvocationException {
+	public static int maven(File subject, List<String> goals, File mavenHome) throws MavenInvocationException {
 		InvocationRequest request = new DefaultInvocationRequest();
 		request.setPomFile(new File(subject, JacocoInstrumenter.FILENAME_POM));
 		request.setGoals(goals);
@@ -51,7 +52,8 @@ public class MavenUtils {
 				LOGGER.warn(line);
 			}
 		});
-		invoker.execute(request);
+		InvocationResult result = invoker.execute(request);
+		return result.getExitCode();
 	}
 
 	/**
