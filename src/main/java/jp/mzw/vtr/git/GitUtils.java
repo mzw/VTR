@@ -27,7 +27,7 @@ import org.slf4j.LoggerFactory;
 public class GitUtils {
 	static Logger log = LoggerFactory.getLogger(GitUtils.class);
 
-	public static final String DOT_GIT = ".git";
+	public static final String GIT_DIR = ".git";
 
 	/**
 	 * 
@@ -37,7 +37,20 @@ public class GitUtils {
 	 */
 	public static Git getGit(String pathToGitRepo) throws IOException {
 		FileRepositoryBuilder builder = new FileRepositoryBuilder();
-		Repository repository = builder.setGitDir(new File(pathToGitRepo, GitUtils.DOT_GIT)).readEnvironment().findGitDir().build();
+		Repository repository = builder.setGitDir(new File(pathToGitRepo, GitUtils.GIT_DIR)).readEnvironment().findGitDir().build();
+		return new Git(repository);
+	}
+	
+	/**
+	 * 
+	 * @param pathToGitRepo
+	 * @param gitDir
+	 * @return
+	 * @throws IOException
+	 */
+	public static Git getGit(String pathToGitRepo, String gitDir) throws IOException {
+		FileRepositoryBuilder builder = new FileRepositoryBuilder();
+		Repository repository = builder.setGitDir(new File(gitDir)).readEnvironment().findGitDir().build();
 		return new Git(repository);
 	}
 

@@ -11,7 +11,8 @@ import org.junit.Before;
 public class VtrTestBase {
 
 	public static final String PROJECT_ID = "vtr-example";
-	public static final String PATH_TO_PROJECT_DIR = "src/test/resources/vtr-example";
+	public static final String PATH_TO_PROJECT_DIR = "src/test/resources/vtr-subjects/vtr-example";
+	public static final String PATH_TO_GIT_DIR = ".git/modules/src/test/resources/vtr-subjects/vtr-example";
 	public static final String PATH_TO_OUTPUT_DIR = "src/test/resources/output/vtr-example";
 
 	protected Git git;
@@ -19,7 +20,7 @@ public class VtrTestBase {
 
 	@Before
 	public void _setup() throws IOException {
-		this.git = GitUtils.getGit(PATH_TO_PROJECT_DIR);
+		this.git = GitUtils.getGit(PATH_TO_PROJECT_DIR, PATH_TO_GIT_DIR);
 		this.project = new Project(PROJECT_ID, PATH_TO_PROJECT_DIR);
 		this.project.setConfig("test-config.properties");
 	}
