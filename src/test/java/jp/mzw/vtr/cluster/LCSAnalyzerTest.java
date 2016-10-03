@@ -35,10 +35,10 @@ public class LCSAnalyzerTest extends VtrTestBase {
 	public void testMeasureLcs() throws IOException, ParseException {
 		LCSAnalyzer analyzer = new LCSAnalyzer(this.project.getOutputDir());
 		LCSMap map = analyzer.analyze();
-		assertEquals(-1.0, map.getMap()[0][0], 0.0);
-		assertEquals(0.9127906976744186, map.getMap()[0][1], 0.0);
-		assertEquals(-1.0, map.getMap()[1][0], 0.0);
-		assertEquals(-1.0, map.getMap()[1][1], 0.0);
+		assertEquals(-1.0, map.getMap()[0][0], 0.01);
+		assertEquals(0.91, map.getMap()[0][1], 0.01);
+		assertEquals(-1.0, map.getMap()[1][0], 0.01);
+		assertEquals(-1.0, map.getMap()[1][1], 0.01);
 	}
 	
 }
