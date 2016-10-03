@@ -15,7 +15,7 @@ public class GitUtilsTest extends VtrTestBase {
 
 	@Test
 	public void testGetGit() throws IOException, GitAPIException {
-		Git git = GitUtils.getGit(PATH_TO_GIT_DIR);
+		Git git = GitUtils.getGit(PATH_TO_PROJECT_DIR, PATH_TO_GIT_DIR);
 		Assert.assertNotNull(git);
 	}
 

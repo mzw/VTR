@@ -12,7 +12,7 @@ public class VtrTestBase {
 
 	public static final String PROJECT_ID = "vtr-example";
 	public static final String PATH_TO_PROJECT_DIR = "src/test/resources/vtr-subjects/vtr-example";
-	public static final String PATH_TO_GIT_DIR = ".git/modules/src/test/resources/vtr-subjects/vtr-example";
+	public static final String PATH_TO_GIT_DIR = "git";
 	public static final String PATH_TO_OUTPUT_DIR = "src/test/resources/output/vtr-example";
 
 	protected Git git;
