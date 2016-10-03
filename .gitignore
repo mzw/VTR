@@ -2,7 +2,7 @@
 subjects/
 log/
 *.log
-*.properties
+config.properties
 output/
 sh/ba.sh
 docker/
