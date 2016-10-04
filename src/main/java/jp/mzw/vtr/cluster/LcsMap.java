@@ -7,8 +7,8 @@ import jp.mzw.vtr.detect.TestCaseModification;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class LCSMap {
-	protected static Logger LOGGER = LoggerFactory.getLogger(LCSMap.class);
+public class LcsMap {
+	protected static Logger LOGGER = LoggerFactory.getLogger(LcsMap.class);
 
 	private List<TestCaseModification> tcmList;
 	private int size;
@@ -16,7 +16,7 @@ public class LCSMap {
 
 	private double[][] map;
 
-	public LCSMap(List<TestCaseModification> tcmList) {
+	public LcsMap(List<TestCaseModification> tcmList) {
 		this.tcmList = tcmList;
 		this.size = tcmList.size();
 		this.hashcodes = new int[size];
@@ -29,6 +29,24 @@ public class LCSMap {
 				this.map[i][j] = -1.0;
 			}
 		}
+	}
+	
+	public LcsMap(int[] hashcodes) {
+		this.size = hashcodes.length;
+		this.hashcodes = hashcodes;
+		this.map = new double[size][size];
+	}
+	
+	public int[] getHashcodes() {
+		return this.hashcodes;
+	}
+	
+	public String[] getHashcodesAsNames() {
+		String[] names = new String[this.size];
+		for (int i = 0; i < this.size; i++) {
+			names[i] = new Integer(this.hashcodes[i]).toString();
+		}
+		return names;
 	}
 
 	public void add(double value, int i, int j) {

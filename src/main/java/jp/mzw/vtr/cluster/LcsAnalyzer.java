@@ -15,16 +15,19 @@ import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class LCSAnalyzer {
-	protected static Logger LOGGER = LoggerFactory.getLogger(LCSAnalyzer.class);
+public class LcsAnalyzer {
+	protected static Logger LOGGER = LoggerFactory.getLogger(LcsAnalyzer.class);
 
 	public static final String LCS_DIR = "lcs";
+	public static final String LATEST_DIR = "latest";
+	public static final String DIST_FILENAME = "dist.csv";
+	public static final String HASHCODE_FILENAME = "hashcode.csv";
 	
 	private File outputDir;
 	
 	private List<String> skipProjectIdList;
 
-	public LCSAnalyzer(File outputDir) {
+	public LcsAnalyzer(File outputDir) {
 		this.outputDir = outputDir;
 		this.skipProjectIdList = new ArrayList<>();
 	}
@@ -72,11 +75,11 @@ public class LCSAnalyzer {
 		return ret;
 	}
 	
-	public LCSMap analyze() throws IOException, ParseException {
+	public LcsMap analyze() throws IOException, ParseException {
 		// Set results
 		List<TestCaseModification> tcmList = this.parseTestCaseModifications();
 		// Measure LCS
-		LCSMap map = new LCSMap(tcmList);
+		LcsMap map = new LcsMap(tcmList);
 		for (int i = 0; i < tcmList.size() - 1; i++) {
 			TestCaseModification result1 = tcmList.get(i);
 			for (int j = i + 1; j < tcmList.size(); j++) {
@@ -90,7 +93,7 @@ public class LCSAnalyzer {
 		return map;
 	}
 	
-	public void output(LCSMap map) throws IOException {
+	public void output(LcsMap map) throws IOException {
 		// root
 		File rootDir = new File(this.outputDir, LCS_DIR);
 		// with time-stamp
@@ -99,15 +102,15 @@ public class LCSAnalyzer {
 	    String timestamp = sdf.format(c.getTime());
 	    File tsDir = new File(rootDir, timestamp);
 	    // latest
-	    File latestDir = new File(rootDir, "latest");
+	    File latestDir = new File(rootDir, LATEST_DIR);
 	    // output
 		output(tsDir, map);
 		output(latestDir, map);
 	}
 	
-	private void output(File dir, LCSMap map) throws IOException  {
-		FileUtils.writeStringToFile(new File(dir, "dist.csv"), map.getCsv());
-		FileUtils.writeStringToFile(new File(dir, "hashcode.csv"), map.getHashcodeCsv());
+	private void output(File dir, LcsMap map) throws IOException  {
+		FileUtils.writeStringToFile(new File(dir, DIST_FILENAME), map.getCsv());
+		FileUtils.writeStringToFile(new File(dir, HASHCODE_FILENAME), map.getHashcodeCsv());
 	}
 
 	/**

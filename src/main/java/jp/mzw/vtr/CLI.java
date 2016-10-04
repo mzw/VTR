@@ -14,8 +14,9 @@ import org.eclipse.jgit.revwalk.RevCommit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import jp.mzw.vtr.cluster.LCSAnalyzer;
-import jp.mzw.vtr.cluster.LCSMap;
+import jp.mzw.vtr.cluster.HCluster;
+import jp.mzw.vtr.cluster.LcsAnalyzer;
+import jp.mzw.vtr.cluster.LcsMap;
 import jp.mzw.vtr.core.Project;
 import jp.mzw.vtr.detect.Detector;
 import jp.mzw.vtr.dict.DictionaryMaker;
@@ -34,6 +35,7 @@ public class CLI {
 			LOGGER.info("Ex) $ java -cp=CLASSPATH jp.mzw.vtr.CLI cov vtr-example subjects/vtr-example");
 			LOGGER.info("Ex) $ java -cp=CLASSPATH jp.mzw.vtr.CLI detect vtr-example subjects/vtr-example");
 			LOGGER.info("Ex) $ java -cp=CLASSPATH jp.mzw.vtr.CLI lcs");
+			LOGGER.info("Ex) $ java -cp=CLASSPATH jp.mzw.vtr.CLI cluster complete 0.5");
 			return;
 		}
 
@@ -41,6 +43,11 @@ public class CLI {
 		if ("lcs".equals(command)) {
 			Project project = new Project(null, null);
 			lcs(project);
+			return;
+		} else if ("cluster".equals(command)) {
+			String method = args[1];
+			double threshold = Double.parseDouble(args[2]);
+			cluster(new Project(null, null).getOutputDir(), method, threshold);
 			return;
 		}
 		
@@ -99,8 +106,14 @@ public class CLI {
 	}
 	
 	private static void lcs(Project project) throws IOException, ParseException {
-		LCSAnalyzer analyzer = new LCSAnalyzer(project.getOutputDir());
-		LCSMap map = analyzer.analyze();
+		LcsAnalyzer analyzer = new LcsAnalyzer(project.getOutputDir());
+		LcsMap map = analyzer.analyze();
 		analyzer.output(map);
+	}
+	
+	private static void cluster(File outputDir, String method, double threshold) throws IOException {
+		HCluster cluster = new HCluster(outputDir).parse();
+		cluster.cluster(HCluster.getStrategy(method), threshold);
+		cluster.output();
 	}
 }

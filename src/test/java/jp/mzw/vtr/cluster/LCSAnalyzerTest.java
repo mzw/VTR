@@ -16,25 +16,25 @@ import org.junit.Test;
 public class LCSAnalyzerTest extends VtrTestBase {
 	
 	protected File outputDir;
-	protected LCSAnalyzer lcsAnalyzer;
+	protected LcsAnalyzer lcsAnalyzer;
 	
 	@Before
 	public void setup() {
 		this.outputDir = new File(PATH_TO_OUTPUT_DIR);
-		this.lcsAnalyzer = new LCSAnalyzer(this.outputDir);
+		this.lcsAnalyzer = new LcsAnalyzer(this.outputDir);
 	}
 	
 	@Test
 	public void testConstructor() throws IOException {
-		LCSAnalyzer analyzer = new LCSAnalyzer(this.project.getOutputDir());
+		LcsAnalyzer analyzer = new LcsAnalyzer(this.project.getOutputDir());
 		List<TestCaseModification> tcmList = analyzer.parseTestCaseModifications();
 		assertEquals(37, tcmList.size());
 	}
 	
 	@Test
 	public void testMeasureLcs() throws IOException, ParseException {
-		LCSAnalyzer analyzer = new LCSAnalyzer(this.project.getOutputDir());
-		LCSMap map = analyzer.analyze();
+		LcsAnalyzer analyzer = new LcsAnalyzer(this.project.getOutputDir());
+		LcsMap map = analyzer.analyze();
 		assertEquals(-1.0, map.getMap()[0][0], 0.01);
 		assertNotEquals(-1.0, map.getMap()[0][1], 0.01);
 		assertEquals(-1.0, map.getMap()[1][0], 0.01);
