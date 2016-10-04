@@ -106,8 +106,8 @@ public class LCSAnalyzer {
 	}
 	
 	private void output(File dir, LCSMap map) throws IOException  {
-		FileUtils.writeStringToFile(new File(this.outputDir, "dist.csv"), map.getCsv());
-		FileUtils.writeStringToFile(new File(this.outputDir, "hashcode.csv"), map.getHashcodeCsv());
+		FileUtils.writeStringToFile(new File(dir, "dist.csv"), map.getCsv());
+		FileUtils.writeStringToFile(new File(dir, "hashcode.csv"), map.getHashcodeCsv());
 	}
 
 	/**
