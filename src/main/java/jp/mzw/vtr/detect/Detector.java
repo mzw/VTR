@@ -46,9 +46,7 @@ public class Detector implements CheckoutConductor.Listener {
 	public static final String DETECT_DIR = "detect";
 
 	protected String projectId;
-	protected String pathToProjectDir;
 	protected File projectDir;
-
 	protected File outputDir;
 	protected File mavenHome;
 
@@ -57,11 +55,10 @@ public class Detector implements CheckoutConductor.Listener {
 
 	public Detector(Project project) throws IOException, ParseException {
 		this.projectId = project.getProjectId();
-		this.pathToProjectDir = project.getPathToProject();
 		this.projectDir = project.getProjectDir();
 		this.outputDir = project.getOutputDir();
 		this.mavenHome = project.getMavenHome();
-		this.git = GitUtils.getGit(this.pathToProjectDir);
+		this.git = GitUtils.getGit(this.projectDir);
 		this.dict = new Dictionary(this.outputDir, this.projectId).parse().createPrevCommitByCommitIdMap();
 	}
 

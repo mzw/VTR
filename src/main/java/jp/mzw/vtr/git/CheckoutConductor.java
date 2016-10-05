@@ -57,7 +57,7 @@ public class CheckoutConductor {
 	Dictionary dict;
 
 	public CheckoutConductor(Project project) throws IOException, ParseException {
-		this.git = GitUtils.getGit(project.getPathToProject());
+		this.git = GitUtils.getGit(project.getProjectDir());
 		this.dict = new Dictionary(project.getOutputDir(), project.getProjectId()).parse();
 	}
 

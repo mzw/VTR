@@ -17,6 +17,7 @@ import org.eclipse.jgit.errors.RevisionSyntaxException;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.Repository;
+import org.eclipse.jgit.lib.StoredConfig;
 import org.eclipse.jgit.patch.Patch;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevWalk;
@@ -35,12 +36,12 @@ public class GitUtils {
 	 * @return
 	 * @throws IOException
 	 */
-	public static Git getGit(String pathToGitRepo) throws IOException {
+	public static Git getGit(File projectDir) throws IOException {
 		FileRepositoryBuilder builder = new FileRepositoryBuilder();
-		Repository repository = builder.setGitDir(new File(pathToGitRepo, GitUtils.GIT_DIR)).readEnvironment().findGitDir().build();
+		Repository repository = builder.setGitDir(new File(projectDir, GitUtils.GIT_DIR)).readEnvironment().findGitDir().build();
 		return new Git(repository);
 	}
-	
+
 	/**
 	 * 
 	 * @param pathToGitRepo
@@ -48,10 +49,31 @@ public class GitUtils {
 	 * @return
 	 * @throws IOException
 	 */
-	public static Git getGit(String pathToGitRepo, String gitDir) throws IOException {
+	public static Git getGit(File projectDir, String gitDir) throws IOException {
 		FileRepositoryBuilder builder = new FileRepositoryBuilder();
-		Repository repository = builder.setGitDir(new File(pathToGitRepo, gitDir)).readEnvironment().findGitDir().build();
+		Repository repository = builder.setGitDir(new File(projectDir, gitDir)).readEnvironment().findGitDir().build();
 		return new Git(repository);
+	}
+
+	/**
+	 *
+	 * @param git
+	 * @return
+	 */
+	public static String getRemoteOriginUrl(Git git) {
+		StoredConfig config = git.getRepository().getConfig();
+		return config.getString("remote", "origin", "url");
+	}
+
+	/**
+	 * 
+	 * @param git
+	 * @return
+	 */
+	public static String getRefToCompareBranch(Git git) {
+		StoredConfig config = git.getRepository().getConfig();
+		String subsection = config.getSubsections("branch").iterator().next();
+		return config.getString("branch", subsection, "merge");
 	}
 
 	/**

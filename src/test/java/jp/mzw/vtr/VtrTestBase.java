@@ -17,7 +17,7 @@ public class VtrTestBase {
 
 	@Before
 	public void _setup() throws IOException {
-		this.project = new Project(PROJECT_ID, PATH_TO_PROJECT_DIR);
+		this.project = new Project(PROJECT_ID);
 		this.project.setConfig(TEST_CONFIG_FILENAME);
 	}
 	

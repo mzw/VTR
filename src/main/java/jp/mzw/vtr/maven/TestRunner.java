@@ -29,7 +29,6 @@ public class TestRunner implements CheckoutConductor.Listener {
 	static Logger LOGGER = LoggerFactory.getLogger(TestRunner.class);
 
 	private String projectId;
-	private String pathToProjectDir;
 	private File projectDir;
 
 	private File outputDir;
@@ -42,13 +41,12 @@ public class TestRunner implements CheckoutConductor.Listener {
 
 	public TestRunner(Project project) throws IOException, ParseException {
 		this.projectId = project.getProjectId();
-		this.pathToProjectDir = project.getPathToProject();
 		this.projectDir = project.getProjectDir();
 		this.outputDir = project.getOutputDir();
 		this.mavenHome = project.getMavenHome();
 		this.ji = new JacocoInstrumenter(this.projectDir);
 		this.dict = new Dictionary(this.outputDir, this.projectId).parse();
-		this.git = GitUtils.getGit(this.pathToProjectDir);
+		this.git = GitUtils.getGit(this.projectDir);
 	}
 
 	/**

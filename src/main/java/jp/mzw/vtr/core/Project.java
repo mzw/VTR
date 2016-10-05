@@ -16,6 +16,15 @@ public class Project {
 	/** Unique string representing subject project */
 	protected String projectId;
 
+	/** Path to directory containing subjects */
+	protected String pathToSubjectsDir = "subjects";
+
+	/** Path to output directory (default: output) */
+	protected String pathToOutputDir = "output";
+
+	/** Maven home (default: $M2_HOME) */
+	protected String mavenHome = "/usr/local/apache-maven-3.3.9";
+
 	/** Path to subject project */
 	protected String pathToProject;
 
@@ -23,13 +32,9 @@ public class Project {
 	 * Constructor
 	 * 
 	 * @param projectId
-	 *            Unique string representing subject project
-	 * @param pathToProject
-	 *            Path to subject project
 	 */
-	public Project(String projectId, String pathToProject) {
+	public Project(String projectId) {
 		this.projectId = projectId;
-		this.pathToProject = pathToProject;
 	}
 
 	/**
@@ -42,51 +47,12 @@ public class Project {
 	}
 
 	/**
-	 * Get path to project
-	 * 
-	 * @return Path to project
-	 */
-	public String getPathToProject() {
-		return this.pathToProject;
-	}
-
-	/**
 	 * Get project directory
 	 * 
 	 * @return Project directory
 	 */
 	public File getProjectDir() {
-		return new File(this.pathToProject);
-	}
-
-	/** Containing local configuration (e.g., Maven Home) */
-	protected Properties config;
-
-	/** Path to output directory (default: output) */
-	protected String pathToOutputDir = "output";
-
-	/** Maven home (default: $M2_HOME) */
-	protected String mavenHome = "/usr/local/apache-maven-3.3.9";
-
-	public void setConfig(String filename) throws IOException {
-		// load
-		this.config = new Properties();
-		InputStream is = CLI.class.getClassLoader().getResourceAsStream(filename);
-		if (is != null) {
-			this.config.load(is);
-		}
-		// read
-		this.pathToOutputDir = config.getProperty("path_to_output_dir") != null ? config.getProperty("path_to_output_dir") : "output";
-		this.mavenHome = config.getProperty("maven_home") != null ? config.getProperty("maven_home") : "/usr/local/apache-maven-3.3.9";
-	}
-
-	/**
-	 * Get path to directory where VTR outputs files
-	 * 
-	 * @return path to directory
-	 */
-	public String getPathToOutputDir() {
-		return this.pathToOutputDir;
+		return new File(this.pathToSubjectsDir, this.projectId);
 	}
 
 	/**
@@ -99,6 +65,15 @@ public class Project {
 	}
 
 	/**
+	 * Get directory where VTR finds subject clones
+	 * 
+	 * @return Directory
+	 */
+	public File getSubjectsDir() {
+		return new File(this.pathToSubjectsDir);
+	}
+
+	/**
 	 * Get Maven home
 	 * 
 	 * @return
@@ -107,25 +82,26 @@ public class Project {
 		return new File(this.mavenHome);
 	}
 
-	/** Reference of branch to be compared (default: refs/heads/master) */
-	protected String refToCompare = "refs/heads/master";
-
 	/**
-	 * Set reference to compare
+	 * Set configuration according to user environment
 	 * 
-	 * @param refToCompare
+	 * @param filename
+	 * @return
+	 * @throws IOException
 	 */
-	public void setRefToCompare(String refToCompare) {
-		this.refToCompare = refToCompare;
-	}
-
-	/**
-	 * Get reference to compare
-	 * 
-	 * @return reference to compare
-	 */
-	public String getRefToCompare() {
-		return this.refToCompare;
+	public Project setConfig(String filename) throws IOException {
+		// load
+		Properties config = new Properties();
+		InputStream is = CLI.class.getClassLoader().getResourceAsStream(filename);
+		if (is != null) {
+			config.load(is);
+		}
+		// read
+		this.pathToOutputDir = config.getProperty("path_to_output_dir") != null ? config.getProperty("path_to_output_dir") : "output";
+		this.pathToSubjectsDir = config.getProperty("path_to_subjects_dir") != null ? config.getProperty("path_to_subjects_dir") : "subjects";
+		this.mavenHome = config.getProperty("maven_home") != null ? config.getProperty("maven_home") : "/usr/local/apache-maven-3.3.9";
+		// return
+		return this;
 	}
 
 }
