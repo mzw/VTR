@@ -1,4 +1,4 @@
-package jp.mzw.vtr.cluster;
+package jp.mzw.vtr.cluster.similarity;
 
 import java.util.List;
 
@@ -7,8 +7,8 @@ import jp.mzw.vtr.detect.TestCaseModification;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class LcsMap {
-	protected static Logger LOGGER = LoggerFactory.getLogger(LcsMap.class);
+public class DistMap {
+	protected static Logger LOGGER = LoggerFactory.getLogger(DistMap.class);
 
 	private List<TestCaseModification> tcmList;
 	private int size;
@@ -16,7 +16,7 @@ public class LcsMap {
 
 	private double[][] map;
 
-	public LcsMap(List<TestCaseModification> tcmList) {
+	public DistMap(List<TestCaseModification> tcmList) {
 		this.tcmList = tcmList;
 		this.size = tcmList.size();
 		this.hashcodes = new int[size];
@@ -31,7 +31,7 @@ public class LcsMap {
 		}
 	}
 	
-	public LcsMap(int[] hashcodes) {
+	public DistMap(int[] hashcodes) {
 		this.size = hashcodes.length;
 		this.hashcodes = hashcodes;
 		this.map = new double[size][size];

@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 import org.eclipse.jgit.api.Git;
@@ -15,10 +16,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import jp.mzw.vtr.cluster.HCluster;
-import jp.mzw.vtr.cluster.LcsAnalyzer;
-import jp.mzw.vtr.cluster.LcsMap;
+import jp.mzw.vtr.cluster.similarity.DistAnalyzer;
+import jp.mzw.vtr.cluster.similarity.LcsAnalyzer;
+import jp.mzw.vtr.cluster.similarity.DistMap;
 import jp.mzw.vtr.core.Project;
 import jp.mzw.vtr.detect.Detector;
+import jp.mzw.vtr.detect.TestCaseModification;
 import jp.mzw.vtr.dict.DictionaryMaker;
 import jp.mzw.vtr.git.CheckoutConductor;
 import jp.mzw.vtr.git.GitUtils;
@@ -106,13 +109,15 @@ public class CLI {
 	}
 	
 	private static void lcs(Project project) throws IOException, ParseException {
-		LcsAnalyzer analyzer = new LcsAnalyzer(project.getOutputDir());
-		LcsMap map = analyzer.analyze();
+		DistAnalyzer analyzer = new LcsAnalyzer(project.getOutputDir());
+		List<TestCaseModification> tcmList = analyzer.parseTestCaseModifications();
+		DistMap map = analyzer.analyze(tcmList);
 		analyzer.output(map);
 	}
 	
 	private static void cluster(File outputDir, String method, double threshold) throws IOException {
-		HCluster cluster = new HCluster(outputDir).parse();
+		DistAnalyzer analyzer = new LcsAnalyzer(outputDir);
+		HCluster cluster = new HCluster(outputDir, analyzer.getMethodName()).parse();
 		cluster.cluster(HCluster.getStrategy(method), threshold);
 		cluster.output();
 	}

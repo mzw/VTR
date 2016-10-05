@@ -5,6 +5,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import jp.mzw.vtr.cluster.similarity.LcsAnalyzer;
+import jp.mzw.vtr.cluster.similarity.DistMap;
+
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
@@ -22,16 +25,18 @@ import com.apporiented.algorithm.clustering.WeightedLinkageStrategy;
 public class HCluster {
 
 	private File outputDir;
+	private String methodName;
 
 	private int[] hashcodes;
-	private LcsMap map;
+	private DistMap map;
 	
 	private LinkageStrategy strategy = new CompleteLinkageStrategy();
 	private double threshold = 0.5;
 	private List<Cluster> clusters;
 
-	public HCluster(File outputDir) {
+	public HCluster(File outputDir, String methodName) {
 		this.outputDir = outputDir;
+		this.methodName = methodName;
 	}
 
 	public HCluster parse() throws IOException {
@@ -41,7 +46,7 @@ public class HCluster {
 	}
 
 	protected int[] parseHashcodes() throws IOException {
-		File lcsDir = new File(this.outputDir, LcsAnalyzer.LCS_DIR);
+		File lcsDir = new File(this.outputDir, this.methodName);
 		File dir = new File(lcsDir, LcsAnalyzer.LATEST_DIR);
 		File file = new File(dir, LcsAnalyzer.HASHCODE_FILENAME);
 		String content = FileUtils.readFileToString(file);
@@ -57,9 +62,9 @@ public class HCluster {
 		return hashcodes;
 	}
 
-	protected LcsMap parseDist(int[] hashcodes) throws IOException {
-		LcsMap map = new LcsMap(hashcodes);
-		File lcsDir = new File(this.outputDir, LcsAnalyzer.LCS_DIR);
+	protected DistMap parseDist(int[] hashcodes) throws IOException {
+		DistMap map = new DistMap(hashcodes);
+		File lcsDir = new File(this.outputDir, this.methodName);
 		File dir = new File(lcsDir, LcsAnalyzer.LATEST_DIR);
 		File file = new File(dir, LcsAnalyzer.DIST_FILENAME);
 		String content = FileUtils.readFileToString(file);
@@ -155,7 +160,7 @@ public class HCluster {
 	}
 	
 	protected File getOutputDir() {
-		File lcsDir = new File(this.outputDir, LcsAnalyzer.LCS_DIR);
+		File lcsDir = new File(this.outputDir, this.methodName);
 		File latestDir = new File(lcsDir, LcsAnalyzer.LATEST_DIR);
 		File stratedyDir = new File(latestDir, this.strategy.getClass().getSimpleName());
 		File dir = new File(stratedyDir, new Double(this.threshold).toString());

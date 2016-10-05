@@ -1,4 +1,4 @@
-package jp.mzw.vtr.cluster;
+package jp.mzw.vtr.cluster.similarity;
 
 import java.io.File;
 import java.io.IOException;
@@ -15,19 +15,17 @@ import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class LcsAnalyzer {
-	protected static Logger LOGGER = LoggerFactory.getLogger(LcsAnalyzer.class);
+abstract public class DistAnalyzer {
+	protected static Logger LOGGER = LoggerFactory.getLogger(DistAnalyzer.class);
 
-	public static final String LCS_DIR = "lcs";
 	public static final String LATEST_DIR = "latest";
 	public static final String DIST_FILENAME = "dist.csv";
 	public static final String HASHCODE_FILENAME = "hashcode.csv";
-	
-	private File outputDir;
-	
-	private List<String> skipProjectIdList;
 
-	public LcsAnalyzer(File outputDir) {
+	protected File outputDir;
+	private List<String> skipProjectIdList;
+	
+	public DistAnalyzer(File outputDir) {
 		this.outputDir = outputDir;
 		this.skipProjectIdList = new ArrayList<>();
 	}
@@ -40,14 +38,30 @@ public class LcsAnalyzer {
 		this.skipProjectIdList.add(projectId);
 	}
 	
-	protected List<TestCaseModification> parseTestCaseModifications() throws IOException {
+	public List<String> getSkipProjectIdList() {
+		return this.skipProjectIdList;
+	}
+	
+	public static DistAnalyzer analyzerFactory(File outputDir, String methodName) {
+		if ("lcs".equals(methodName)) {
+			return new LcsAnalyzer(outputDir);
+		}
+		return null;
+	}
+
+	/**
+	 * Parse test-case modifications detected
+	 * @return
+	 * @throws IOException
+	 */
+	public List<TestCaseModification> parseTestCaseModifications() throws IOException {
 		List<TestCaseModification> ret = new ArrayList<>();
 		for (File outputProjectDir : this.outputDir.listFiles()) {
 			if (!outputProjectDir.isDirectory()) {
 				continue;
 			}
 			String projectId = outputProjectDir.getName();
-			if (this.skipProjectIdList.contains(projectId)) {
+			if (this.getSkipProjectIdList().contains(projectId)) {
 				continue;
 			}
 			File outputDetectDir = new File(outputProjectDir, Detector.DETECT_DIR);
@@ -75,11 +89,15 @@ public class LcsAnalyzer {
 		return ret;
 	}
 	
-	public LcsMap analyze() throws IOException, ParseException {
-		// Set results
-		List<TestCaseModification> tcmList = this.parseTestCaseModifications();
-		// Measure LCS
-		LcsMap map = new LcsMap(tcmList);
+	/**
+	 * Analyze similarity distance among test-case modifications
+	 * @param tcmList
+	 * @return
+	 * @throws IOException
+	 * @throws ParseException
+	 */
+	public DistMap analyze(List<TestCaseModification> tcmList) throws IOException, ParseException {
+		DistMap map = new DistMap(tcmList);
 		for (int i = 0; i < tcmList.size() - 1; i++) {
 			TestCaseModification result1 = tcmList.get(i);
 			for (int j = i + 1; j < tcmList.size(); j++) {
@@ -92,10 +110,15 @@ public class LcsAnalyzer {
 		}
 		return map;
 	}
-	
-	public void output(LcsMap map) throws IOException {
+
+	/**
+	 * Output 
+	 * @param map
+	 * @throws IOException
+	 */
+	public void output(DistMap map) throws IOException {
 		// root
-		File rootDir = new File(this.outputDir, LCS_DIR);
+		File rootDir = new File(this.outputDir, getMethodName());
 		// with time-stamp
 	    Calendar c = Calendar.getInstance();
 	    SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddHHmm");
@@ -104,66 +127,16 @@ public class LcsAnalyzer {
 	    // latest
 	    File latestDir = new File(rootDir, LATEST_DIR);
 	    // output
-		output(tsDir, map);
-		output(latestDir, map);
+	    // with time-stamp
+		FileUtils.writeStringToFile(new File(tsDir, DIST_FILENAME), map.getCsv());
+		FileUtils.writeStringToFile(new File(tsDir, HASHCODE_FILENAME), map.getHashcodeCsv());
+		// latest
+		FileUtils.writeStringToFile(new File(latestDir, DIST_FILENAME), map.getCsv());
+		FileUtils.writeStringToFile(new File(latestDir, HASHCODE_FILENAME), map.getHashcodeCsv());
+		FileUtils.writeStringToFile(new File(latestDir, "timestamp"), timestamp);
 	}
 	
-	private void output(File dir, LcsMap map) throws IOException  {
-		FileUtils.writeStringToFile(new File(dir, DIST_FILENAME), map.getCsv());
-		FileUtils.writeStringToFile(new File(dir, HASHCODE_FILENAME), map.getHashcodeCsv());
-	}
-
-	/**
-	 * Get longest common subsequence (LCS)
-	 * 
-	 * @param src
-	 * @param dst
-	 * @return
-	 */
-	protected List<String> lcs(List<String> src, List<String> dst) {
-		int M = src.size();
-		int N = dst.size();
-		int[][] opt = new int[M + 1][N + 1];
-		for (int i = M - 1; i >= 0; i--) {
-			for (int j = N - 1; j >= 0; j--) {
-				if (src.get(i).equals(dst.get(j))) {
-					opt[i][j] = opt[i + 1][j + 1] + 1;
-				} else {
-					opt[i][j] = Math.max(opt[i + 1][j], opt[i][j + 1]);
-				}
-			}
-		}
-		ArrayList<String> ret = new ArrayList<>();
-		int i = 0, j = 0;
-		while (i < M && j < N) {
-			if (src.get(i).equals(dst.get(j))) {
-				ret.add(src.get(i));
-				i++;
-				j++;
-			} else if (opt[i + 1][j] >= opt[i][j + 1]) {
-				i++;
-			} else {
-				j++;
-			}
-		}
-		return ret;
-	}
-
-	/**
-	 * Calculate LCS-based similarity
-	 * @param src
-	 * @param dst
-	 * @return
-	 */
-	protected double sim(List<String> src, List<String> dst) {
-		List<String> lcs = lcs(src, dst);
-		if (lcs.isEmpty()) {
-			return 0.0;
-		}
-		double _lcs = (double) lcs.size();
-		double _s = (double) src.size();
-		double _d = (double) dst.size();
-		return _lcs / (_s + _d - _lcs);
-	}
-
+	abstract public String getMethodName();
+	abstract protected double sim(List<String> src, List<String> dst);
+	
 }

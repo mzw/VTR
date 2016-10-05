@@ -1,4 +1,4 @@
-package jp.mzw.vtr.cluster;
+package jp.mzw.vtr.cluster.similarity;
 
 import static org.junit.Assert.*;
 
@@ -8,6 +8,8 @@ import java.text.ParseException;
 import java.util.List;
 
 import jp.mzw.vtr.VtrTestBase;
+import jp.mzw.vtr.cluster.similarity.LcsAnalyzer;
+import jp.mzw.vtr.cluster.similarity.DistMap;
 import jp.mzw.vtr.detect.TestCaseModification;
 
 import org.junit.Before;
@@ -34,7 +36,8 @@ public class LCSAnalyzerTest extends VtrTestBase {
 	@Test
 	public void testMeasureLcs() throws IOException, ParseException {
 		LcsAnalyzer analyzer = new LcsAnalyzer(this.project.getOutputDir());
-		LcsMap map = analyzer.analyze();
+		List<TestCaseModification> tcmList = analyzer.parseTestCaseModifications();
+		DistMap map = analyzer.analyze(tcmList);
 		assertEquals(-1.0, map.getMap()[0][0], 0.01);
 		assertNotEquals(-1.0, map.getMap()[0][1], 0.01);
 		assertEquals(-1.0, map.getMap()[1][0], 0.01);
