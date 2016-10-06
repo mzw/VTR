@@ -11,16 +11,16 @@ path_to_subjects_dir = subjects
 maven_home = /usr/local/apache-maven-3.3.9
 ```
 
-### Compile
-```
-$ mvn compile test-compile dependency:copy-dependencies
-```
-
 ### Clone
 Clone your project under the `subjects` directory.
 ```
 $ cd subjects
 $ git clone https://github.com/mzw/vtr-example
+```
+
+### Compile
+```
+$ mvn compile test-compile dependency:copy-dependencies
 ```
 
 ### Run

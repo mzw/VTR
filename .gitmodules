@@ -1,3 +1,0 @@
-[submodule "src/test/resources/vtr-subjects/vtr-example"]
-	path = src/test/resources/vtr-subjects/vtr-example
-	url = https://github.com/mzw/vtr-example
