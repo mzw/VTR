@@ -192,6 +192,7 @@ public class HTMLVisualizer extends VisualizerBase {
 				String filePath = "src/main/java/" + pkg.getName() + "/" + src.getName();
 				BlameResult result = blame.setFilePath(filePath).call();
 				// Create table
+				boolean covered = false;
 				Table table = new Table().setRules("groups");
 				table.appendChild(new Caption().appendChild(getBlobAnchor(url, projectDir, pkg.getName(), src.getName(), commit)));
 				table.appendChild(new Thead().appendChild(new Tr().appendChild(new Th().appendText("Tag")).appendChild(new Th().appendText("Date"))
@@ -203,6 +204,7 @@ public class HTMLVisualizer extends VisualizerBase {
 					// Create line
 					Tr tr = new Tr();
 					if (JacocoInstrumenter.isCoveredLine(src.getLine(lineno).getStatus())) {
+						covered = true;
 						tr.setCSSClass("target");
 					}
 					tr.appendChild(new Td().appendText("&nbsp;&nbsp;").appendChild(getTagAnchor(url, tag)).appendText("&nbsp;&nbsp;"));
@@ -214,9 +216,10 @@ public class HTMLVisualizer extends VisualizerBase {
 					// append
 					tbody.appendChild(tr);
 				}
-				table.appendChild(tbody);
-				ret.add(table);
-
+				if (covered) {
+					table.appendChild(tbody);
+					ret.add(table);
+				}
 			}
 		}
 		return ret;
