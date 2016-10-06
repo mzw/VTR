@@ -44,6 +44,14 @@ public class Commit {
 	public String getId() {
 		return this.id;
 	}
+	
+	/**
+	 * Get commit ID in SHA form
+	 * @return
+	 */
+	public String getIdSha() {
+		return this.id.substring(0, 6);
+	}
 
 	/**
 	 * Get commit date

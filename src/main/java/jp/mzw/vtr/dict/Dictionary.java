@@ -115,6 +115,20 @@ public class Dictionary extends DictionaryBase {
 	public List<Commit> getCommits() {
 		return this.commits;
 	}
+	
+	/**
+	 * 
+	 * @param commitId
+	 * @return
+	 */
+	public Commit getCommitBy(String commitId) {
+		for (Commit commit : this.commits) {
+			if (commit.getId().equals(commitId)) {
+				return commit;
+			}
+		}
+		return null;
+	}
 
 	/**
 	 * Get all tags parsed
@@ -129,7 +143,6 @@ public class Dictionary extends DictionaryBase {
 	 * Get tag relevant to given commit
 	 * 
 	 * @param commit
-	 * @param dict
 	 * @return
 	 */
 	public Tag getTagBy(Commit commit) {

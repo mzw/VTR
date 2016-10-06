@@ -97,5 +97,4 @@ public class TestCase {
 	public String getFullName() {
 		return this.className + "#" + this.name;
 	}
-
 }

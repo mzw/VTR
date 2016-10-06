@@ -18,6 +18,7 @@ import org.slf4j.LoggerFactory;
 import jp.mzw.vtr.cluster.HCluster;
 import jp.mzw.vtr.cluster.similarity.DistAnalyzer;
 import jp.mzw.vtr.cluster.similarity.DistMap;
+import jp.mzw.vtr.cluster.visualize.VisualizerBase;
 import jp.mzw.vtr.core.Project;
 import jp.mzw.vtr.detect.Detector;
 import jp.mzw.vtr.detect.TestCaseModification;
@@ -34,12 +35,13 @@ public class CLI {
 	public static void main(String[] args) throws IOException, NoHeadException, GitAPIException, ParseException {
 
 		if (args.length < 1) { // Invalid usage
-			LOGGER.info("$ java -cp=<class-path> jp.mzw.vtr.CLI dict    <subject-id>");
-			LOGGER.info("$ java -cp=<class-path> jp.mzw.vtr.CLI cov     <subject-id>");
-			LOGGER.info("$ java -cp=<class-path> jp.mzw.vtr.CLI cov     <subject-id> At    <commit-id>");
-			LOGGER.info("$ java -cp=<class-path> jp.mzw.vtr.CLI cov     <subject-id> After <commit-id>");
-			LOGGER.info("$ java -cp=<class-path> jp.mzw.vtr.CLI detect  <subject-id>");
-			LOGGER.info("$ java -cp=<class-path> jp.mzw.vtr.CLI cluster <similarity> <cluster-method> <threshold>");
+			LOGGER.info("$ java -cp=<class-path> jp.mzw.vtr.CLI dict      <subject-id>");
+			LOGGER.info("$ java -cp=<class-path> jp.mzw.vtr.CLI cov       <subject-id>");
+			LOGGER.info("$ java -cp=<class-path> jp.mzw.vtr.CLI cov       <subject-id> At    <commit-id>");
+			LOGGER.info("$ java -cp=<class-path> jp.mzw.vtr.CLI cov       <subject-id> After <commit-id>");
+			LOGGER.info("$ java -cp=<class-path> jp.mzw.vtr.CLI detect    <subject-id>");
+			LOGGER.info("$ java -cp=<class-path> jp.mzw.vtr.CLI cluster   <similarity> <cluster-method> <threshold>");
+			LOGGER.info("$ java -cp=<class-path> jp.mzw.vtr.CLI visualize <method>");
 			return;
 		}
 
@@ -74,6 +76,14 @@ public class CLI {
 				cluster(new Project(null), analyzer, storategy, threshold);
 			} else {
 				LOGGER.info("$ java -cp=<class-path> jp.mzw.vtr.CLI cluster <similarity> <cluster-method> <threshold>");
+			}
+		} else if ("visualize".equals(command)) {
+			String method = args[1];
+			VisualizerBase visualizer = VisualizerBase.visualizerFactory(method, new Project(null).setConfig(CONFIG_FILENAME).getOutputDir());
+			if (visualizer != null) {
+				visualizer.visualize();
+			} else {
+				LOGGER.info("$ java -cp=<class-path> jp.mzw.vtr.CLI visualize <method>");
 			}
 		}
 

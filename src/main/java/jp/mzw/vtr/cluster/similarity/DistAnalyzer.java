@@ -18,6 +18,7 @@ import org.slf4j.LoggerFactory;
 abstract public class DistAnalyzer {
 	protected static Logger LOGGER = LoggerFactory.getLogger(DistAnalyzer.class);
 
+	public static final String SIMILARITY_DIR = "similarity";
 	public static final String LATEST_DIR = "latest";
 	public static final String DIST_FILENAME = "dist.csv";
 	public static final String HASHCODE_FILENAME = "hashcode.csv";
@@ -118,14 +119,21 @@ abstract public class DistAnalyzer {
 	 */
 	public void output(DistMap map) throws IOException {
 		// root
-		File rootDir = new File(this.outputDir, getMethodName());
+		File simDir = new File(this.outputDir, SIMILARITY_DIR);
+		File methodDir = new File(simDir, getMethodName());
 		// with time-stamp
 	    Calendar c = Calendar.getInstance();
 	    SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddHHmm");
 	    String timestamp = sdf.format(c.getTime());
-	    File tsDir = new File(rootDir, timestamp);
+	    File tsDir = new File(methodDir, timestamp);
+	    if (!tsDir.exists()) {
+	    	tsDir.mkdirs();
+	    }
 	    // latest
-	    File latestDir = new File(rootDir, LATEST_DIR);
+	    File latestDir = new File(methodDir, LATEST_DIR);
+	    if (!latestDir.exists()) {
+	    	latestDir.mkdirs();
+	    }
 	    // output
 	    // with time-stamp
 		FileUtils.writeStringToFile(new File(tsDir, DIST_FILENAME), map.getCsv());
