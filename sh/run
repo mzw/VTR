@@ -3,27 +3,24 @@
 ####################################################################################################
 # $ sh/run command subject path/to/subject ref_to_compare
 #
-# command        : 
-# subject        : ID representing subject
-# path/to/subject: absolute or relative path to subject root directory
-# ref_to_compare : 
-#
 # Ex.
-# $ sh/run dict vtr-example subjects/vtr-example refs/heads/master
+# $ sh/run dict      vtr-example
+# $ sh/run cov       vtr-example
+# $ sh/run cov       vtr-example After 7fcfdfa99bf9f220b9643f372c36609ca35c60b3
+# $ sh/run cov       vtr-example At    7fcfdfa99bf9f220b9643f372c36609ca35c60b3
+# $ sh/run detect    vtr-example
+# $ sh/run cluster   vtr-example lcs complete 0.5
+# $ sh/run visualize vtr-example html
 ####################################################################################################
 
 ## Parse arguments
 COMMAND=${1}
-SUBJECT=${2}
-PATH_TO_SUBJECT=${3}
 
 ## Create class path
-VTR_CP="target/classes:target/test-classes:target/dependency/*"
+CLASS_PATH="target/classes:target/test-classes:target/dependency/*"
 
 ## Run VTR
 /usr/bin/java \
   -Xms6400m \
-  -cp ${VTR_CP} \
-  jp.mzw.vtr.CLI ${COMMAND} ${SUBJECT} ${PATH_TO_SUBJECT} ${4} ${5}
-
-echo "Finish"
+  -cp ${CLASS_PATH} \
+  jp.mzw.vtr.CLI ${COMMAND} ${2} ${3} ${4} ${5}

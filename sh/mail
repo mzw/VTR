@@ -1,0 +1,4 @@
+#!/bin/sh
+cat mail.template.txt > mail.txt && echo "${1}" >> mail.txt
+cat mail.txt | /usr/sbin/sendmail -i -t
+rm mail.txt

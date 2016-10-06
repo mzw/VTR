@@ -1,0 +1,7 @@
+#!/bin/sh
+
+MY_PRIVATE_IP=`hostname -i`
+MY_INSTANCE_INFO=`aws ec2 describe-instances | grep INSTANCES | grep ${MY_PRIVATE_IP}`
+MY_INSTANCE_ID=`echo ${MY_INSTANCE_INFO} | cut -d ' ' -f8`
+
+aws ec2 stop-instances --instance-ids ${MY_INSTANCE_ID}

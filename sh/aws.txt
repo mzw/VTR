@@ -1,0 +1,19 @@
+## This snippet is for copy-paste at "ba.sh"
+
+for arg in $@
+do
+    ## Copy results to S3
+    if [ "s3-copy" = "${arg}" ]; then
+        echo "Copy results to S3"
+        S3_URI=`cat sh/s3.uri`
+        TIMESTAMP=`date +'%Y%m%d'`
+        aws s3 cp output ${S3_URI}/${TIMESTAMP}/ --recursive
+    fi
+    ## Stop EC2 instance
+    if [ "ec2-stop" = "${arg}" ]; then
+        echo "Stop EC2"
+        sh/ec2-stop
+    fi
+done
+
+echo "All finished: $@" | /usr/sbin/sendmail yuta@mzw.jp
