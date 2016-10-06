@@ -124,7 +124,7 @@ public class CheckoutConductor {
 	 * @param commit
 	 * @throws GitAPIException
 	 */
-	private void checkout(Commit commit) throws GitAPIException {
+	public void checkout(Commit commit) throws GitAPIException {
 		git.stashCreate().call();
 		Collection<RevCommit> stashes = git.stashList().call();
 		if (!stashes.isEmpty()) {

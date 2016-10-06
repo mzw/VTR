@@ -18,7 +18,7 @@ public class TestSuite {
 	protected File testFile;
 	String testClassName;
 	List<TestCase> testCases;
-	
+
 	protected CompilationUnit cu;
 
 	public TestSuite(File testBaseDir, File testFile) {
@@ -62,7 +62,7 @@ public class TestSuite {
 
 		return this;
 	}
-	
+
 	public CompilationUnit getCompilationUnit() {
 		return this.cu;
 	}
@@ -74,11 +74,11 @@ public class TestSuite {
 	public List<TestCase> getTestCases() {
 		return this.testCases;
 	}
-	
+
 	public void setTestCases(List<TestCase> testCases) {
 		this.testCases = testCases;
 	}
-	
+
 	public TestCase getTestCaseBy(String clazz, String method) {
 		for (TestCase tc : this.testCases) {
 			if (tc.getClassName().equals(clazz) && tc.getName().equals(method)) {
@@ -89,9 +89,13 @@ public class TestSuite {
 	}
 
 	/**
-	 * Get test case having the same (class + method) as that of given test case from given test suites
-	 * @param testSuites Search space
-	 * @param testCase Provides specific (class + method)
+	 * Get test case having the same (class + method) as that of given test case
+	 * from given test suites
+	 * 
+	 * @param testSuites
+	 *            Search space
+	 * @param testCase
+	 *            Provides specific (class + method)
 	 * @return Found test case or null if not found
 	 */
 	public static TestCase getTestCaseWithClassMethodName(List<TestSuite> testSuites, TestCase testCase) {
@@ -106,8 +110,11 @@ public class TestSuite {
 	}
 
 	/**
-	 * Get test case having the same (class + method) as that of given test case from given test suites
-	 * @param testSuites Search space
+	 * Get test case having the same (class + method) as that of given test case
+	 * from given test suites
+	 * 
+	 * @param testSuites
+	 *            Search space
 	 * @param className
 	 * @param methodName
 	 * @return Found test case or null if not found
@@ -122,5 +129,5 @@ public class TestSuite {
 		}
 		return null;
 	}
-	
+
 }

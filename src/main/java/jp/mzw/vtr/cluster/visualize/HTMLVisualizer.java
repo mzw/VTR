@@ -77,9 +77,12 @@ public class HTMLVisualizer extends VisualizerBase {
 			Project project = new Project(projectId).setConfig(CLI.CONFIG_FILENAME);
 			File projectDir = project.getProjectDir();
 			File mavenHome = project.getMavenHome();
+			// Get dictionary, commit, and coverage
+			Dictionary dict = this.getDict(project.getProjectId());
+			Commit commit = dict.getCommitBy(leaf.getCommitId());
 			// Checkout and compile
 			CheckoutConductor cc = new CheckoutConductor(project);
-			cc.checkout(CheckoutConductor.Type.At, leaf.getCommitId());
+			cc.checkout(commit);
 			MavenUtils.maven(projectDir, Arrays.asList("clean", "compile"), mavenHome);
 			// Get test case
 			List<TestSuite> testSuites = MavenUtils.getTestSuites(projectDir);
@@ -87,9 +90,6 @@ public class HTMLVisualizer extends VisualizerBase {
 			// Get URL
 			Git git = GitUtils.getGit(project.getProjectDir());
 			String url = GitUtils.getRemoteOriginUrl(git);
-			// Get dictionary, commit, and coverage
-			Dictionary dict = this.getDict(project.getProjectId());
-			Commit commit = dict.getCommitBy(leaf.getCommitId());
 			File jacocoCommitDir = JacocoInstrumenter.getJacocoCommitDir(outputDir, projectId, commit);
 			// Instantiate git-blame
 			BlameCommand blame = new BlameCommand(git.getRepository());
