@@ -2,7 +2,11 @@
 
 for arg in $@
 do
+    ## Mail
     ## Copy results to S3
+    if [ "sendmail" = "${arg}" ]; then
+        echo "All finished: $@" | /usr/sbin/sendmail yuta@mzw.jp
+    fi
     if [ "s3-copy" = "${arg}" ]; then
         echo "Copy results to S3"
         S3_URI=`cat sh/s3.uri`
@@ -16,4 +20,3 @@ do
     fi
 done
 
-echo "All finished: $@" | /usr/sbin/sendmail yuta@mzw.jp

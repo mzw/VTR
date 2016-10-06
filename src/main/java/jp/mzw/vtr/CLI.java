@@ -53,11 +53,11 @@ public class CLI {
 		} else if ("cov".equals(command)) {
 			String projectId = args[1];
 			Project project = new Project(projectId).setConfig(CONFIG_FILENAME);
-			if (args.length == 1) { // all commits
+			if (args.length == 2) { // all commits
 				cov(project);
-			} else if (args.length == 3) { // specific commit(s)
-				CheckoutConductor.Type type = CheckoutConductor.Type.valueOf(args[1]);
-				String commitId = args[2];
+			} else if (args.length == 4) { // specific commit(s)
+				CheckoutConductor.Type type = CheckoutConductor.Type.valueOf(args[2]);
+				String commitId = args[3];
 				cov(project, type, commitId);
 			} else {
 				LOGGER.info("$ java -cp=<class-path> jp.mzw.vtr.CLI cov <subject-id>");
@@ -73,7 +73,7 @@ public class CLI {
 				String analyzer = args[1];
 				String strategy = args[2];
 				double threshold = Double.parseDouble(args[3]);
-				cluster(new Project(null), analyzer, strategy, threshold);
+				cluster(new Project(null).setConfig(CONFIG_FILENAME), analyzer, strategy, threshold);
 			} else {
 				LOGGER.info("$ java -cp=<class-path> jp.mzw.vtr.CLI cluster <similarity> <cluster-method> <threshold>");
 			}
