@@ -136,6 +136,7 @@ public class HTMLVisualizer extends VisualizerBase {
 		String relative = VtrUtils.getFilePath(projectDir, tc.getTestFile());
 		BlameResult result = blame.setFilePath(relative).call();
 		Tag cur = dict.getTagBy(commit);
+		List<String> lines = FileUtils.readLines(tc.getTestFile());
 		// Table
 		Table table = new Table().setRules("groups");
 		// table-header
@@ -159,7 +160,7 @@ public class HTMLVisualizer extends VisualizerBase {
 			tr.appendChild(new Td().appendText("&nbsp;&nbsp;").appendText(blameCommit.getDate().toString()).appendText("&nbsp;&nbsp;"));
 			tr.appendChild(new Td().appendText("&nbsp;&nbsp;").appendChild(getBlameAnchor(url, blameCommit, relative, lineno)).appendText("&nbsp;&nbsp;"));
 			tr.appendChild(new Td().setAlign("right").appendText(new Integer(lineno).toString()));
-			tr.appendChild(new Td().setAlign("left").appendChild(new Pre().appendText(getSrcLine(tc.getTestFile(), lineno))));
+			tr.appendChild(new Td().setAlign("left").appendChild(new Pre().appendText(lines.get(lineno - 1))));
 			// append
 			tbody.appendChild(tr);
 		}
@@ -190,6 +191,7 @@ public class HTMLVisualizer extends VisualizerBase {
 		for (IPackageCoverage pkg : bundle.getPackages()) {
 			for (ISourceFileCoverage src : pkg.getSourceFiles()) {
 				String filePath = "src/main/java/" + pkg.getName() + "/" + src.getName();
+				List<String> lines = FileUtils.readLines(new File(projectDir, filePath));
 				BlameResult result = blame.setFilePath(filePath).call();
 				// Create table
 				boolean covered = false;
@@ -212,7 +214,7 @@ public class HTMLVisualizer extends VisualizerBase {
 					tr.appendChild(new Td().appendText("&nbsp;&nbsp;").appendChild(getBlameAnchor(url, blameCommit, filePath, lineno))
 							.appendText("&nbsp;&nbsp;"));
 					tr.appendChild(new Td().setAlign("right").appendText(new Integer(lineno).toString()));
-					tr.appendChild(new Td().setAlign("left").appendChild(new Pre().appendText(getSrcLine(new File(projectDir, filePath), lineno))));
+					tr.appendChild(new Td().setAlign("left").appendChild(new Pre().appendText(lines.get(lineno - 1))));
 					// append
 					tbody.appendChild(tr);
 				}
@@ -246,17 +248,6 @@ public class HTMLVisualizer extends VisualizerBase {
 	 */
 	private A getBlameAnchor(String url, Commit commit, String relative, int lineno) {
 		return new A().setHref(url + "/blame/" + commit.getId() + "/" + relative + "#L" + lineno).appendText(commit.getIdSha());
-	}
-
-	/**
-	 * 
-	 * @param file
-	 * @param lineno
-	 * @return
-	 * @throws IOException
-	 */
-	private String getSrcLine(File file, int lineno) throws IOException {
-		return FileUtils.readLines(file).get(lineno - 1);
 	}
 
 	/**
