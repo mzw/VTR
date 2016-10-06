@@ -3,47 +3,57 @@ Written by [Yuta Maezawa](mailto:maezawa@nii.ac.jp) and greatest contributors
 
 ## Get Started
 
-
 ### Configuration
-Need to describe local configurations at `src/main/resources/config.properties`.
+Provide your local configurations at `src/main/resources/config.properties`.
 ```
 path_to_output_dir = output
-maven_home = /usr/local/apache-maven-3.3.*
+path_to_subjects_dir = subjects
+maven_home = /usr/local/apache-maven-3.3.9
 ```
-
-Additionally, need to configure environmental variables below.
-- JAVA_HOME
 
 ### Compile
 ```
 $ mvn compile test-compile dependency:copy-dependencies
 ```
 
+### Clone
+Clone your project under the `subjects` directory.
+```
+$ cd subjects
+$ git clone https://github.com/mzw/vtr-example
+```
+
 ### Run
 
 #### Make Dictionary
 ```
-$ sh/run dict <project ID> <path to project> <reference to compare branch>
+$ sh/run dict vtr-example
 ```
 
-### Measure Coverage
+### Measure Coverage of Modified Test Cases
 ```
-$ sh/run cov <project ID> <path to project>
+$ sh/run cov vtr-example
 ```
 
-### Detect Test-Case Modifications
+### Detect Test-Case Modifications for Previously-Released Source Code
 ```
-$ sh/run detect <project ID> <path to project>
+$ sh/run detect vtr-example
+```
+
+### Cluster Detected Test-Case Modifications
+```
+$ sh/run cluster lcs complete 0.5
+```
+
+### Review VTR In-Advance Results
+```
+$ sh/run visualize html
 ```
 
 Enjoy!
 
 ## License
 [Apache 2.0 License](http://www.apache.org/licenses/LICENSE-2.0)
-
-## Contributors
-* Shunsuke Komuta - Result data analysis
-* Kazuyuki Honda - Result data analysis
 
 ----
 (C) Yuta Maezawa 2016
