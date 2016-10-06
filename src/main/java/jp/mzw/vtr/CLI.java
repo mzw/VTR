@@ -71,9 +71,9 @@ public class CLI {
 		} else if ("cluster".equals(command)) {
 			if (args.length == 4) {
 				String analyzer = args[1];
-				String storategy = args[2];
+				String strategy = args[2];
 				double threshold = Double.parseDouble(args[3]);
-				cluster(new Project(null), analyzer, storategy, threshold);
+				cluster(new Project(null), analyzer, strategy, threshold);
 			} else {
 				LOGGER.info("$ java -cp=<class-path> jp.mzw.vtr.CLI cluster <similarity> <cluster-method> <threshold>");
 			}
