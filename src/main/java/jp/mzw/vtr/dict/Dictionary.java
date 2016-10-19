@@ -22,7 +22,6 @@ import org.slf4j.LoggerFactory;
 
 import jp.mzw.vtr.git.Commit;
 import jp.mzw.vtr.git.Tag;
-import jp.mzw.vtr.maven.TestSuite;
 
 public class Dictionary extends DictionaryBase {
 	protected static Logger LOGGER = LoggerFactory.getLogger(Dictionary.class);
@@ -33,7 +32,6 @@ public class Dictionary extends DictionaryBase {
 	private Map<Tag, List<Commit>> contents;
 	private List<Commit> commits;
 	private Map<String, Commit> prevCommitByCommitId;
-	private Map<String, List<TestSuite>> testSuitesByCommitId;
 
 	public Dictionary(File outputDir, String projectId) {
 		this.outputDir = outputDir;
@@ -190,33 +188,6 @@ public class Dictionary extends DictionaryBase {
 			this.parse().createPrevCommitByCommitIdMap();
 		}
 		return this.prevCommitByCommitId.get(commitId);
-	}
-
-	/**
-	 * Get test suites by given commit. Note: need to traverse Git repository in
-	 * older commit first manner
-	 * 
-	 * @param commit
-	 * @return
-	 */
-	public List<TestSuite> getTestSuiteBy(Commit commit) {
-		if (this.testSuitesByCommitId == null) {
-			LOGGER.warn("Need to set test suites");
-		}
-		return this.testSuitesByCommitId.get(commit.getId());
-	}
-
-	/**
-	 * Set test suits at given commit
-	 * 
-	 * @param commit
-	 * @throws IOException
-	 */
-	public void setTestSuite(Commit commit, List<TestSuite> testSuites) {
-		if (this.testSuitesByCommitId == null) {
-			this.testSuitesByCommitId = new HashMap<>();
-		}
-		this.testSuitesByCommitId.put(commit.getId(), testSuites);
 	}
 
 }

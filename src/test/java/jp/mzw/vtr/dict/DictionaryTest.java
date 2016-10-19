@@ -54,13 +54,4 @@ public class DictionaryTest extends VtrTestBase {
 		Assert.assertArrayEquals(PREV_COMMIT_ID.toCharArray(), prevCommit.getId().toCharArray());
 	}
 
-	@Test
-	public void testSetGetTestSuites() throws IOException {
-		List<TestSuite> testSuites = MavenUtils.getTestSuites(new File(PATH_TO_PROJECT_DIR));
-		Dictionary dict = new Dictionary(this.project.getOutputDir(), this.project.getProjectId());
-		dict.setTestSuite(this.commit, testSuites);
-		List<TestSuite> _testSuites = dict.getTestSuiteBy(this.commit);
-		Assert.assertEquals(testSuites.size(), _testSuites.size());
-	}
-
 }

@@ -53,6 +53,9 @@ public class Detector implements CheckoutConductor.Listener {
 	protected Git git;
 	protected Dictionary dict;
 
+	private List<TestSuite> curTestSuites;
+	private List<TestSuite> prvTestSuites;
+
 	public Detector(Project project) throws IOException, ParseException {
 		this.projectId = project.getProjectId();
 		this.projectDir = project.getProjectDir();
@@ -60,16 +63,19 @@ public class Detector implements CheckoutConductor.Listener {
 		this.mavenHome = project.getMavenHome();
 		this.git = GitUtils.getGit(this.projectDir);
 		this.dict = new Dictionary(this.outputDir, this.projectId).parse().createPrevCommitByCommitIdMap();
+		this.curTestSuites = null;
+		this.prvTestSuites = null;
 	}
 
 	@Override
 	public void onCheckout(Commit commit) {
 		try {
 			CheckoutConductor.before(projectDir, mavenHome);
-			dict.setTestSuite(commit, MavenUtils.getTestSuites(this.projectDir));
+			this.curTestSuites = MavenUtils.getTestSuites(this.projectDir);
 			List<TestCase> results = detect(commit);
 			List<TestCaseModification> tcm = getTestCaseModifications(commit, results);
 			output(commit, tcm);
+			this.prvTestSuites = this.curTestSuites;
 			CheckoutConductor.after(projectDir, mavenHome);
 		} catch (IOException | GitAPIException | RevisionSyntaxException | ParseException e) {
 			LOGGER.warn(e.toString());
@@ -89,10 +95,9 @@ public class Detector implements CheckoutConductor.Listener {
 		Tag cur = dict.getTagBy(commit);
 		BlameCommand blame = new BlameCommand(this.git.getRepository());
 		File dir = JacocoInstrumenter.getJacocoCommitDir(this.outputDir, this.projectId, commit);
-		List<TestSuite> testSuites = dict.getTestSuiteBy(commit);
 		// For each test case
 		List<TestCase> ret = new ArrayList<>();
-		for (TestSuite ts : testSuites) {
+		for (TestSuite ts : this.curTestSuites) {
 			for (TestCase tc : ts.getTestCases()) {
 				File exec = new File(dir, tc.getFullName() + "!jacoco.exec");
 				if (!exec.exists()) {
@@ -172,8 +177,7 @@ public class Detector implements CheckoutConductor.Listener {
 			IOException, ParseException {
 		// Obtain previous commit contents
 		Commit prvCommit = dict.getPrevCommitBy(commit.getId());
-		List<TestSuite> prvTestSuites = dict.getTestSuiteBy(prvCommit);
-		if (prvTestSuites == null) {
+		if (this.prvTestSuites == null) {
 			LOGGER.warn("Commit one before initial releaser? Test suites are not found: {}", prvCommit.getId());
 			return new ArrayList<>();
 		}
@@ -207,7 +211,7 @@ public class Detector implements CheckoutConductor.Listener {
 			List<ASTNode> newNodes = tc.getAllNodesIn(ModifiedLineRange.getMergedNewLineRange(lineRanges));
 			///// For old
 			// TODO Need to validate whether the same (class + method) is fine
-			TestCase prvTestCase = TestSuite.getTestCaseWithClassMethodName(prvTestSuites, tc);
+			TestCase prvTestCase = TestSuite.getTestCaseWithClassMethodName(this.prvTestSuites, tc);
 			List<ASTNode> oldNodes = null;
 			if (prvTestCase != null) { // otherwise (partially) test-case addition
 				List<Integer> prvMethodLineRange = prvTestCase.getLineRange();
