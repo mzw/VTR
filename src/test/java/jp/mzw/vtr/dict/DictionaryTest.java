@@ -1,9 +1,7 @@
 package jp.mzw.vtr.dict;
 
-import java.io.File;
 import java.io.IOException;
 import java.text.ParseException;
-import java.util.List;
 
 import org.apache.maven.shared.invoker.MavenInvocationException;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -13,8 +11,6 @@ import org.junit.Test;
 
 import jp.mzw.vtr.VtrTestBase;
 import jp.mzw.vtr.git.Commit;
-import jp.mzw.vtr.maven.MavenUtils;
-import jp.mzw.vtr.maven.TestSuite;
 
 public class DictionaryTest extends VtrTestBase {
 

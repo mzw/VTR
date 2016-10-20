@@ -4,10 +4,12 @@ import java.io.File;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringEscapeUtils;
+import org.apache.maven.shared.invoker.MavenInvocationException;
 import org.dom4j.Document;
 import org.dom4j.DocumentHelper;
 import org.dom4j.Element;
@@ -70,14 +72,18 @@ public class Detector implements CheckoutConductor.Listener {
 	@Override
 	public void onCheckout(Commit commit) {
 		try {
-			CheckoutConductor.before(projectDir, mavenHome);
 			this.curTestSuites = MavenUtils.getTestSuites(this.projectDir);
 			List<TestCase> results = detect(commit);
-			List<TestCaseModification> tcm = getTestCaseModifications(commit, results);
-			output(commit, tcm);
+			if (!results.isEmpty()) {
+				MavenUtils.maven(this.projectDir, Arrays.asList("compile", "test-compile"), this.mavenHome);
+				List<TestCaseModification> tcm = getTestCaseModifications(commit, results);
+				if (!tcm.isEmpty()) {
+					output(commit, tcm);
+				}
+				MavenUtils.maven(this.projectDir, Arrays.asList("clean"), this.mavenHome);
+			}
 			this.prvTestSuites = this.curTestSuites;
-			CheckoutConductor.after(projectDir, mavenHome);
-		} catch (IOException | GitAPIException | RevisionSyntaxException | ParseException e) {
+		} catch (IOException | GitAPIException | RevisionSyntaxException | ParseException | MavenInvocationException e) {
 			LOGGER.warn(e.toString());
 		}
 	}
@@ -110,8 +116,8 @@ public class Detector implements CheckoutConductor.Listener {
 					continue;
 				}
 				if (detect(cur, blame, exec)) {
-					ret.add(tc);
 					LOGGER.info("Detect subject test-case modification: {} @ {}", tc.getFullName(), commit.getId());
+					ret.add(tc);
 				}
 			}
 		}
