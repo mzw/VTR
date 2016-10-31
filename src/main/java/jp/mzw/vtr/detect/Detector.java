@@ -72,17 +72,17 @@ public class Detector implements CheckoutConductor.Listener {
 	@Override
 	public void onCheckout(Commit commit) {
 		try {
+			MavenUtils.maven(this.projectDir, Arrays.asList("compile", "test-compile"), this.mavenHome);
 			this.curTestSuites = MavenUtils.getTestSuites(this.projectDir);
 			List<TestCase> results = detect(commit);
 			if (!results.isEmpty()) {
-				MavenUtils.maven(this.projectDir, Arrays.asList("compile", "test-compile"), this.mavenHome);
 				List<TestCaseModification> tcm = getTestCaseModifications(commit, results);
 				if (!tcm.isEmpty()) {
 					output(commit, tcm);
 				}
-				MavenUtils.maven(this.projectDir, Arrays.asList("clean"), this.mavenHome);
 			}
 			this.prvTestSuites = this.curTestSuites;
+			MavenUtils.maven(this.projectDir, Arrays.asList("clean"), this.mavenHome);
 		} catch (IOException | GitAPIException | RevisionSyntaxException | ParseException | MavenInvocationException e) {
 			LOGGER.warn(e.toString());
 		}
@@ -110,7 +110,7 @@ public class Detector implements CheckoutConductor.Listener {
 					LOGGER.info("Coverage file does not exist: {}", exec.getAbsolutePath());
 					continue;
 				}
-				File result = this.getOutputFile(commit, tc);
+				File result = this.getOutputFile(commit, tc, false);
 				if (result.exists()) {
 					LOGGER.info("Detection result is found: {}", result.getPath());
 					continue;
@@ -179,8 +179,8 @@ public class Detector implements CheckoutConductor.Listener {
 	 * @throws IOException
 	 * @throws ParseException
 	 */
-	protected List<TestCaseModification> getTestCaseModifications(Commit commit, List<TestCase> testCases) throws RevisionSyntaxException, AmbiguousObjectException, IncorrectObjectTypeException,
-			IOException, ParseException {
+	protected List<TestCaseModification> getTestCaseModifications(Commit commit, List<TestCase> testCases) throws RevisionSyntaxException,
+			AmbiguousObjectException, IncorrectObjectTypeException, IOException, ParseException {
 		// Obtain previous commit contents
 		Commit prvCommit = dict.getPrevCommitBy(commit.getId());
 		if (this.prvTestSuites == null) {
@@ -195,12 +195,15 @@ public class Detector implements CheckoutConductor.Listener {
 		for (TestCase tc : testCases) {
 			List<Integer> methodLineRange = tc.getLineRange();
 			List<ModifiedLineRange> modifiedLineRanges = analyzer.getModifiedLineRanges(tc.getTestFile());
-			if (modifiedLineRanges == null) { // TODO Need to check why 'modifiedLineRanges' can be 'null'
+			if (modifiedLineRanges == null) { // TODO Need to check why
+												// 'modifiedLineRanges' can be
+												// 'null'
 				LOGGER.warn("TODO Need to check why 'modifiedLineRanges' can be 'null'", tc.getTestFile().getPath());
 				continue;
 			}
-			// Analyze new lines that are in this test case AND are modified in this commit
-			///// For new
+			// Analyze new lines that are in this test case AND are modified in
+			// this commit
+			// /// For new
 			List<ModifiedLineRange> lineRanges = new ArrayList<>();
 			for (ModifiedLineRange mlr : modifiedLineRanges) {
 				List<Integer> lineRange = new ArrayList<>();
@@ -215,11 +218,12 @@ public class Detector implements CheckoutConductor.Listener {
 			}
 			// Syntax-element nodes added in this commit
 			List<ASTNode> newNodes = tc.getAllNodesIn(ModifiedLineRange.getMergedNewLineRange(lineRanges));
-			///// For old
+			// /// For old
 			// TODO Need to validate whether the same (class + method) is fine
 			TestCase prvTestCase = TestSuite.getTestCaseWithClassMethodName(this.prvTestSuites, tc);
 			List<ASTNode> oldNodes = null;
-			if (prvTestCase != null) { // otherwise (partially) test-case addition
+			if (prvTestCase != null) { // otherwise (partially) test-case
+										// addition
 				List<Integer> prvMethodLineRange = prvTestCase.getLineRange();
 				List<ModifiedLineRange> oldLineRanges = new ArrayList<>();
 				for (ModifiedLineRange mlr : lineRanges) {
@@ -235,7 +239,7 @@ public class Detector implements CheckoutConductor.Listener {
 				}
 				oldNodes = prvTestCase.getAllNodesIn(ModifiedLineRange.getMergedOldLineRange(lineRanges));
 			}
-			///// For return
+			// /// For return
 			ret.add(new TestCaseModification(commit, tc, newNodes, oldNodes));
 		}
 		return ret;
@@ -243,39 +247,42 @@ public class Detector implements CheckoutConductor.Listener {
 
 	/**
 	 * Output results in XML file
+	 * 
 	 * @param commit
 	 * @param revisedNodes
 	 * @param originalNodes
-	 * @throws IOException 
+	 * @throws IOException
 	 */
 	public void output(Commit commit, List<TestCaseModification> testCaseModifications) throws IOException {
 		for (TestCaseModification tcm : testCaseModifications) {
 			String content = getXml(tcm.getNewNodes(), tcm.getOldNodes());
 			if (content != null) {
-				File file = getOutputFile(commit, tcm.getTestCase());
+				File file = getOutputFile(commit, tcm.getTestCase(), true);
 				FileUtils.writeStringToFile(file, content);
 			}
 		}
 	}
-	
+
 	/**
 	 * Get output file
+	 * 
 	 * @param commit
 	 * @param testCase
 	 * @return
 	 */
-	protected File getOutputFile(Commit commit, TestCase testCase) {
+	protected File getOutputFile(Commit commit, TestCase testCase, boolean mkdir) {
 		File projectDir = new File(this.outputDir, this.projectId);
 		File diffDir = new File(projectDir, DETECT_DIR);
 		File dir = new File(diffDir, commit.getId());
-		if (!dir.exists()) {
+		if (mkdir && !dir.exists()) {
 			dir.mkdirs();
 		}
 		return new File(dir, testCase.getFullName() + ".xml");
 	}
-	
+
 	/**
 	 * Get output content
+	 * 
 	 * @param revisedNodes
 	 * @param originalNodes
 	 * @return
