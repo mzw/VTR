@@ -78,7 +78,12 @@ public class DistMap {
 		for (int i = 0; i < size; i++) {
 			builder.append(this.hashcodes[i]);
 			for (int j = 0; j < size; j++) {
-				builder.append(",").append(this.map[i][j]);
+				if (i == j) {
+					builder.append(",").append("1");
+				} else {
+					String dist = 0 <= this.map[i][j] ? new Double(this.map[i][j]).toString() : new Double(this.map[j][i]).toString();
+					builder.append(",").append(dist);
+				}
 			}
 			builder.append("\n");
 		}
