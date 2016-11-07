@@ -40,18 +40,18 @@ public class HClusterTest extends VtrTestBase {
 		HCluster hCluster = new HCluster(this.project.getOutputDir(), this.analyzer.getMethodName());
 		int[] hashcodes = hCluster.parseHashcodes();
 		DistMap map = hCluster.parseDist(hashcodes);
-		assertEquals(0.0, map.getMap()[0][0], 0.01);
+		assertEquals(1.0, map.getMap()[0][0], 0.01);
 		assertNotEquals(0.0, map.getMap()[0][1], 0.01);
 		assertNotEquals(0.0, map.getMap()[1][0], 0.01);
-		assertEquals(0.0, map.getMap()[1][1], 0.01);
+		assertEquals(1.0, map.getMap()[1][1], 0.01);
 	}
 
 	@Test
 	public void testCluster() throws IOException {
 		HCluster hCluster = new HCluster(this.project.getOutputDir(), this.analyzer.getMethodName()).parse();
 		LinkageStrategy strategy = HCluster.getStrategy("complete");
-		List<Cluster> clusters = hCluster.cluster(strategy, 0.5);
-		assertEquals(15, clusters.size());
+		List<Cluster> clusters = hCluster.cluster(strategy, 0.75);
+		assertEquals(19, clusters.size());
 	}
 
 	@Test
@@ -63,5 +63,4 @@ public class HClusterTest extends VtrTestBase {
 		assertNull(HCluster.getStrategy("median"));
 		assertNull(HCluster.getStrategy("ward"));
 	}
-
 }

@@ -44,7 +44,7 @@ public class DistMap {
 	public String[] getHashcodesAsNames() {
 		String[] names = new String[this.size];
 		for (int i = 0; i < this.size; i++) {
-			names[i] = new Integer(this.hashcodes[i]).toString();
+			names[i] = "X" + new Integer(this.hashcodes[i]).toString();
 		}
 		return names;
 	}
@@ -72,11 +72,11 @@ public class DistMap {
 		StringBuilder builder = new StringBuilder();
 		for (int i = 0; i < size; i++) {
 			builder.append(",");
-			builder.append(this.hashcodes[i]);
+			builder.append("X" + this.hashcodes[i]);
 		}
 		builder.append("\n");
 		for (int i = 0; i < size; i++) {
-			builder.append(this.hashcodes[i]);
+			builder.append("X" + this.hashcodes[i]);
 			for (int j = 0; j < size; j++) {
 				if (i == j) {
 					builder.append(",").append("1");

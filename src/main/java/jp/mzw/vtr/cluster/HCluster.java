@@ -2,7 +2,9 @@ package jp.mzw.vtr.cluster;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.List;
 
 import jp.mzw.vtr.cluster.similarity.DistAnalyzer;
@@ -12,6 +14,8 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.io.FileUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.apporiented.algorithm.clustering.AverageLinkageStrategy;
 import com.apporiented.algorithm.clustering.Cluster;
@@ -23,6 +27,7 @@ import com.apporiented.algorithm.clustering.SingleLinkageStrategy;
 import com.apporiented.algorithm.clustering.WeightedLinkageStrategy;
 
 public class HCluster {
+	protected static Logger LOGGER = LoggerFactory.getLogger(HCluster.class);
 
 	private File outputDir;
 	private String methodName;
@@ -76,13 +81,8 @@ public class HCluster {
 		for (int i = 0; i < size - 1; i++) { // do not parse first
 			CSVRecord record = records.get(i + 1);
 			for (int j = 0; j < size - 1; j++) { // do not parse first
-				if (i == j) {
-					map.add(0.0, i, j);
-				} else if (i < j) {
-					double value = Double.parseDouble(record.get(j + 1));
-					map.add(value, i, j);
-					map.add(value, j, i);
-				}
+				double value = Double.parseDouble(record.get(j + 1));
+				map.add(value, i, j);
 			}
 		}
 		return map;
@@ -137,35 +137,42 @@ public class HCluster {
 	 * @return
 	 */
 	public List<Cluster> cluster(LinkageStrategy strategy, double threshold) {
+		if (threshold < 0 || 1 < threshold) {
+			LOGGER.warn("Threshold should be 0-1: {}", threshold);
+			return null;
+		}
 		this.strategy = strategy;
 		this.threshold = threshold;
 		ClusteringAlgorithm alg = new DefaultClusteringAlgorithm();
 		Cluster cluster = alg.performClustering(this.map.getMap(), this.map.getHashcodesAsNames(), strategy);
-		double normalized = cluster.getTotalDistance() * threshold;
-		this.clusters = getClusters(cluster, normalized);
+		// Analyze top-nodes under given distance
+		this.clusters = new ArrayList<>();
+		Deque<Cluster> queue = new ArrayDeque<>();
+		queue.offer(cluster);
+		while(!queue.isEmpty()) {
+			Cluster node = queue.poll();
+			if (node.getDistanceValue() < threshold) {
+				if (!this.clusters.contains(node)) {
+					this.clusters.add(node);
+				}
+			} else {
+				for (Cluster child : node.getChildren()) {
+					queue.offer(child);
+				}
+			}
+		}
 		return this.clusters;
+	}
+	
+	protected void bfs(Cluster cluster, double threshold) {
 	}
 
 	/**
-	 * Get clusters whose total distances are lower than given threshold
-	 * 
+	 * Get leaf nodes from 
 	 * @param cluster
-	 * @param threshold
 	 * @return
 	 */
-	private List<Cluster> getClusters(Cluster cluster, double threshold) {
-		List<Cluster> ret = new ArrayList<>();
-		if (cluster.getTotalDistance() < threshold) {
-			ret.add(cluster);
-		} else {
-			for (Cluster child : cluster.getChildren()) {
-				ret.addAll(getClusters(child, threshold));
-			}
-		}
-		return ret;
-	}
-
-	private List<Cluster> getLeaves(Cluster cluster) {
+	protected static List<Cluster> getLeaves(Cluster cluster) {
 		List<Cluster> ret = new ArrayList<>();
 		if (cluster.isLeaf()) {
 			ret.add(cluster);
