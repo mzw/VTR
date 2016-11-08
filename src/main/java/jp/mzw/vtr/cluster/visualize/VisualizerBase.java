@@ -28,6 +28,7 @@ abstract public class VisualizerBase {
 	static Logger LOGGER = LoggerFactory.getLogger(VisualizerBase.class);
 
 	public static final String VISUAL_DIR = "visual";
+	public static final String ORIGIN_DIR = "origin";
 
 	protected File outputDir;
 	protected File visualDir;
@@ -49,7 +50,7 @@ abstract public class VisualizerBase {
 	abstract public String getContent(ClusterLeaf leaf);
 
 	abstract public String getMethodName();
-	
+
 	public static VisualizerBase visualizerFactory(String method, File outputDir) throws IOException, ParseException {
 		if ("html".equals(method)) {
 			return new HTMLVisualizer(outputDir);
@@ -172,6 +173,9 @@ abstract public class VisualizerBase {
 		List<String> lines = FileUtils.readLines(file);
 		List<Integer> hashcodes = new ArrayList<>();
 		for (String line : lines) {
+			if (line.startsWith("X")) {
+				line = line.substring(1);
+			}
 			int hashcode = Integer.parseInt(line);
 			hashcodes.add(hashcode);
 		}
@@ -186,7 +190,10 @@ abstract public class VisualizerBase {
 	public void visualize() throws IOException {
 		File visualDir = new File(this.outputDir, VISUAL_DIR);
 		File methodDir = new File(visualDir, this.getMethodName());
-
+		File originDir = new File(methodDir, ORIGIN_DIR);
+		if (!originDir.exists()) {
+			originDir.mkdirs();
+		}
 		for (ClusterResult result : this.getClusterResults()) {
 			// Directory
 			File distDir = new File(methodDir, result.getDistAnalyzer().getMethodName());
@@ -207,9 +214,17 @@ abstract public class VisualizerBase {
 				for (ClusterLeaf leaf : leaves) {
 					String filename = leaf.getProjectId() + ":" + leaf.getCommitId() + ":" + leaf.getClassName() + ":" + leaf.getMethodName() + "."
 							+ this.getMethodName();
+					File originFile = new File(originDir, filename);
 					File file = new File(dir, filename);
-					String content = getContent(leaf);
-					FileUtils.writeStringToFile(file, content);
+					if (originFile.exists()) {
+						LOGGER.info("Origin file found so copy: {}", originFile.getPath());
+						FileUtils.copyFile(originFile, file);
+					} else {
+						LOGGER.info("Origin file not found so create: {}", file.getPath());
+						String content = getContent(leaf);
+						FileUtils.writeStringToFile(file, content);
+						FileUtils.writeStringToFile(originFile, content);
+					}
 				}
 			}
 		}
