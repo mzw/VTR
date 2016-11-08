@@ -16,12 +16,12 @@ import org.junit.Test;
 public class HTMLVisualizerTest extends VtrTestBase {
 
 	protected VisualizerBase visualizer;
-	
+
 	@Before
 	public void setup() throws IOException, ParseException {
 		this.visualizer = new HTMLVisualizer(this.project.getOutputDir());
 	}
-	
+
 	@Test
 	public void testInstance() {
 		assertNotNull(this.visualizer);
@@ -54,7 +54,7 @@ public class HTMLVisualizerTest extends VtrTestBase {
 		ClusterResult result = this.visualizer.getClusterResults().get(0);
 		List<List<ClusterLeaf>> clusters = result.getClusters();
 		assertFalse(clusters.isEmpty());
-		assertEquals(37, clusters.size());
+		assertEquals(new File(this.project.getOutputDir(), "similarity/lcs/latest/complete/0.5").listFiles().length, clusters.size());
 		List<ClusterLeaf> cluster = clusters.get(0);
 		assertFalse(cluster.isEmpty());
 	}
