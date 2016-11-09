@@ -92,7 +92,6 @@ public class TestCaseModification {
 			String clazz = element.attr("class");
 			revisedNodeClasses.add(clazz);
 		}
-		List<String> originalNodeClasses = new ArrayList<>();
 		for (Element element : document.select("OriginalNodes Node")) {
 			String clazz = element.attr("class");
 			originalNodeClasses.add(clazz);

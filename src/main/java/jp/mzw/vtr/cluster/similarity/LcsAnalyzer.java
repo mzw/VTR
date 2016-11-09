@@ -29,6 +29,9 @@ public class LcsAnalyzer extends DistAnalyzer {
 	 */
 	@Override
 	protected double sim(List<String> src, List<String> dst) {
+		if (src.isEmpty() && dst.isEmpty()) {
+			return 1.0;
+		}
 		List<String> lcs = lcs(src, dst);
 		if (lcs.isEmpty()) {
 			return 0.0;
