@@ -96,7 +96,8 @@ public class HTMLVisualizer extends VisualizerBase {
 
 			// Header
 			document.head.appendChild(new Style("text/css").appendText(".target {background-color: pink;}"));
-			document.head.appendChild(new Style("text/css").appendText(".after {background-color: #FFD5EC;}"));
+			document.head.appendChild(new Style("text/css").appendText(".same-tag {background-color: #FFD5EC;}"));
+			document.head.appendChild(new Style("text/css").appendText(".after-tag {background-color: #FFDBC9;}"));
 			document.head.appendChild(new Style("text/css").appendText("pre {margin: 0px;}"));
 			document.head.appendChild(new Style("text/css").appendText("table caption {text-align: left;}"));
 			document.head.appendChild(new Style("text/css").appendText("table thead th, table tbody tr {text-align: center;}"));
@@ -150,10 +151,12 @@ public class HTMLVisualizer extends VisualizerBase {
 			// determine whether this test-line was modified at this commit
 			Commit blameCommit = new Commit(result.getSourceCommit(lineno - 1));
 			Tag tag = dict.getTagBy(blameCommit);
-			if (cur.getDate().equals(tag.getDate())) {
+			if (commit.getId().equals(blameCommit.getId())) {
 				tr.setCSSClass("target");
+			} else if (cur.getDate().equals(tag.getDate())) {
+				tr.setCSSClass("same-tag");
 			} else if (cur.getDate().before(tag.getDate())) {
-				tr.setCSSClass("after");
+				tr.setCSSClass("after-tag");
 			}
 			// create test-line
 			tr.appendChild(new Td().appendText("&nbsp;&nbsp;").appendChild(getTagAnchor(url, tag)).appendText("&nbsp;&nbsp;"));
