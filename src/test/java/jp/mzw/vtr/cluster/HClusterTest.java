@@ -2,6 +2,7 @@ package jp.mzw.vtr.cluster;
 
 import static org.junit.Assert.*;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
@@ -50,8 +51,8 @@ public class HClusterTest extends VtrTestBase {
 	public void testCluster() throws IOException {
 		HCluster hCluster = new HCluster(this.project.getOutputDir(), this.analyzer.getMethodName()).parse();
 		LinkageStrategy strategy = HCluster.getStrategy("complete");
-		List<Cluster> clusters = hCluster.cluster(strategy, 0.75);
-		assertEquals(19, clusters.size());
+		List<Cluster> clusters = hCluster.cluster(strategy, 0.5);
+		assertEquals(new File("src/test/resources/vtr-output/similarity/lcs/latest/complete/0.5").listFiles().length, clusters.size());
 	}
 
 	@Test
