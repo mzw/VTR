@@ -17,6 +17,7 @@ import jp.mzw.vtr.git.GitUtils;
 import jp.mzw.vtr.git.Tag;
 
 import org.apache.maven.shared.invoker.MavenInvocationException;
+import org.codehaus.plexus.util.FileUtils;
 import org.dom4j.DocumentException;
 import org.eclipse.jgit.api.BlameCommand;
 import org.eclipse.jgit.api.Git;
@@ -77,6 +78,15 @@ public class TestRunner implements CheckoutConductor.Listener {
 							run(tc);
 							copy(src, dst);
 							clean(src);
+							// copy coverage results in HTML
+							File site_src_dir = new File(this.projectDir, "target/site/jacoco");
+							if (site_src_dir.exists()) {
+								File site_dst_dir = new File(dir, tc.getFullName());
+								FileUtils.copyDirectoryStructure(site_src_dir, site_dst_dir);
+								FileUtils.deleteDirectory(site_src_dir);
+							} else {
+								LOGGER.warn("Not found, Coverage results in HTML: {}", site_src_dir.getPath());
+							}
 						}
 					}
 				}
