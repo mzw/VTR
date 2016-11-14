@@ -4,12 +4,10 @@ import java.io.File;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringEscapeUtils;
-import org.apache.maven.shared.invoker.MavenInvocationException;
 import org.dom4j.Document;
 import org.dom4j.DocumentHelper;
 import org.dom4j.Element;
@@ -22,11 +20,8 @@ import org.eclipse.jgit.errors.AmbiguousObjectException;
 import org.eclipse.jgit.errors.IncorrectObjectTypeException;
 import org.eclipse.jgit.errors.RevisionSyntaxException;
 import org.eclipse.jgit.patch.Patch;
-import org.jacoco.core.analysis.CoverageBuilder;
-import org.jacoco.core.analysis.IBundleCoverage;
-import org.jacoco.core.analysis.ILine;
-import org.jacoco.core.analysis.IPackageCoverage;
-import org.jacoco.core.analysis.ISourceFileCoverage;
+import org.jsoup.Jsoup;
+import org.jsoup.parser.Parser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -72,7 +67,6 @@ public class Detector implements CheckoutConductor.Listener {
 	@Override
 	public void onCheckout(Commit commit) {
 		try {
-			MavenUtils.maven(this.projectDir, Arrays.asList("compile", "test-compile"), this.mavenHome);
 			this.curTestSuites = MavenUtils.getTestSuites(this.projectDir);
 			List<TestCase> results = detect(commit);
 			if (!results.isEmpty()) {
@@ -82,8 +76,7 @@ public class Detector implements CheckoutConductor.Listener {
 				}
 			}
 			this.prvTestSuites = this.curTestSuites;
-			MavenUtils.maven(this.projectDir, Arrays.asList("clean"), this.mavenHome);
-		} catch (IOException | GitAPIException | RevisionSyntaxException | ParseException | MavenInvocationException e) {
+		} catch (IOException | GitAPIException | RevisionSyntaxException | ParseException e) {
 			LOGGER.warn(e.toString());
 		}
 	}
@@ -105,9 +98,9 @@ public class Detector implements CheckoutConductor.Listener {
 		List<TestCase> ret = new ArrayList<>();
 		for (TestSuite ts : this.curTestSuites) {
 			for (TestCase tc : ts.getTestCases()) {
-				File exec = new File(dir, tc.getFullName() + "!jacoco.exec");
-				if (!exec.exists()) {
-					LOGGER.info("Coverage file does not exist: {}", exec.getAbsolutePath());
+				File site = new File(dir, tc.getFullName());
+				if (!site.exists()) {
+					LOGGER.info("Coverage file does not exist: {}", site.getPath());
 					continue;
 				}
 				File result = this.getOutputFile(commit, tc, false);
@@ -115,7 +108,7 @@ public class Detector implements CheckoutConductor.Listener {
 					LOGGER.info("Detection result is found: {}", result.getPath());
 					continue;
 				}
-				if (detect(cur, blame, exec)) {
+				if (detect(cur, blame, site)) {
 					LOGGER.info("Detect subject test-case modification: {} @ {}", tc.getFullName(), commit.getId());
 					ret.add(tc);
 				}
@@ -124,29 +117,31 @@ public class Detector implements CheckoutConductor.Listener {
 		return ret;
 	}
 
-	/**
-	 * 
-	 * @param cur
-	 * @param blame
-	 * @param exec
-	 * @return
-	 * @throws IOException
-	 * @throws GitAPIException
-	 */
-	private boolean detect(Tag cur, BlameCommand blame, File exec) throws IOException, GitAPIException {
+	protected boolean detect(Tag cur, BlameCommand blame, File site) throws IOException, GitAPIException {
 		boolean detect = true;
-		CoverageBuilder cb = JacocoInstrumenter.getCoverageBuilder(this.projectDir, exec);
-		IBundleCoverage bundle = cb.getBundle("VTR.Detector");
-		for (IPackageCoverage pkg : bundle.getPackages()) {
-			for (ISourceFileCoverage src : pkg.getSourceFiles()) {
-				String filePath = "src/main/java/" + pkg.getName() + "/" + src.getName();
+		File xml = new File(site, "jacoco.xml");
+		String content = FileUtils.readFileToString(xml);
+		org.jsoup.nodes.Document document = Jsoup.parse(content, "", Parser.xmlParser());
+		// Packages
+		for (org.jsoup.nodes.Element pkg : document.select("package")) {
+			String pkgName = pkg.attr("name");
+			// Sources
+			for (org.jsoup.nodes.Element src : pkg.select("sourcefile")) {
+				String srcName = src.attr("name");
+				String filePath = "src/main/java/" + pkgName + "/" + srcName;
 				BlameResult result = blame.setFilePath(filePath).call();
-				for (int lineno = src.getFirstLine(); lineno <= src.getLastLine(); lineno++) {
-					ILine line = src.getLine(lineno);
-					if (JacocoInstrumenter.isCoveredLine(line.getStatus())) {
-						// Determine covered source-line is modified
-						// in previous release
-						Tag tag = dict.getTagBy(new Commit(result.getSourceCommit(lineno)));
+				// Lines
+				for (org.jsoup.nodes.Element line : src.select("line")) {
+					// nr: line number of interest
+					// mi: missed instructions (statements)
+					// ci: covered instructions (statements)
+					// mb: missed branches
+					// cb: covered branches
+					int nr = Integer.parseInt(line.attr("nr"));
+					int ci = Integer.parseInt(line.attr("ci"));
+					int cb = Integer.parseInt(line.attr("cb"));
+					if (0 < ci || 0 < cb) { // Covered
+						Tag tag = dict.getTagBy(new Commit(result.getSourceCommit(nr)));
 						if (cur.getDate().after(tag.getDate())) {
 							// Previous
 						} else {
@@ -195,9 +190,7 @@ public class Detector implements CheckoutConductor.Listener {
 		for (TestCase tc : testCases) {
 			List<Integer> methodLineRange = tc.getLineRange();
 			List<ModifiedLineRange> modifiedLineRanges = analyzer.getModifiedLineRanges(tc.getTestFile());
-			if (modifiedLineRanges == null) { // TODO Need to check why
-												// 'modifiedLineRanges' can be
-												// 'null'
+			if (modifiedLineRanges == null) { // TODO
 				LOGGER.warn("TODO Need to check why 'modifiedLineRanges' can be 'null'", tc.getTestFile().getPath());
 				continue;
 			}
