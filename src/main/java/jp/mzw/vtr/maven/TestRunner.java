@@ -58,7 +58,7 @@ public class TestRunner implements CheckoutConductor.Listener {
 	 */
 	@Override
 	public void onCheckout(Commit commit) {
-		File dir = this.getOutputDir(commit);
+		File dir = this.getOutputDir(commit, false);
 		boolean modified = false;
 		try {
 			modified = ji.instrument();
@@ -76,17 +76,11 @@ public class TestRunner implements CheckoutConductor.Listener {
 						}
 						if (modified(commit, blame, tc)) {
 							run(tc);
+							// site/jacoco/jacoco.xml
+							copy(commit, tc);
+							// jacoco.exec
 							copy(src, dst);
 							clean(src);
-							// copy coverage results in HTML
-							File site_src_dir = new File(this.projectDir, "target/site/jacoco");
-							if (site_src_dir.exists()) {
-								File site_dst_dir = new File(dir, tc.getFullName());
-								FileUtils.copyDirectoryStructure(site_src_dir, site_dst_dir);
-								FileUtils.deleteDirectory(site_src_dir);
-							} else {
-								LOGGER.warn("Not found, Coverage results in HTML: {}", site_src_dir.getPath());
-							}
 						}
 					}
 				}
@@ -118,15 +112,37 @@ public class TestRunner implements CheckoutConductor.Listener {
 	}
 
 	/**
+	 * Copy coverage results in XML/HTML
+	 * 
+	 * @param commit
+	 * @param testCase
+	 * @throws IOException
+	 */
+	protected void copy(Commit commit, TestCase testCase) throws IOException {
+		File dir = this.getOutputDir(commit, true);
+		File src = new File(this.projectDir, "target/site/jacoco");
+		if (src.exists()) {
+			File dst = new File(dir, testCase.getFullName());
+			if (!dst.exists()) {
+				dst.mkdirs();
+			}
+			FileUtils.copyDirectoryStructure(src, dst);
+			FileUtils.deleteDirectory(src);
+		} else {
+			LOGGER.warn("[Not-found]HTML coverage results: {}", src.getPath());
+		}
+	}
+
+	/**
 	 * 
 	 * @param commit
 	 * @return
 	 */
-	protected File getOutputDir(Commit commit) {
+	protected File getOutputDir(Commit commit, boolean mkdir) {
 		File subjectDir = new File(this.outputDir, this.projectId);
 		File jacocoDir = new File(subjectDir, "jacoco");
 		File commitDir = new File(jacocoDir, commit.getId());
-		if (!commitDir.exists()) {
+		if (mkdir && !commitDir.exists()) {
 			commitDir.mkdirs();
 		}
 		return commitDir;
