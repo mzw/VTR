@@ -75,12 +75,18 @@ public class TestRunner implements CheckoutConductor.Listener {
 							continue;
 						}
 						if (modified(commit, blame, tc)) {
-							run(tc);
-							// site/jacoco/jacoco.xml
-							copy(commit, tc);
-							// jacoco.exec
-							copy(src, dst);
-							clean(src);
+							int status = run(tc);
+							if (status == 0) {
+								// site/jacoco/jacoco.xml
+								copy(commit, tc);
+								// jacoco.exec
+								copy(src, dst);
+								clean(src);
+							} else {
+								LOGGER.warn("Failed to execute test case: {} @ {}", tc.getFullName(), commit.getId());
+								cleanDir("target/site/jacoco");
+								clean(src);
+							}
 						}
 					}
 				}
@@ -130,6 +136,20 @@ public class TestRunner implements CheckoutConductor.Listener {
 			FileUtils.deleteDirectory(src);
 		} else {
 			LOGGER.warn("[Not-found]HTML coverage results: {}", src.getPath());
+		}
+	}
+
+	/**
+	 * Clean coverage results in XML/HTML
+	 * 
+	 * @param commit
+	 * @param testCase
+	 * @throws IOException
+	 */
+	protected void cleanDir(String pathToDir) throws IOException {
+		File src = new File(this.projectDir, pathToDir);
+		if (src.exists()) {
+			FileUtils.deleteDirectory(src);
 		}
 	}
 
@@ -187,13 +207,14 @@ public class TestRunner implements CheckoutConductor.Listener {
 	 * Run test case to measure its coverage
 	 * 
 	 * @param testCase
+	 * @return
 	 * @throws MavenInvocationException
 	 */
-	protected void run(TestCase testCase) throws MavenInvocationException {
+	protected int run(TestCase testCase) throws MavenInvocationException {
 		LOGGER.info("Measure coverage: {}", testCase.getFullName());
 		String each = "-Dtest=" + testCase.getFullName();
 		List<String> args = Arrays.asList(each, "org.jacoco:jacoco-maven-plugin:prepare-agent", "test", "org.jacoco:jacoco-maven-plugin:report");
-		MavenUtils.maven(this.projectDir, args, this.mavenHome);
+		return MavenUtils.maven(this.projectDir, args, this.mavenHome);
 	}
 
 	/**
