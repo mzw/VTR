@@ -28,7 +28,7 @@ public class TestRunnerTest extends VtrTestBase {
 	@Test
 	public void testGetOutputDir() throws IOException, ParseException {
 		TestRunner tr = new TestRunner(this.project);
-		File dir = tr.getOutputDir(this.commit);
+		File dir = tr.getOutputDir(this.commit, false);
 		assertArrayEquals((PATH_TO_OUTPUT_DIR + "/jacoco/" + COMMIT_ID).toCharArray(), dir.getPath().toCharArray());
 	}
 
