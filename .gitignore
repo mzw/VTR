@@ -5,6 +5,7 @@ log/
 config.properties
 output/
 sh/ba.sh
+sh/slack.php
 docker/
 
 # Maven
