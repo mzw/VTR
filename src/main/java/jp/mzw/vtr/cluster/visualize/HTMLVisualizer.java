@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import jp.mzw.vtr.CLI;
@@ -21,15 +20,12 @@ import jp.mzw.vtr.maven.TestCase;
 import jp.mzw.vtr.maven.TestSuite;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.maven.shared.invoker.MavenInvocationException;
 import org.eclipse.jgit.api.BlameCommand;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.blame.BlameResult;
-import org.jacoco.core.analysis.CoverageBuilder;
-import org.jacoco.core.analysis.IBundleCoverage;
-import org.jacoco.core.analysis.IPackageCoverage;
-import org.jacoco.core.analysis.ISourceFileCoverage;
+import org.jsoup.Jsoup;
+import org.jsoup.parser.Parser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -76,14 +72,12 @@ public class HTMLVisualizer extends VisualizerBase {
 			// Instantiate project
 			Project project = new Project(projectId).setConfig(CLI.CONFIG_FILENAME);
 			File projectDir = project.getProjectDir();
-			File mavenHome = project.getMavenHome();
 			// Get dictionary, commit, and coverage
 			Dictionary dict = this.getDict(project.getProjectId());
 			Commit commit = dict.getCommitBy(leaf.getCommitId());
-			// Checkout and compile
+			// Checkout
 			CheckoutConductor cc = new CheckoutConductor(project);
 			cc.checkout(commit);
-			MavenUtils.maven(projectDir, Arrays.asList("clean", "compile"), mavenHome);
 			// Get test case
 			List<TestSuite> testSuites = MavenUtils.getTestSuites(projectDir);
 			TestCase tc = TestSuite.getTestCaseWithClassMethodName(testSuites, leaf.getClassName(), leaf.getMethodName());
@@ -114,7 +108,7 @@ public class HTMLVisualizer extends VisualizerBase {
 			for (Table table : srcTables) {
 				document.body.appendChild(table);
 			}
-		} catch (IOException | ParseException | GitAPIException | MavenInvocationException e) {
+		} catch (IOException | ParseException | GitAPIException e) {
 			e.printStackTrace();
 		}
 		return document.write();
@@ -188,36 +182,42 @@ public class HTMLVisualizer extends VisualizerBase {
 			String url) throws GitAPIException, IOException {
 		List<Table> ret = new ArrayList<>();
 		// parse
-		File exec = new File(jacocoCommitDir, tc.getFullName() + "!jacoco.exec");
-		CoverageBuilder builder = JacocoInstrumenter.getCoverageBuilder(projectDir, exec);
-		IBundleCoverage bundle = builder.getBundle("VTR.Detector");
-		for (IPackageCoverage pkg : bundle.getPackages()) {
-			for (ISourceFileCoverage src : pkg.getSourceFiles()) {
-				String filePath = "src/main/java/" + pkg.getName() + "/" + src.getName();
+		File site = new File(jacocoCommitDir, tc.getFullName());
+		File xml = new File(site, "jacoco.xml");
+		String content = FileUtils.readFileToString(xml);
+		org.jsoup.nodes.Document document = Jsoup.parse(content, "", Parser.xmlParser());
+		for (org.jsoup.nodes.Element pkg : document.select("package")) {
+			String pkgName = pkg.attr("name");
+			// Sources
+			for (org.jsoup.nodes.Element src : pkg.select("sourcefile")) {
+				String srcName = src.attr("name");
+				String filePath = "src/main/java/" + pkgName + "/" + srcName;
 				List<String> lines = FileUtils.readLines(new File(projectDir, filePath));
 				BlameResult result = blame.setFilePath(filePath).call();
 				// Create table
 				boolean covered = false;
 				Table table = new Table().setRules("groups");
-				table.appendChild(new Caption().appendChild(getBlobAnchor(url, projectDir, pkg.getName(), src.getName(), commit)));
+				table.appendChild(new Caption().appendChild(getBlobAnchor(url, projectDir, pkgName, srcName, commit)));
 				table.appendChild(new Thead().appendChild(new Tr().appendChild(new Th().appendText("Tag")).appendChild(new Th().appendText("Date"))
 						.appendChild(new Th().appendText("Blame")).appendChild(new Th().appendText("Line")).appendChild(new Th().appendText("Source"))));
 				Tbody tbody = new Tbody();
-				for (int lineno = src.getFirstLine(); lineno <= src.getLastLine(); lineno++) {
-					Commit blameCommit = new Commit(result.getSourceCommit(lineno));
+				for (org.jsoup.nodes.Element line : src.select("line")) {
+					int nr = Integer.parseInt(line.attr("nr"));
+					int ci = Integer.parseInt(line.attr("ci"));
+					int cb = Integer.parseInt(line.attr("cb"));
+					Commit blameCommit = new Commit(result.getSourceCommit(nr));
 					Tag tag = dict.getTagBy(blameCommit);
 					// Create line
 					Tr tr = new Tr();
-					if (JacocoInstrumenter.isCoveredLine(src.getLine(lineno).getStatus())) {
+					if (0 < ci || 0 < cb) { // Covered
 						covered = true;
 						tr.setCSSClass("target");
 					}
 					tr.appendChild(new Td().appendText("&nbsp;&nbsp;").appendChild(getTagAnchor(url, tag)).appendText("&nbsp;&nbsp;"));
 					tr.appendChild(new Td().appendText("&nbsp;&nbsp;").appendText(blameCommit.getDate().toString()).appendText("&nbsp;&nbsp;"));
-					tr.appendChild(new Td().appendText("&nbsp;&nbsp;").appendChild(getBlameAnchor(url, blameCommit, filePath, lineno))
-							.appendText("&nbsp;&nbsp;"));
-					tr.appendChild(new Td().setAlign("right").appendText(new Integer(lineno).toString()));
-					tr.appendChild(new Td().setAlign("left").appendChild(new Pre().appendText(lines.get(lineno - 1))));
+					tr.appendChild(new Td().appendText("&nbsp;&nbsp;").appendChild(getBlameAnchor(url, blameCommit, filePath, nr)).appendText("&nbsp;&nbsp;"));
+					tr.appendChild(new Td().setAlign("right").appendText(new Integer(nr).toString()));
+					tr.appendChild(new Td().setAlign("left").appendChild(new Pre().appendText(lines.get(nr - 1))));
 					// append
 					tbody.appendChild(tr);
 				}
