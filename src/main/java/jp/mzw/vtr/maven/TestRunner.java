@@ -10,11 +10,9 @@ import java.util.List;
 
 import jp.mzw.vtr.core.Project;
 import jp.mzw.vtr.core.VtrUtils;
-import jp.mzw.vtr.dict.Dictionary;
 import jp.mzw.vtr.git.CheckoutConductor;
 import jp.mzw.vtr.git.Commit;
 import jp.mzw.vtr.git.GitUtils;
-import jp.mzw.vtr.git.Tag;
 
 import org.apache.maven.shared.invoker.MavenInvocationException;
 import org.codehaus.plexus.util.FileUtils;
@@ -37,7 +35,6 @@ public class TestRunner implements CheckoutConductor.Listener {
 	private File mavenHome;
 
 	private JacocoInstrumenter ji;
-	private Dictionary dict;
 	private Git git;
 
 	public TestRunner(Project project) throws IOException, ParseException {
@@ -46,7 +43,6 @@ public class TestRunner implements CheckoutConductor.Listener {
 		this.outputDir = project.getOutputDir();
 		this.mavenHome = project.getMavenHome();
 		this.ji = new JacocoInstrumenter(this.projectDir);
-		this.dict = new Dictionary(this.outputDir, this.projectId).parse();
 		this.git = GitUtils.getGit(this.projectDir);
 	}
 
@@ -230,7 +226,7 @@ public class TestRunner implements CheckoutConductor.Listener {
 	}
 
 	/**
-	 * 
+	 * Determine whether given test case is modified at given commit
 	 * @param commit
 	 * @param testSuites
 	 * @throws IOException
@@ -241,10 +237,9 @@ public class TestRunner implements CheckoutConductor.Listener {
 		String filePath = VtrUtils.getFilePath(this.projectDir, testCase.getTestFile());
 		BlameResult result = blame.setFilePath(filePath).call();
 		// Determine
-		Tag curTag = this.dict.getTagBy(commit);
 		for (int lineno = testCase.getStartLineNumber(); lineno <= testCase.getEndLineNumber(); lineno++) {
-			Tag tag = this.dict.getTagBy(new Commit(result.getSourceCommit(lineno - 1)));
-			if (curTag.getDate().equals(tag.getDate())) {
+			Commit modifiedCommit = new Commit(result.getSourceCommit(lineno - 1));
+			if (commit.getDate().equals(modifiedCommit.getDate())) {
 				LOGGER.info("Detect test modification: {}", testCase.getFullName());
 				return true;
 			}
