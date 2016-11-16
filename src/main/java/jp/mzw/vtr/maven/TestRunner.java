@@ -3,6 +3,7 @@ package jp.mzw.vtr.maven;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.text.ParseException;
 import java.util.Arrays;
@@ -14,6 +15,7 @@ import jp.mzw.vtr.git.CheckoutConductor;
 import jp.mzw.vtr.git.Commit;
 import jp.mzw.vtr.git.GitUtils;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.maven.shared.invoker.MavenInvocationException;
 import org.codehaus.plexus.util.FileUtils;
 import org.dom4j.DocumentException;
@@ -37,6 +39,8 @@ public class TestRunner implements CheckoutConductor.Listener {
 	private JacocoInstrumenter ji;
 	private Git git;
 
+	private List<String> skipList;
+
 	public TestRunner(Project project) throws IOException, ParseException {
 		this.projectId = project.getProjectId();
 		this.projectDir = project.getProjectDir();
@@ -44,6 +48,7 @@ public class TestRunner implements CheckoutConductor.Listener {
 		this.mavenHome = project.getMavenHome();
 		this.ji = new JacocoInstrumenter(this.projectDir);
 		this.git = GitUtils.getGit(this.projectDir);
+		this.skipList = parseTestRunnerSkipList();
 	}
 
 	/**
@@ -65,6 +70,9 @@ public class TestRunner implements CheckoutConductor.Listener {
 				BlameCommand blame = new BlameCommand(this.git.getRepository());
 				for (TestSuite ts : testSuites) {
 					for (TestCase tc : ts.getTestCases()) {
+						if (skip(commit, tc)) {
+							continue;
+						}
 						File src = new File(this.projectDir, "target/jacoco.exec");
 						File dst = new File(dir, tc.getFullName() + "!jacoco.exec");
 						File siteDir = new File(this.projectDir, "target/site/jacoco");
@@ -114,6 +122,30 @@ public class TestRunner implements CheckoutConductor.Listener {
 				LOGGER.debug(e.getMessage());
 			}
 		}
+	}
+
+	/**
+	 * 
+	 * @return
+	 * @throws IOException
+	 */
+	protected List<String> parseTestRunnerSkipList() throws IOException {
+		InputStream is = TestRunner.class.getClassLoader().getResourceAsStream("test_runner_skip_list.txt");
+		return IOUtils.readLines(is);
+	}
+
+	/**
+	 * 
+	 * @param commit
+	 * @param testCase
+	 * @return
+	 */
+	protected boolean skip(Commit commit, TestCase testCase) {
+		String key = testCase.getFullName() + "@" + commit.getId();
+		if (this.skipList.contains(key)) {
+			return true;
+		}
+		return false;
 	}
 
 	/**
@@ -229,6 +261,7 @@ public class TestRunner implements CheckoutConductor.Listener {
 
 	/**
 	 * Determine whether given test case is modified at given commit
+	 * 
 	 * @param commit
 	 * @param testSuites
 	 * @throws IOException
