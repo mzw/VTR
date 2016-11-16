@@ -67,20 +67,23 @@ public class TestRunner implements CheckoutConductor.Listener {
 					for (TestCase tc : ts.getTestCases()) {
 						File src = new File(this.projectDir, "target/jacoco.exec");
 						File dst = new File(dir, tc.getFullName() + "!jacoco.exec");
+						File siteDir = new File(this.projectDir, "target/site/jacoco");
 						if (already(dst)) {
 							continue;
 						}
 						if (modified(commit, blame, tc)) {
 							int status = run(tc);
 							if (status == 0) {
+								LOGGER.warn("Copy coverage results: {} @ {}", tc.getFullName(), commit.getId());
 								// site/jacoco/jacoco.xml
 								copy(commit, tc);
+								cleanDir(siteDir);
 								// jacoco.exec
 								copy(src, dst);
 								clean(src);
 							} else {
 								LOGGER.warn("Failed to execute test case: {} @ {}", tc.getFullName(), commit.getId());
-								cleanDir("target/site/jacoco");
+								cleanDir(siteDir);
 								clean(src);
 							}
 						}
@@ -142,10 +145,9 @@ public class TestRunner implements CheckoutConductor.Listener {
 	 * @param testCase
 	 * @throws IOException
 	 */
-	protected void cleanDir(String pathToDir) throws IOException {
-		File src = new File(this.projectDir, pathToDir);
-		if (src.exists()) {
-			FileUtils.deleteDirectory(src);
+	protected void cleanDir(File dir) throws IOException {
+		if (dir.exists()) {
+			FileUtils.deleteDirectory(dir);
 		}
 	}
 
