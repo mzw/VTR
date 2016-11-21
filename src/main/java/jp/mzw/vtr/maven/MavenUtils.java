@@ -15,9 +15,11 @@ import org.apache.maven.shared.invoker.InvocationRequest;
 import org.apache.maven.shared.invoker.InvocationResult;
 import org.apache.maven.shared.invoker.Invoker;
 import org.apache.maven.shared.invoker.MavenInvocationException;
+import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.MarkerAnnotation;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.Modifier;
+import org.eclipse.jdt.core.dom.StructuralPropertyDescriptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -95,9 +97,11 @@ public class MavenUtils {
 		}
 		return null;
 	}
-	
+
 	/**
-	 * Traverse given test suites and find test case whose full name is equals to given test case
+	 * Traverse given test suites and find test case whose full name is equals
+	 * to given test case
+	 * 
 	 * @param testSuites
 	 * @param testCase
 	 * @return
@@ -158,5 +162,30 @@ public class MavenUtils {
 			}
 		}
 		return false;
+	}
+
+	/**
+	 * Get children from given parent
+	 * 
+	 * @param node Parent
+	 * @return Children
+	 */
+	public static List<ASTNode> getChildren(ASTNode node) {
+		List<ASTNode> children = new ArrayList<ASTNode>();
+		List<?> list = node.structuralPropertiesForType();
+		for (int i = 0; i < list.size(); i++) {
+			Object child = node.getStructuralProperty((StructuralPropertyDescriptor) list.get(i));
+			if (child instanceof ASTNode) {
+				children.add((ASTNode) child);
+			} else if (child instanceof List) {
+				for (Object _child : ((List<?>) child).toArray()) {
+					if (_child instanceof ASTNode) {
+						children.add((ASTNode) _child);
+					}
+				}
+
+			}
+		}
+		return children;
 	}
 }

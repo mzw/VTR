@@ -61,6 +61,14 @@ public class TestCase {
 		}
 		return ret;
 	}
+	
+	public List<ASTNode> getNodes() {
+		List<Integer> lineNumbers = new ArrayList<>();
+		for (int line = this.getStartLineNumber(); line <= this.getEndLineNumber(); line++) {
+			lineNumbers.add(new Integer(line));
+		}
+		return this.getAllNodesIn(lineNumbers);
+	}
 
 	public String getName() {
 		return this.name;
@@ -84,6 +92,14 @@ public class TestCase {
 
 	public int getEndLineNumber() {
 		return this.cu.getLineNumber(this.method.getStartPosition() + this.method.getLength());
+	}
+
+	public int getStartLineNumber(ASTNode node) {
+		return this.cu.getLineNumber(node.getStartPosition());
+	}
+
+	public int getEndLineNumber(ASTNode node) {
+		return this.cu.getLineNumber(node.getStartPosition() + node.getLength());
 	}
 
 	public List<Integer> getLineRange() {

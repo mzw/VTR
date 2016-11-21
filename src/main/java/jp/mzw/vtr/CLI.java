@@ -26,10 +26,11 @@ import jp.mzw.vtr.dict.DictionaryMaker;
 import jp.mzw.vtr.git.CheckoutConductor;
 import jp.mzw.vtr.git.GitUtils;
 import jp.mzw.vtr.maven.TestRunner;
+import jp.mzw.vtr.validate.ValidatorBase;
 
 public class CLI {
 	static Logger LOGGER = LoggerFactory.getLogger(CLI.class);
-	
+
 	public static final String CONFIG_FILENAME = "config.properties";
 
 	public static void main(String[] args) throws IOException, NoHeadException, GitAPIException, ParseException {
@@ -85,6 +86,10 @@ public class CLI {
 			} else {
 				LOGGER.info("$ java -cp=<class-path> jp.mzw.vtr.CLI visualize <method>");
 			}
+		} else if ("validate".equals(command)) {
+			String projectId = args[1];
+			Project project = new Project(projectId).setConfig(CONFIG_FILENAME);
+			validate(project);
 		}
 
 	}
@@ -117,7 +122,7 @@ public class CLI {
 		cc.addListener(new Detector(project));
 		cc.checkout();
 	}
-	
+
 	private static void cluster(Project project, String analyzer, String strategy, double threshold) throws IOException, ParseException {
 		// Similarity
 		DistAnalyzer distAnalyzer = DistAnalyzer.analyzerFactory(project.getOutputDir(), analyzer);
@@ -129,4 +134,15 @@ public class CLI {
 		cluster.cluster(HCluster.getStrategy(strategy), threshold);
 		cluster.output();
 	}
+
+	private static void validate(Project project) throws IOException, ParseException, GitAPIException {
+		CheckoutConductor cc = new CheckoutConductor(project);
+		List<ValidatorBase> validators = ValidatorBase.getValidators(project);
+		for (ValidatorBase validator : validators) {
+			cc.addListener(validator);
+		}
+		cc.checkout();
+		ValidatorBase.output(project, validators);
+	}
+
 }
