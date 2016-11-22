@@ -61,7 +61,7 @@ public class TestCase {
 		}
 		return ret;
 	}
-	
+
 	public List<ASTNode> getNodes() {
 		List<Integer> lineNumbers = new ArrayList<>();
 		for (int line = this.getStartLineNumber(); line <= this.getEndLineNumber(); line++) {
@@ -76,6 +76,14 @@ public class TestCase {
 
 	public String getClassName() {
 		return this.className;
+	}
+
+	public MethodDeclaration getMethodDeclaration() {
+		return this.method;
+	}
+
+	public CompilationUnit getCompilationUnit() {
+		return this.cu;
 	}
 
 	public TestSuite getTestSuite() {

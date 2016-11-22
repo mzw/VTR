@@ -26,6 +26,7 @@ import jp.mzw.vtr.dict.DictionaryMaker;
 import jp.mzw.vtr.git.CheckoutConductor;
 import jp.mzw.vtr.git.GitUtils;
 import jp.mzw.vtr.maven.TestRunner;
+import jp.mzw.vtr.validate.ValidationResult;
 import jp.mzw.vtr.validate.ValidatorBase;
 
 public class CLI {
@@ -90,6 +91,10 @@ public class CLI {
 			String projectId = args[1];
 			Project project = new Project(projectId).setConfig(CONFIG_FILENAME);
 			validate(project);
+		} else if ("gen".equals(command)) {
+			String projectId = args[1];
+			Project project = new Project(projectId).setConfig(CONFIG_FILENAME);
+			gen(project);
 		}
 
 	}
@@ -143,6 +148,16 @@ public class CLI {
 		}
 		cc.checkout();
 		ValidatorBase.output(project, validators);
+	}
+
+	private static void gen(Project project) throws IOException, ParseException, GitAPIException {
+		List<ValidatorBase> validators = ValidatorBase.getValidators(project);
+		for (ValidatorBase validator : validators) {
+			List<ValidationResult> results = ValidatorBase.parse(project);
+			for (ValidationResult result : results) {
+				validator.generate(result);
+			}
+		}
 	}
 
 }

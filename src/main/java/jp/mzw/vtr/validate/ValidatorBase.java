@@ -9,12 +9,15 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.io.FileUtils;
+import org.eclipse.jdt.core.dom.ASTNode;
+import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import jp.mzw.vtr.core.Project;
 import jp.mzw.vtr.git.CheckoutConductor;
 import jp.mzw.vtr.git.Commit;
+import jp.mzw.vtr.maven.MavenUtils;
 
 abstract public class ValidatorBase implements CheckoutConductor.Listener {
 	protected static Logger LOGGER = LoggerFactory.getLogger(ValidatorBase.class);
@@ -37,6 +40,8 @@ abstract public class ValidatorBase implements CheckoutConductor.Listener {
 	@Override
 	abstract public void onCheckout(Commit commit);
 
+	abstract public void generate(ValidationResult result);
+
 	/**
 	 * TODO: Give validator list from resources
 	 * 
@@ -57,6 +62,36 @@ abstract public class ValidatorBase implements CheckoutConductor.Listener {
 	public List<ValidationResult> getValidationResultList() {
 		return this.validationResultList;
 	}
+
+	/**
+	 * Determine whether given node has JUnit assert method invocation
+	 * 
+	 * @param node
+	 * @return
+	 */
+	protected boolean hasAssertMethodInvocation(ASTNode node) {
+		if (node instanceof MethodInvocation) {
+			MethodInvocation method = (MethodInvocation) node;
+			for (String name : JUNIT_ASSERT_METHODS) {
+				if (name.equals(method.getName().toString())) {
+					return true;
+				}
+			}
+		}
+		for (Object child : MavenUtils.getChildren(node)) {
+			boolean has = hasAssertMethodInvocation((ASTNode) child);
+			if (has) {
+				return true;
+			}
+		}
+		return false;
+	}
+
+	/**
+	 * List of JUnit assert method names
+	 */
+	public static final String[] JUNIT_ASSERT_METHODS = { "assertArrayEquals", "assertEquals", "assertFalse", "assertNotNull", "assertNotSame", "assertNull",
+			"assertSame", "assertThat", "assertTrue", "fail", };
 
 	/**
 	 * Output validation results in CSV file
@@ -139,6 +174,24 @@ abstract public class ValidatorBase implements CheckoutConductor.Listener {
 	}
 
 	/**
+	 * Parse existing validation reuslts
+	 * 
+	 * @param project
+	 * @return
+	 * @throws IOException
+	 */
+	public static List<ValidationResult> parse(Project project) throws IOException {
+		List<ValidationResult> ret = new ArrayList<>();
+		File projectDir = new File(project.getOutputDir(), project.getProjectId());
+		File validateDir = new File(projectDir, VALIDATOR_DIRNAME);
+		File file = new File(validateDir, VALIDATOR_FILENAME);
+		if (file.exists()) {
+			ret = parse(file);
+		}
+		return ret;
+	}
+
+	/**
 	 * Parse existing validation results
 	 * 
 	 * @param file
@@ -147,7 +200,7 @@ abstract public class ValidatorBase implements CheckoutConductor.Listener {
 	 * @throws IOException
 	 *             When given file is not found
 	 */
-	protected static List<ValidationResult> parse(File file) throws IOException {
+	public static List<ValidationResult> parse(File file) throws IOException {
 		// Read
 		String content = FileUtils.readFileToString(file);
 		CSVParser parser = CSVParser.parse(content, CSVFormat.DEFAULT);
