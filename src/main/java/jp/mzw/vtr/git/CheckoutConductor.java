@@ -112,7 +112,13 @@ public class CheckoutConductor {
 	 */
 	private void checkout(List<Commit> commits) throws GitAPIException {
 		for (Commit commit : commits) {
-			checkout(commit);
+			try {
+				checkout(commit);
+			} catch (GitAPIException e) {
+				LOGGER.warn("Failed to checkout @ {}", commit.getId());
+				LOGGER.warn(e.getMessage());
+				continue;
+			}
 			notifyListeners(commit);
 		}
 		// Recover initial state
