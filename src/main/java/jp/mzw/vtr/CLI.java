@@ -7,6 +7,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.maven.shared.invoker.MavenInvocationException;
+import org.dom4j.DocumentException;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.api.errors.NoHeadException;
@@ -15,6 +17,7 @@ import org.eclipse.jgit.revwalk.RevCommit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import difflib.PatchFailedException;
 import jp.mzw.vtr.cluster.HCluster;
 import jp.mzw.vtr.cluster.similarity.DistAnalyzer;
 import jp.mzw.vtr.cluster.similarity.DistMap;
@@ -26,6 +29,8 @@ import jp.mzw.vtr.dict.DictionaryMaker;
 import jp.mzw.vtr.git.CheckoutConductor;
 import jp.mzw.vtr.git.GitUtils;
 import jp.mzw.vtr.maven.TestRunner;
+import jp.mzw.vtr.repair.Repair;
+import jp.mzw.vtr.repair.Repairer;
 import jp.mzw.vtr.validate.ValidationResult;
 import jp.mzw.vtr.validate.ValidatorBase;
 
@@ -34,7 +39,8 @@ public class CLI {
 
 	public static final String CONFIG_FILENAME = "config.properties";
 
-	public static void main(String[] args) throws IOException, NoHeadException, GitAPIException, ParseException {
+	public static void main(String[] args) throws IOException, NoHeadException, GitAPIException, ParseException, MavenInvocationException, DocumentException,
+			PatchFailedException {
 
 		if (args.length < 1) { // Invalid usage
 			LOGGER.info("$ java -cp=<class-path> jp.mzw.vtr.CLI dict      <subject-id>");
@@ -44,6 +50,9 @@ public class CLI {
 			LOGGER.info("$ java -cp=<class-path> jp.mzw.vtr.CLI detect    <subject-id>");
 			LOGGER.info("$ java -cp=<class-path> jp.mzw.vtr.CLI cluster   <similarity> <cluster-method> <threshold>");
 			LOGGER.info("$ java -cp=<class-path> jp.mzw.vtr.CLI visualize <method>");
+			LOGGER.info("$ java -cp=<class-path> jp.mzw.vtr.CLI validate  <subject-id>");
+			LOGGER.info("$ java -cp=<class-path> jp.mzw.vtr.CLI gen       <subject-id>");
+			LOGGER.info("$ java -cp=<class-path> jp.mzw.vtr.CLI repair    <subject-id> <source-classes>");
 			return;
 		}
 
@@ -95,8 +104,14 @@ public class CLI {
 			String projectId = args[1];
 			Project project = new Project(projectId).setConfig(CONFIG_FILENAME);
 			gen(project);
+		} else if ("repair".equals(command)) {
+			String projectId = args[1];
+			String sut = args[2];
+			Project project = new Project(projectId).setConfig(CONFIG_FILENAME);
+			repair(project, sut);
 		}
 
+		LOGGER.info("Finished: {}", command);
 	}
 
 	private static void dict(Project project) throws IOException, NoHeadException, GitAPIException {
@@ -157,6 +172,15 @@ public class CLI {
 			for (ValidationResult result : results) {
 				validator.generate(result);
 			}
+		}
+	}
+
+	private static void repair(Project project, String sut) throws IOException, ParseException, GitAPIException, MavenInvocationException, DocumentException,
+			PatchFailedException {
+		Repairer repairer = new Repairer(project, sut).parse();
+		CheckoutConductor cc = new CheckoutConductor(project);
+		for (Repair repair : repairer.getRepairs()) {
+			repairer.repair(cc, repair);
 		}
 	}
 
