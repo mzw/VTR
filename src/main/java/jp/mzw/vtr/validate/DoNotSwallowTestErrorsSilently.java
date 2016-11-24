@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import org.apache.commons.io.FileUtils;
@@ -23,8 +22,6 @@ import org.eclipse.text.edits.TextEdit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import difflib.DiffUtils;
-import difflib.Patch;
 import jp.mzw.vtr.CLI;
 import jp.mzw.vtr.core.Project;
 import jp.mzw.vtr.git.CheckoutConductor;
@@ -110,6 +107,9 @@ public class DoNotSwallowTestErrorsSilently extends ValidatorBase {
 
 	@Override
 	public void generate(ValidationResult result) {
+		if (!this.getClass().toString().equals(result.getValidatorName())) {
+			return;
+		}
 		if (new Boolean(false).equals(result.isTruePositive())) {
 			LOGGER.info("Skip due to false-positive: {}#{} @ {} by {}", result.getTestCaseClassName(), result.getTestCaseMathodName(), result.getCommitId(),
 					result.getValidatorName());
@@ -176,7 +176,7 @@ public class DoNotSwallowTestErrorsSilently extends ValidatorBase {
 				if (tce.getCatchClause() != null) { // target
 					String modified = genModifiedContent(origin, tc, tce);
 					if (modified != null) {
-						return genPatch(origin, modified, tc.getTestFile());
+						return genPatch(origin, modified, tc.getTestFile(), tc.getTestFile());
 					}
 					LOGGER.warn("Failed to generate patch file: {} @ {}", tc.getFullName(), commit.getId());
 					return null;
@@ -184,21 +184,6 @@ public class DoNotSwallowTestErrorsSilently extends ValidatorBase {
 			}
 		}
 		return null;
-	}
-
-	/**
-	 * Generate patch
-	 * 
-	 * @param origin
-	 * @param modified
-	 * @param file
-	 * @return
-	 */
-	private List<String> genPatch(String origin, String modified, File file) {
-		List<String> originList = Arrays.asList(origin.split("\n"));
-		List<String> modifyList = Arrays.asList(modified.split("\n"));
-		Patch<String> patch = DiffUtils.diff(originList, modifyList);
-		return DiffUtils.generateUnifiedDiff(file.getAbsolutePath(), file.getAbsolutePath(), originList, patch, 0);
 	}
 
 	/**

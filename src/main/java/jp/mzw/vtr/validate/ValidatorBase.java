@@ -3,6 +3,7 @@ package jp.mzw.vtr.validate;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.apache.commons.csv.CSVFormat;
@@ -14,6 +15,8 @@ import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import difflib.DiffUtils;
+import difflib.Patch;
 import jp.mzw.vtr.core.Project;
 import jp.mzw.vtr.git.CheckoutConductor;
 import jp.mzw.vtr.git.Commit;
@@ -226,5 +229,20 @@ abstract public class ValidatorBase implements CheckoutConductor.Listener {
 		}
 		// Return
 		return ret;
+	}
+
+	/**
+	 * Generate patch
+	 * 
+	 * @param origin
+	 * @param modified
+	 * @param file
+	 * @return
+	 */
+	public static List<String> genPatch(String origin, String modified, File org, File mod) {
+		List<String> originList = Arrays.asList(origin.split("\n"));
+		List<String> modifyList = Arrays.asList(modified.split("\n"));
+		Patch<String> patch = DiffUtils.diff(originList, modifyList);
+		return DiffUtils.generateUnifiedDiff(org.getAbsolutePath(), mod.getAbsolutePath(), originList, patch, 0);
 	}
 }
