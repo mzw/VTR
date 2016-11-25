@@ -30,7 +30,7 @@ import jp.mzw.vtr.git.CheckoutConductor;
 import jp.mzw.vtr.git.GitUtils;
 import jp.mzw.vtr.maven.TestRunner;
 import jp.mzw.vtr.repair.Repair;
-import jp.mzw.vtr.repair.Repairer;
+import jp.mzw.vtr.repair.RepairEvaluator;
 import jp.mzw.vtr.validate.ValidationResult;
 import jp.mzw.vtr.validate.ValidatorBase;
 
@@ -177,10 +177,10 @@ public class CLI {
 
 	private static void repair(Project project, String sut) throws IOException, ParseException, GitAPIException, MavenInvocationException, DocumentException,
 			PatchFailedException {
-		Repairer repairer = new Repairer(project, sut).parse();
+		RepairEvaluator repairEvaluator = new RepairEvaluator(project, sut).parse();
 		CheckoutConductor cc = new CheckoutConductor(project);
-		for (Repair repair : repairer.getRepairs()) {
-			repairer.repair(cc, repair);
+		for (Repair repair : repairEvaluator.getRepairs()) {
+			repairEvaluator.repair(cc, repair);
 		}
 	}
 

@@ -23,8 +23,8 @@ import jp.mzw.vtr.maven.MavenUtils;
 import jp.mzw.vtr.maven.PitInstrumenter;
 import jp.mzw.vtr.validate.ValidatorBase;
 
-public class Repairer {
-	protected static Logger LOGGER = LoggerFactory.getLogger(Repairer.class);
+public class RepairEvaluator {
+	protected static Logger LOGGER = LoggerFactory.getLogger(RepairEvaluator.class);
 
 	protected String projectId;
 	protected File projectDir;
@@ -36,7 +36,7 @@ public class Repairer {
 
 	protected List<Repair> repairs;
 
-	public Repairer(Project project, String sut) {
+	public RepairEvaluator(Project project, String sut) {
 		this.projectId = project.getProjectId();
 		this.projectDir = project.getProjectDir();
 		this.outputDir = project.getOutputDir();
@@ -46,7 +46,7 @@ public class Repairer {
 		this.repairs = new ArrayList<>();
 	}
 
-	public Repairer parse() {
+	public RepairEvaluator parse() {
 		File projectDir = new File(this.outputDir, this.projectId);
 		File validateDir = new File(projectDir, ValidatorBase.VALIDATOR_DIRNAME);
 		for (File commitDir : validateDir.listFiles()) {
