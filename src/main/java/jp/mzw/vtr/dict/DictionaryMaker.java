@@ -20,6 +20,7 @@ import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.api.errors.NoHeadException;
 import org.eclipse.jgit.errors.IncorrectObjectTypeException;
 import org.eclipse.jgit.errors.MissingObjectException;
+import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevTag;
@@ -60,7 +61,13 @@ public class DictionaryMaker extends DictionaryBase {
 			Collection<RevCommit> relevantCommits = new ArrayList<>();
 			// Get commits which are necessary to be included for achieving
 			// ref-to-compare from this tag
-			Collection<RevCommit> commitsToCompare = VtrUtils.makeCollection(this.git.log().addRange(tag.getPeeledObjectId(), compare.getObjectId()).call());
+			ObjectId tagRef = tag.getPeeledObjectId();
+			if (tagRef == null) {
+				tagRef = tag.getObjectId();
+			}
+			ObjectId compRef = compare.getObjectId();
+			Iterable<RevCommit> commitsInRange = this.git.log().addRange(tagRef, compRef).call();
+			Collection<RevCommit> commitsToCompare = VtrUtils.makeCollection(commitsInRange);
 			for (RevCommit commit : commits) {
 				boolean relevant = true;
 				for (RevCommit commitToCompare : commitsToCompare) {
@@ -120,8 +127,14 @@ public class DictionaryMaker extends DictionaryBase {
 			Date date = new Date();
 			if (!refToCompare.equals(tag.getName())) { // Not latest
 				RevWalk walk = new RevWalk(this.git.getRepository());
-				RevTag _tag = walk.parseTag(tag.getObjectId());
-				date = _tag.getTaggerIdent().getWhen();
+				try {
+					RevTag _tag = walk.parseTag(tag.getObjectId());
+					_tag = walk.parseTag(tag.getObjectId());
+					date = _tag.getTaggerIdent().getWhen();
+				} catch (IncorrectObjectTypeException e) {
+					RevCommit commit = walk.parseCommit(tag.getObjectId());
+					date = new Date((long) commit.getCommitTime() * 1000L);
+				}
 			}
 			Element tagElement = root.addElement("Tag").addAttribute("id", tag.getName()).addAttribute("date", SDF.format(date));
 			for (RevCommit commit : tagCommitsMap.get(tag)) {
