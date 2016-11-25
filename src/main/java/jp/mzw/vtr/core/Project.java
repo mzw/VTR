@@ -25,6 +25,9 @@ public class Project {
 	/** Maven home (default: $M2_HOME) */
 	protected String mavenHome = "/usr/local/apache-maven-3.3.9";
 
+	/** Determine whether Maven outputs are logged (true) or not (false) */
+	protected boolean mavenOutput = true;
+
 	/** Path to subject project */
 	protected String pathToProject;
 
@@ -83,6 +86,15 @@ public class Project {
 	}
 
 	/**
+	 * Get flag to determine whether Maven outputs are logged or not
+	 * 
+	 * @return
+	 */
+	public boolean getMavenOutput() {
+		return this.mavenOutput;
+	}
+
+	/**
 	 * Set configuration according to user environment
 	 * 
 	 * @param filename
@@ -100,6 +112,7 @@ public class Project {
 		this.pathToOutputDir = config.getProperty("path_to_output_dir") != null ? config.getProperty("path_to_output_dir") : "output";
 		this.pathToSubjectsDir = config.getProperty("path_to_subjects_dir") != null ? config.getProperty("path_to_subjects_dir") : "subjects";
 		this.mavenHome = config.getProperty("maven_home") != null ? config.getProperty("maven_home") : "/usr/local/apache-maven-3.3.9";
+		this.mavenOutput = config.getProperty("maven_output") != null ? Boolean.parseBoolean(config.getProperty("maven_output")) : true;
 		// return
 		return this;
 	}

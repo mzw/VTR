@@ -31,10 +31,9 @@ public class TestRunner implements CheckoutConductor.Listener {
 
 	private String projectId;
 	private File projectDir;
-
 	private File outputDir;
-
 	private File mavenHome;
+	private boolean mavenOutput;
 
 	private JacocoInstrumenter ji;
 	private Git git;
@@ -46,6 +45,7 @@ public class TestRunner implements CheckoutConductor.Listener {
 		this.projectDir = project.getProjectDir();
 		this.outputDir = project.getOutputDir();
 		this.mavenHome = project.getMavenHome();
+		this.mavenOutput = project.getMavenOutput();
 		this.ji = new JacocoInstrumenter(this.projectDir);
 		this.git = GitUtils.getGit(this.projectDir);
 		this.skipList = parseTestRunnerSkipList();
@@ -63,7 +63,7 @@ public class TestRunner implements CheckoutConductor.Listener {
 		boolean modified = false;
 		try {
 			modified = ji.instrument();
-			int before = CheckoutConductor.before(this.projectDir, this.mavenHome);
+			int before = CheckoutConductor.before(this.projectDir, this.mavenHome, this.mavenOutput);
 			if (before == 0) { // succeeded to compile
 				// Measure coverage
 				List<TestSuite> testSuites = MavenUtils.getTestSuites(this.projectDir);
@@ -104,7 +104,7 @@ public class TestRunner implements CheckoutConductor.Listener {
 			} else {
 				LOGGER.warn("Failed to compile subject: {}", commit.getId());
 			}
-			CheckoutConductor.after(this.projectDir, this.mavenHome);
+			CheckoutConductor.after(this.projectDir, this.mavenHome, this.mavenOutput);
 		}
 		// Not found "pom.xml" meaning not Maven project
 		catch (FileNotFoundException e) {
@@ -244,7 +244,7 @@ public class TestRunner implements CheckoutConductor.Listener {
 		LOGGER.info("Measure coverage: {}", testCase.getFullName());
 		String each = "-Dtest=" + testCase.getFullName();
 		List<String> args = Arrays.asList(each, "org.jacoco:jacoco-maven-plugin:prepare-agent", "test", "org.jacoco:jacoco-maven-plugin:report");
-		return MavenUtils.maven(this.projectDir, args, this.mavenHome);
+		return MavenUtils.maven(this.projectDir, args, this.mavenHome, this.mavenOutput);
 	}
 
 	/**

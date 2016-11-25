@@ -9,6 +9,7 @@ Provide your local configurations at `src/main/resources/config.properties`.
 path_to_output_dir = output
 path_to_subjects_dir = subjects
 maven_home = /usr/local/apache-maven-3.3.9
+maven_output = false
 ```
 
 ### Clone

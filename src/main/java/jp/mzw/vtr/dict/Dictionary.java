@@ -32,6 +32,7 @@ public class Dictionary extends DictionaryBase {
 	private Map<Tag, List<Commit>> contents;
 	private List<Commit> commits;
 	private Map<String, Commit> prevCommitByCommitId;
+	private Map<String, Commit> postCommitByCommitId;
 
 	public Dictionary(File outputDir, String projectId) {
 		this.outputDir = outputDir;
@@ -113,7 +114,7 @@ public class Dictionary extends DictionaryBase {
 	public List<Commit> getCommits() {
 		return this.commits;
 	}
-	
+
 	/**
 	 * 
 	 * @param commitId
@@ -176,6 +177,27 @@ public class Dictionary extends DictionaryBase {
 	}
 
 	/**
+	 * Create previous commit by given commit ID
+	 * 
+	 * @return
+	 * @throws IOException
+	 * @throws ParseException
+	 */
+	public Dictionary createPostCommitByCommitIdMap() throws IOException, ParseException {
+		this.postCommitByCommitId = new HashMap<>();
+		if (this.commits.size() < 3) {
+			return null;
+		}
+		Commit prv = this.commits.get(0);
+		for (int i = 1; i < this.commits.size(); i++) {
+			Commit cur = this.commits.get(i);
+			this.postCommitByCommitId.put(prv.getId(), cur);
+			prv = cur;
+		}
+		return this;
+	}
+
+	/**
 	 * Get previous commit by given commit
 	 * 
 	 * @param commitId
@@ -188,6 +210,21 @@ public class Dictionary extends DictionaryBase {
 			this.parse().createPrevCommitByCommitIdMap();
 		}
 		return this.prevCommitByCommitId.get(commitId);
+	}
+
+	/**
+	 * Get previous commit by given commit
+	 * 
+	 * @param commitId
+	 * @return
+	 * @throws ParseException
+	 * @throws IOException
+	 */
+	public Commit getPostCommitBy(String commitId) throws IOException, ParseException {
+		if (this.postCommitByCommitId == null) {
+			this.parse().createPostCommitByCommitIdMap();
+		}
+		return this.postCommitByCommitId.get(commitId);
 	}
 
 }

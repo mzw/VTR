@@ -30,6 +30,7 @@ public class Repairer {
 	protected File projectDir;
 	protected File outputDir;
 	protected File mavenHome;
+	protected boolean mavenOutput;
 
 	protected String sut;
 
@@ -40,6 +41,7 @@ public class Repairer {
 		this.projectDir = project.getProjectDir();
 		this.outputDir = project.getOutputDir();
 		this.mavenHome = project.getMavenHome();
+		this.mavenOutput = project.getMavenOutput();
 		this.sut = sut;
 		this.repairs = new ArrayList<>();
 	}
@@ -78,8 +80,8 @@ public class Repairer {
 		boolean modified = pi.instrument();
 		// Before applying patch
 		LOGGER.info("Invoke PIT for original version");
-		MavenUtils.maven(this.projectDir, Arrays.asList("compile", "test-compile"), this.mavenHome);
-		MavenUtils.maven(this.projectDir, Arrays.asList("org.pitest:pitest-maven:mutationCoverage"), this.mavenHome);
+		MavenUtils.maven(this.projectDir, Arrays.asList("compile", "test-compile"), this.mavenHome, this.mavenOutput);
+		MavenUtils.maven(this.projectDir, Arrays.asList("org.pitest:pitest-maven:mutationCoverage"), this.mavenHome, this.mavenOutput);
 		for (File resultDir : PitInstrumenter.getPitResultsDir(this.projectDir)) {
 			org.codehaus.plexus.util.FileUtils.copyDirectoryStructure(resultDir, getCopyDestinationDir(repair.getPatch(), "before"));
 			org.codehaus.plexus.util.FileUtils.deleteDirectory(resultDir);
@@ -93,8 +95,8 @@ public class Repairer {
 		FileUtils.writeLines(file, applied);
 		// After applying patch
 		LOGGER.info("Invoke PIT for applied version");
-		MavenUtils.maven(this.projectDir, Arrays.asList("compile", "test-compile"), this.mavenHome);
-		MavenUtils.maven(this.projectDir, Arrays.asList("org.pitest:pitest-maven:mutationCoverage"), this.mavenHome);
+		MavenUtils.maven(this.projectDir, Arrays.asList("compile", "test-compile"), this.mavenHome, this.mavenOutput);
+		MavenUtils.maven(this.projectDir, Arrays.asList("org.pitest:pitest-maven:mutationCoverage"), this.mavenHome, this.mavenOutput);
 		for (File resultDir : PitInstrumenter.getPitResultsDir(this.projectDir)) {
 			org.codehaus.plexus.util.FileUtils.copyDirectoryStructure(resultDir, getCopyDestinationDir(repair.getPatch(), "after"));
 			org.codehaus.plexus.util.FileUtils.deleteDirectory(resultDir);
@@ -105,7 +107,7 @@ public class Repairer {
 			pi.revert();
 		}
 		FileUtils.writeLines(file, target);
-		MavenUtils.maven(this.projectDir, Arrays.asList("clean"), this.mavenHome);
+		MavenUtils.maven(this.projectDir, Arrays.asList("clean"), this.mavenHome, this.mavenOutput);
 	}
 
 	private File getCopyDestinationDir(File patch, String name) {

@@ -65,8 +65,10 @@ public class CheckoutConductor {
 	 * API for conducting checkout
 	 * 
 	 * @throws GitAPIException
+	 * @throws ParseException
+	 * @throws IOException
 	 */
-	public void checkout() throws GitAPIException {
+	public void checkout() throws GitAPIException, IOException, ParseException {
 		List<Commit> commits = getCommitsAfterInitialRelease();
 		checkout(commits);
 	}
@@ -87,8 +89,10 @@ public class CheckoutConductor {
 	 * @param type
 	 * @param commitId
 	 * @throws GitAPIException
+	 * @throws ParseException
+	 * @throws IOException
 	 */
-	public void checkout(Type type, String commitId) throws GitAPIException {
+	public void checkout(Type type, String commitId) throws GitAPIException, IOException, ParseException {
 		List<Commit> commits = new ArrayList<>();
 		switch (type) {
 		case After:
@@ -109,14 +113,17 @@ public class CheckoutConductor {
 	 * 
 	 * @param commits
 	 * @throws GitAPIException
+	 * @throws ParseException
+	 * @throws IOException
 	 */
-	private void checkout(List<Commit> commits) throws GitAPIException {
+	private void checkout(List<Commit> commits) throws GitAPIException, IOException, ParseException {
 		for (Commit commit : commits) {
 			try {
 				checkout(commit);
 			} catch (GitAPIException e) {
 				LOGGER.warn("Failed to checkout @ {}", commit.getId());
 				LOGGER.warn(e.getMessage());
+				LOGGER.warn("Rerun after next commit ID: {}", this.dict.getPostCommitBy(commit.getId()).getId());
 				continue;
 			}
 			notifyListeners(commit);
@@ -124,9 +131,10 @@ public class CheckoutConductor {
 		// Recover initial state
 		checkout(getLatestCommit());
 	}
-	
+
 	/**
 	 * Checkout given commit
+	 * 
 	 * @param commit
 	 * @throws GitAPIException
 	 */
@@ -139,14 +147,13 @@ public class CheckoutConductor {
 		git.checkout().setName(commit.getId()).call();
 		LOGGER.info("Checkout: {}", commit.getId());
 	}
-	
 
 	/**
 	 * Maven compile to obtain source programs covered by test cases
 	 */
-	public static int before(File projectDir, File mavenHome) {
+	public static int before(File projectDir, File mavenHome, boolean mavenOutput) {
 		try {
-			return MavenUtils.maven(projectDir, Arrays.asList("compile", "test-compile"), mavenHome);
+			return MavenUtils.maven(projectDir, Arrays.asList("compile", "test-compile"), mavenHome, mavenOutput);
 		} catch (MavenInvocationException e) {
 			LOGGER.warn("Failed to compile subject");
 			return -1;
@@ -156,15 +163,14 @@ public class CheckoutConductor {
 	/**
 	 * Maven clean to initialize
 	 */
-	public static int after(File projectDir, File mavenHome) {
+	public static int after(File projectDir, File mavenHome, boolean mavenOutput) {
 		try {
-			return MavenUtils.maven(projectDir, Arrays.asList("clean"), mavenHome);
+			return MavenUtils.maven(projectDir, Arrays.asList("clean"), mavenHome, mavenOutput);
 		} catch (MavenInvocationException e) {
 			LOGGER.warn("Failed to clean subject");
 			return -1;
 		}
 	}
-	
 
 	/**
 	 * Get commits after initial release
@@ -229,13 +235,14 @@ public class CheckoutConductor {
 
 	/**
 	 * Get latest commit
+	 * 
 	 * @return latest commit
 	 */
 	public Commit getLatestCommit() {
 		int index = this.dict.getCommits().size() - 1;
 		return this.dict.getCommits().get(index);
 	}
-	
+
 	/**
 	 * 
 	 * @return
@@ -258,7 +265,7 @@ public class CheckoutConductor {
 			return prev;
 		}
 		return null;
-		
+
 	}
-	
+
 }

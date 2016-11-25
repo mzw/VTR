@@ -36,7 +36,7 @@ public class MavenUtils {
 	 * @param mavenHome
 	 * @throws MavenInvocationException
 	 */
-	public static int maven(File subject, List<String> goals, File mavenHome) throws MavenInvocationException {
+	public static int maven(File subject, List<String> goals, File mavenHome, final boolean logger) throws MavenInvocationException {
 		InvocationRequest request = new DefaultInvocationRequest();
 		request.setPomFile(new File(subject, JacocoInstrumenter.FILENAME_POM));
 		request.setGoals(goals);
@@ -45,13 +45,17 @@ public class MavenUtils {
 		invoker.setOutputHandler(new InvocationOutputHandler() {
 			@Override
 			public void consumeLine(String line) {
-				LOGGER.info(line);
+				if (logger) {
+					LOGGER.info(line);
+				}
 			}
 		});
 		invoker.setErrorHandler(new InvocationOutputHandler() {
 			@Override
 			public void consumeLine(String line) {
-				LOGGER.warn(line);
+				if (logger) {
+					LOGGER.warn(line);
+				}
 			}
 		});
 		InvocationResult result = invoker.execute(request);
