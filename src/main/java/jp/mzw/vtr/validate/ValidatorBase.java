@@ -2,6 +2,8 @@ package jp.mzw.vtr.validate;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -10,6 +12,7 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.slf4j.Logger;
@@ -28,6 +31,8 @@ abstract public class ValidatorBase implements CheckoutConductor.Listener {
 	public static final String VALIDATOR_DIRNAME = "validate";
 	public static final String VALIDATOR_FILENAME = "results.csv";
 
+	public static final String VALIDATORS_LIST = "validators_list.txt";
+
 	protected String projectId;
 	protected File projectDir;
 
@@ -36,7 +41,6 @@ abstract public class ValidatorBase implements CheckoutConductor.Listener {
 	public ValidatorBase(Project project) {
 		this.projectId = project.getProjectId();
 		this.projectDir = project.getProjectDir();
-		// this.outputDir = project.getOutputDir();
 		this.validationResultList = new ArrayList<>();
 	}
 
@@ -51,11 +55,26 @@ abstract public class ValidatorBase implements CheckoutConductor.Listener {
 	 * @param project
 	 *            Project
 	 * @return Validators
+	 * @throws IOException
+	 * @throws SecurityException
+	 * @throws NoSuchMethodException
+	 * @throws InvocationTargetException
+	 * @throws IllegalArgumentException
+	 * @throws IllegalAccessException
+	 * @throws InstantiationException
+	 * @throws ClassNotFoundException
 	 */
-	public static List<ValidatorBase> getValidators(Project project) {
-		List<ValidatorBase> ret = new ArrayList<>();
-		ret.add(new DoNotSwallowTestErrorsSilently(project));
-		return ret;
+	public static List<ValidatorBase> getValidators(Project project, String filename) throws IOException, InstantiationException, IllegalAccessException,
+			IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException, ClassNotFoundException {
+		InputStream is = ValidatorBase.class.getClassLoader().getResourceAsStream(filename);
+		List<String> lines = IOUtils.readLines(is);
+		List<ValidatorBase> validators = new ArrayList<>();
+		for (String line : lines) {
+			Class<?> clazz = Class.forName(line);
+			ValidatorBase validator = (ValidatorBase) clazz.getConstructor(Project.class).newInstance(project);
+			validators.add(validator);
+		}
+		return validators;
 	}
 
 	/**

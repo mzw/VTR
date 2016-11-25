@@ -2,6 +2,7 @@ package jp.mzw.vtr;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.text.ParseException;
 import java.util.Collection;
 import java.util.List;
@@ -40,7 +41,8 @@ public class CLI {
 	public static final String CONFIG_FILENAME = "config.properties";
 
 	public static void main(String[] args) throws IOException, NoHeadException, GitAPIException, ParseException, MavenInvocationException, DocumentException,
-			PatchFailedException {
+			PatchFailedException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException,
+			SecurityException, ClassNotFoundException {
 
 		if (args.length < 1) { // Invalid usage
 			LOGGER.info("$ java -cp=<class-path> jp.mzw.vtr.CLI dict      <subject-id>");
@@ -155,9 +157,10 @@ public class CLI {
 		cluster.output();
 	}
 
-	private static void validate(Project project) throws IOException, ParseException, GitAPIException {
+	private static void validate(Project project) throws IOException, ParseException, GitAPIException, InstantiationException, IllegalAccessException,
+			IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException, ClassNotFoundException {
 		CheckoutConductor cc = new CheckoutConductor(project);
-		List<ValidatorBase> validators = ValidatorBase.getValidators(project);
+		List<ValidatorBase> validators = ValidatorBase.getValidators(project, ValidatorBase.VALIDATORS_LIST);
 		for (ValidatorBase validator : validators) {
 			cc.addListener(validator);
 		}
@@ -165,8 +168,9 @@ public class CLI {
 		ValidatorBase.output(project, validators);
 	}
 
-	private static void gen(Project project) throws IOException, ParseException, GitAPIException {
-		List<ValidatorBase> validators = ValidatorBase.getValidators(project);
+	private static void gen(Project project) throws IOException, ParseException, GitAPIException, InstantiationException, IllegalAccessException,
+			IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException, ClassNotFoundException {
+		List<ValidatorBase> validators = ValidatorBase.getValidators(project, ValidatorBase.VALIDATORS_LIST);
 		for (ValidatorBase validator : validators) {
 			List<ValidationResult> results = ValidatorBase.parse(project);
 			for (ValidationResult result : results) {
