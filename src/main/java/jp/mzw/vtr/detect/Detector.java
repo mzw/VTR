@@ -130,6 +130,31 @@ public class Detector implements CheckoutConductor.Listener {
 				String srcName = src.attr("name");
 				String filePath = "src/main/java/" + pkgName + "/" + srcName;
 				BlameResult result = blame.setFilePath(filePath).call();
+				// TODO: Special case in JEXL
+				if (result == null) {
+					LOGGER.info("Generated code? {}", filePath);
+					filePath = "src/main/java/" + pkgName + "/" + "Parser.jjt";
+					File file = new File(filePath);
+					if (file.exists()) {
+						LOGGER.info("Found {} as target source", filePath);
+						List<String> lines = FileUtils.readLines(file);
+						result = blame.setFilePath(filePath).call();
+						for (int line = 0; line < lines.size(); line++) {
+							Tag tag = dict.getTagBy(new Commit(result.getSourceCommit(line + 1)));
+							if (cur.getDate().after(tag.getDate())) {
+								// Previous
+							} else {
+								// After this test-case modification release
+								// i.e., valid
+								detect = false;
+								break;
+							}
+						}
+					} else {
+						LOGGER.info("Failed to find target source: {}", filePath);
+					}
+					continue;
+				}
 				// Lines
 				for (org.jsoup.nodes.Element line : src.select("line")) {
 					// nr: line number of interest
