@@ -122,8 +122,7 @@ public class CheckoutConductor {
 				checkout(commit);
 			} catch (GitAPIException e) {
 				LOGGER.warn("Failed to checkout @ {}", commit.getId());
-				LOGGER.warn(e.getMessage());
-				LOGGER.warn("Rerun after next commit ID: {}", this.dict.getPostCommitBy(commit.getId()).getId());
+				git.clean().call();
 				continue;
 			}
 			notifyListeners(commit);
@@ -265,7 +264,6 @@ public class CheckoutConductor {
 			return prev;
 		}
 		return null;
-
 	}
 
 }
