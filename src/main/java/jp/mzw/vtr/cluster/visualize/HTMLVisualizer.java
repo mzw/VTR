@@ -18,8 +18,10 @@ import jp.mzw.vtr.maven.JacocoInstrumenter;
 import jp.mzw.vtr.maven.MavenUtils;
 import jp.mzw.vtr.maven.TestCase;
 import jp.mzw.vtr.maven.TestSuite;
+import jp.mzw.vtr.validate.ValidatorBase;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.eclipse.jgit.api.BlameCommand;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -45,6 +47,9 @@ import com.hp.gagawa.java.elements.Text;
 import com.hp.gagawa.java.elements.Th;
 import com.hp.gagawa.java.elements.Thead;
 import com.hp.gagawa.java.elements.Tr;
+import com.hp.gagawa.java.elements.Tt;
+
+;
 
 public class HTMLVisualizer extends VisualizerBase {
 	static Logger LOGGER = LoggerFactory.getLogger(HTMLVisualizer.class);
@@ -76,17 +81,23 @@ public class HTMLVisualizer extends VisualizerBase {
 			File projectDir = project.getProjectDir();
 			// Get dictionary, commit, and coverage
 			Dictionary dict = this.getDict(project.getProjectId());
-			Commit commit = dict.getCommitBy(leaf.getCommitId());
+			Commit curCommit = dict.getCommitBy(leaf.getCommitId());
+			Commit prvCommit = dict.getPrevCommitBy(curCommit.getId());
 			// Checkout
 			CheckoutConductor cc = new CheckoutConductor(project);
-			cc.checkout(commit);
-			// Get test case
-			List<TestSuite> testSuites = MavenUtils.getTestSuites(projectDir);
-			TestCase tc = TestSuite.getTestCaseWithClassMethodName(testSuites, leaf.getClassName(), leaf.getMethodName());
+			// Get test cases
+			cc.checkout(prvCommit);
+			List<TestSuite> prvTestSuites = MavenUtils.getTestSuites(projectDir);
+			TestCase prvTestCase = TestSuite.getTestCaseWithClassMethodName(prvTestSuites, leaf.getClassName(), leaf.getMethodName());
+			cc.checkout(curCommit);
+			List<TestSuite> curTestSuites = MavenUtils.getTestSuites(projectDir);
+			TestCase curTestCase = TestSuite.getTestCaseWithClassMethodName(curTestSuites, leaf.getClassName(), leaf.getMethodName());
+			List<String> patch = ValidatorBase.genPatch(prvTestCase.getMethodDeclaration().toString(), curTestCase.getMethodDeclaration().toString(),
+					prvTestCase.getTestFile(), curTestCase.getTestFile());
 			// Get URL
 			Git git = GitUtils.getGit(project.getProjectDir());
 			String url = GitUtils.getRemoteOriginUrl(git);
-			File jacocoCommitDir = JacocoInstrumenter.getJacocoCommitDir(outputDir, projectId, commit);
+			File jacocoCommitDir = JacocoInstrumenter.getJacocoCommitDir(outputDir, projectId, curCommit);
 			// Instantiate git-blame
 			BlameCommand blame = new BlameCommand(git.getRepository());
 
@@ -101,17 +112,32 @@ public class HTMLVisualizer extends VisualizerBase {
 
 			// Commit message
 			document.body.appendChild(new H1().appendChild(new Text("Commit Message")));
-			RevCommit revCommit = GitUtils.getCommit(git.getRepository(), commit);
+			RevCommit revCommit = GitUtils.getCommit(git.getRepository(), curCommit);
 			document.body.appendChild(new P().appendChild(new Text(revCommit.getFullMessage())));
 
 			// Test case
 			document.body.appendChild(new H1().appendChild(new Text("Test Blame")));
-			Table testTable = getModifiedTestCaseTable(blame, commit, dict, projectDir, tc, url);
+			Table testTable = getModifiedTestCaseTable(blame, curCommit, dict, projectDir, curTestCase, url);
 			document.body.appendChild(testTable);
+
+			// Patch
+			document.body.appendChild(new H1().appendChild(new Text("Patch")));
+			document.body.appendChild(new P().appendChild(new Text("* Note that line numbers below are not correct")));
+			{
+				Table table = new Table().setRules("groups");
+				Tbody tbody = new Tbody();
+				for (String line : patch) {
+					Tr tr = new Tr();
+					tr.appendChild(new Td().setAlign("left").appendChild(new Tt().appendText(StringEscapeUtils.escapeHtml4(line))));
+					tbody.appendChild(tr);
+				}
+				table.appendChild(tbody);
+				document.body.appendChild(table);
+			}
 
 			// Source code
 			document.body.appendChild(new H1().appendChild(new Text("Source Blame")));
-			List<Table> srcTables = getCoveredSourceTables(blame, commit, dict, jacocoCommitDir, projectDir, tc, url);
+			List<Table> srcTables = getCoveredSourceTables(blame, curCommit, dict, jacocoCommitDir, projectDir, curTestCase, url);
 			for (Table table : srcTables) {
 				document.body.appendChild(table);
 			}
@@ -213,7 +239,7 @@ public class HTMLVisualizer extends VisualizerBase {
 					}
 					Tbody tbody = new Tbody();
 					Tr tr = new Tr();
-					tr.appendChild(new Td().appendText("&nbsp;&nbsp;").appendText("Generated from").appendText("&nbsp;&nbsp;")
+					tr.appendChild(new Td().setAlign("left").appendText("&nbsp;&nbsp;").appendText("Generated from").appendText("&nbsp;&nbsp;")
 							.appendChild(getBlobAnchor(url, projectDir, filePath, commit)));
 					// append
 					tbody.appendChild(tr);
