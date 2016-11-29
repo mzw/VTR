@@ -130,21 +130,21 @@ public class Detector implements CheckoutConductor.Listener {
 				String srcName = src.attr("name");
 				String filePath = "src/main/java/" + pkgName + "/" + srcName;
 				BlameResult result = blame.setFilePath(filePath).call();
-				// TODO: Special case in Configuration and JEXL
+				// TODO: Special cases for JavaCC code generation
 				if (result == null) {
 					LOGGER.info("Generated code? {}", filePath);
-					if (pkgName.contains("configuration")) {
+					if (pkgName.contains("configuration")) { // Commons-Configuration
 						filePath = "src/main/javacc/PropertyListParser.jj";
-					} else if (pkgName.contains("jexl")) {
+					} else if (pkgName.contains("jexl")) { // Commons-JEXL
 						filePath = "src/main/java/" + pkgName + "/" + "Parser.jjt";
 					}
-					File file = new File(filePath);
+					File file = new File(this.projectDir, filePath);
 					if (file.exists()) {
 						LOGGER.info("Found {} as target source", filePath);
 						List<String> lines = FileUtils.readLines(file);
 						result = blame.setFilePath(filePath).call();
 						for (int line = 0; line < lines.size(); line++) {
-							Tag tag = dict.getTagBy(new Commit(result.getSourceCommit(line + 1)));
+							Tag tag = dict.getTagBy(new Commit(result.getSourceCommit(line)));
 							if (cur.getDate().after(tag.getDate())) {
 								// Previous
 							} else {
@@ -155,7 +155,7 @@ public class Detector implements CheckoutConductor.Listener {
 							}
 						}
 					} else {
-						LOGGER.info("Failed to find target source: {}", filePath);
+						LOGGER.info("Failed to find target source: {}", file.getAbsolutePath());
 					}
 					continue;
 				}

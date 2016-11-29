@@ -184,19 +184,32 @@ public class HCluster {
 		return ret;
 	}
 
-	public void output() throws IOException {
+	public void output(String timestamp) throws IOException {
 		File dir = this.getOutputDir();
 		for (Cluster cluster : this.clusters) {
 			File file = this.getOutputFile(dir, cluster);
 			String content = this.getOutputContent(cluster);
 			FileUtils.writeStringToFile(file, content);
 		}
+		FileUtils.copyDirectory(dir, getOutputDir(timestamp));
 	}
 
 	protected File getOutputDir() {
 		File simDir = new File(this.outputDir, DistAnalyzer.SIMILARITY_DIR);
 		File methodDir = new File(simDir, this.methodName);
 		File latestDir = new File(methodDir, DistAnalyzer.LATEST_DIR);
+		File stratedyDir = new File(latestDir, getStrategyName(this.strategy));
+		File dir = new File(stratedyDir, new Double(this.threshold).toString());
+		if (!dir.exists()) {
+			dir.mkdirs();
+		}
+		return dir;
+	}
+
+	protected File getOutputDir(String timestamp) {
+		File simDir = new File(this.outputDir, DistAnalyzer.SIMILARITY_DIR);
+		File methodDir = new File(simDir, this.methodName);
+		File latestDir = new File(methodDir, timestamp);
 		File stratedyDir = new File(latestDir, getStrategyName(this.strategy));
 		File dir = new File(stratedyDir, new Double(this.threshold).toString());
 		if (!dir.exists()) {

@@ -24,6 +24,7 @@ import org.eclipse.jgit.api.BlameCommand;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.blame.BlameResult;
+import org.eclipse.jgit.revwalk.RevCommit;
 import org.jsoup.Jsoup;
 import org.jsoup.parser.Parser;
 import org.slf4j.Logger;
@@ -34,6 +35,7 @@ import com.hp.gagawa.java.DocumentType;
 import com.hp.gagawa.java.elements.A;
 import com.hp.gagawa.java.elements.Caption;
 import com.hp.gagawa.java.elements.H1;
+import com.hp.gagawa.java.elements.P;
 import com.hp.gagawa.java.elements.Pre;
 import com.hp.gagawa.java.elements.Style;
 import com.hp.gagawa.java.elements.Table;
@@ -96,6 +98,11 @@ public class HTMLVisualizer extends VisualizerBase {
 			document.head.appendChild(new Style("text/css").appendText("table caption {text-align: left;}"));
 			document.head.appendChild(new Style("text/css").appendText("table thead th, table tbody tr {text-align: center;}"));
 			document.head.appendChild(new Style("text/css").appendText("table {margin: 15px;}"));
+
+			// Commit message
+			document.body.appendChild(new H1().appendChild(new Text("Commit Message")));
+			RevCommit revCommit = GitUtils.getCommit(git.getRepository(), commit);
+			document.body.appendChild(new P().appendChild(new Text(revCommit.getFullMessage())));
 
 			// Test case
 			document.body.appendChild(new H1().appendChild(new Text("Test Blame")));
@@ -192,38 +199,58 @@ public class HTMLVisualizer extends VisualizerBase {
 			for (org.jsoup.nodes.Element src : pkg.select("sourcefile")) {
 				String srcName = src.attr("name");
 				String filePath = "src/main/java/" + pkgName + "/" + srcName;
-				List<String> lines = FileUtils.readLines(new File(projectDir, filePath));
-				BlameResult result = blame.setFilePath(filePath).call();
+				File file = new File(projectDir, filePath);
 				// Create table
-				boolean covered = false;
 				Table table = new Table().setRules("groups");
 				table.appendChild(new Caption().appendChild(getBlobAnchor(url, projectDir, pkgName, srcName, commit)));
-				table.appendChild(new Thead().appendChild(new Tr().appendChild(new Th().appendText("Tag")).appendChild(new Th().appendText("Date"))
-						.appendChild(new Th().appendText("Blame")).appendChild(new Th().appendText("Line")).appendChild(new Th().appendText("Source"))));
-				Tbody tbody = new Tbody();
-				for (org.jsoup.nodes.Element line : src.select("line")) {
-					int nr = Integer.parseInt(line.attr("nr"));
-					int ci = Integer.parseInt(line.attr("ci"));
-					int cb = Integer.parseInt(line.attr("cb"));
-					Commit blameCommit = new Commit(result.getSourceCommit(nr));
-					Tag tag = dict.getTagBy(blameCommit);
-					// Create line
-					Tr tr = new Tr();
-					if (0 < ci || 0 < cb) { // Covered
-						covered = true;
-						tr.setCSSClass("target");
+				// Special cases for JavaCC code generation
+				if (!file.exists()) {
+					LOGGER.info("Generated code? {}", filePath);
+					if (pkgName.contains("configuration")) { // Commons-Configuration
+						filePath = "src/main/javacc/PropertyListParser.jj";
+					} else if (pkgName.contains("jexl")) { // Commons-JEXL
+						filePath = "src/main/java/" + pkgName + "/" + "Parser.jjt";
 					}
-					tr.appendChild(new Td().appendText("&nbsp;&nbsp;").appendChild(getTagAnchor(url, tag)).appendText("&nbsp;&nbsp;"));
-					tr.appendChild(new Td().appendText("&nbsp;&nbsp;").appendText(blameCommit.getDate().toString()).appendText("&nbsp;&nbsp;"));
-					tr.appendChild(new Td().appendText("&nbsp;&nbsp;").appendChild(getBlameAnchor(url, blameCommit, filePath, nr)).appendText("&nbsp;&nbsp;"));
-					tr.appendChild(new Td().setAlign("right").appendText(new Integer(nr).toString()));
-					tr.appendChild(new Td().setAlign("left").appendChild(new Pre().appendText(lines.get(nr - 1))));
+					Tbody tbody = new Tbody();
+					Tr tr = new Tr();
+					tr.appendChild(new Td().appendText("&nbsp;&nbsp;").appendText("Generated from").appendText("&nbsp;&nbsp;")
+							.appendChild(getBlobAnchor(url, projectDir, filePath, commit)));
 					// append
 					tbody.appendChild(tr);
-				}
-				if (covered) {
 					table.appendChild(tbody);
 					ret.add(table);
+				} else {
+					table.appendChild(new Thead().appendChild(new Tr().appendChild(new Th().appendText("Tag")).appendChild(new Th().appendText("Date"))
+							.appendChild(new Th().appendText("Blame")).appendChild(new Th().appendText("Line")).appendChild(new Th().appendText("Source"))));
+					boolean covered = false;
+					List<String> lines = FileUtils.readLines(file);
+					BlameResult result = blame.setFilePath(filePath).call();
+					Tbody tbody = new Tbody();
+					for (org.jsoup.nodes.Element line : src.select("line")) {
+						int nr = Integer.parseInt(line.attr("nr"));
+						int ci = Integer.parseInt(line.attr("ci"));
+						int cb = Integer.parseInt(line.attr("cb"));
+						Commit blameCommit = new Commit(result.getSourceCommit(nr));
+						Tag tag = dict.getTagBy(blameCommit);
+						// Create line
+						Tr tr = new Tr();
+						if (0 < ci || 0 < cb) { // Covered
+							covered = true;
+							tr.setCSSClass("target");
+						}
+						tr.appendChild(new Td().appendText("&nbsp;&nbsp;").appendChild(getTagAnchor(url, tag)).appendText("&nbsp;&nbsp;"));
+						tr.appendChild(new Td().appendText("&nbsp;&nbsp;").appendText(blameCommit.getDate().toString()).appendText("&nbsp;&nbsp;"));
+						tr.appendChild(new Td().appendText("&nbsp;&nbsp;").appendChild(getBlameAnchor(url, blameCommit, filePath, nr))
+								.appendText("&nbsp;&nbsp;"));
+						tr.appendChild(new Td().setAlign("right").appendText(new Integer(nr).toString()));
+						tr.appendChild(new Td().setAlign("left").appendChild(new Pre().appendText(lines.get(nr - 1))));
+						// append
+						tbody.appendChild(tr);
+					}
+					if (covered) {
+						table.appendChild(tbody);
+						ret.add(table);
+					}
 				}
 			}
 		}
@@ -282,5 +309,17 @@ public class HTMLVisualizer extends VisualizerBase {
 		File src = new File(pkgDir, filename);
 		String relative = VtrUtils.getFilePath(projectDir, src);
 		return new A().setHref(url + "/blob/" + commit.getId() + "/" + relative).appendText(relative);
+	}
+
+	/**
+	 * 
+	 * @param url
+	 * @param projectDir
+	 * @param filePath
+	 * @param commit
+	 * @return
+	 */
+	private A getBlobAnchor(String url, File projectDir, String filePath, Commit commit) {
+		return new A().setHref(url + "/blob/" + commit.getId() + "/" + filePath).appendText(filePath);
 	}
 }

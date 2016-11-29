@@ -150,11 +150,11 @@ public class CLI {
 		DistAnalyzer distAnalyzer = DistAnalyzer.analyzerFactory(project.getOutputDir(), analyzer);
 		List<TestCaseModification> tcmList = distAnalyzer.parseTestCaseModifications();
 		DistMap map = distAnalyzer.analyze(tcmList);
-		distAnalyzer.output(map);
+		String timestamp = distAnalyzer.output(map);
 		// Clustering
 		HCluster cluster = new HCluster(project.getOutputDir(), distAnalyzer.getMethodName()).parse();
 		cluster.cluster(HCluster.getStrategy(strategy), threshold);
-		cluster.output();
+		cluster.output(timestamp);
 	}
 
 	private static void validate(Project project) throws IOException, ParseException, GitAPIException, InstantiationException, IllegalAccessException,

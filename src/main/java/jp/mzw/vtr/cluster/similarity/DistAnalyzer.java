@@ -25,24 +25,24 @@ abstract public class DistAnalyzer {
 
 	protected File outputDir;
 	private List<String> skipProjectIdList;
-	
+
 	public DistAnalyzer(File outputDir) {
 		this.outputDir = outputDir;
 		this.skipProjectIdList = new ArrayList<>();
 	}
-	
+
 	public void setSkipProjectId(List<String> projectIdList) {
 		this.skipProjectIdList.addAll(projectIdList);
 	}
-	
+
 	public void setSkipProjectId(String projectId) {
 		this.skipProjectIdList.add(projectId);
 	}
-	
+
 	public List<String> getSkipProjectIdList() {
 		return this.skipProjectIdList;
 	}
-	
+
 	public static DistAnalyzer analyzerFactory(File outputDir, String methodName) {
 		if ("lcs".equals(methodName)) {
 			return new LcsAnalyzer(outputDir);
@@ -52,6 +52,7 @@ abstract public class DistAnalyzer {
 
 	/**
 	 * Parse test-case modifications detected
+	 * 
 	 * @return
 	 * @throws IOException
 	 */
@@ -81,7 +82,7 @@ abstract public class DistAnalyzer {
 						String clazz = split[0];
 						String method = split[1];
 						// new and add
-						TestCaseModification tcm = new TestCaseModification(file, projectId, commitId, clazz, method); 
+						TestCaseModification tcm = new TestCaseModification(file, projectId, commitId, clazz, method);
 						ret.add(tcm);
 					}
 				}
@@ -89,9 +90,10 @@ abstract public class DistAnalyzer {
 		}
 		return ret;
 	}
-	
+
 	/**
 	 * Analyze similarity distance among test-case modifications
+	 * 
 	 * @param tcmList
 	 * @return
 	 * @throws IOException
@@ -113,38 +115,44 @@ abstract public class DistAnalyzer {
 	}
 
 	/**
-	 * Output 
+	 * Output
+	 * 
 	 * @param map
+	 * @return
 	 * @throws IOException
 	 */
-	public void output(DistMap map) throws IOException {
+	public String output(DistMap map) throws IOException {
 		// root
 		File simDir = new File(this.outputDir, SIMILARITY_DIR);
 		File methodDir = new File(simDir, getMethodName());
 		// with time-stamp
-	    Calendar c = Calendar.getInstance();
-	    SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddHHmm");
-	    String timestamp = sdf.format(c.getTime());
-	    File tsDir = new File(methodDir, timestamp);
-	    if (!tsDir.exists()) {
-	    	tsDir.mkdirs();
-	    }
-	    // latest
-	    File latestDir = new File(methodDir, LATEST_DIR);
-	    if (!latestDir.exists()) {
-	    	latestDir.mkdirs();
-	    }
-	    // output
-	    // with time-stamp
+		Calendar c = Calendar.getInstance();
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddHHmm");
+		String timestamp = sdf.format(c.getTime());
+		File tsDir = new File(methodDir, timestamp);
+		if (!tsDir.exists()) {
+			tsDir.mkdirs();
+		}
+		// latest
+		File latestDir = new File(methodDir, LATEST_DIR);
+		if (latestDir.exists()) {
+			latestDir.delete();
+		}
+		latestDir.mkdirs();
+		// output
+		// with time-stamp
 		FileUtils.writeStringToFile(new File(tsDir, DIST_FILENAME), map.getCsv());
 		FileUtils.writeStringToFile(new File(tsDir, HASHCODE_FILENAME), map.getHashcodeCsv());
 		// latest
 		FileUtils.writeStringToFile(new File(latestDir, DIST_FILENAME), map.getCsv());
 		FileUtils.writeStringToFile(new File(latestDir, HASHCODE_FILENAME), map.getHashcodeCsv());
 		FileUtils.writeStringToFile(new File(latestDir, "timestamp"), timestamp);
+		// return
+		return timestamp;
 	}
-	
+
 	abstract public String getMethodName();
+
 	abstract protected double sim(List<String> src, List<String> dst);
-	
+
 }
