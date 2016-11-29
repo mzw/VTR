@@ -130,10 +130,14 @@ public class Detector implements CheckoutConductor.Listener {
 				String srcName = src.attr("name");
 				String filePath = "src/main/java/" + pkgName + "/" + srcName;
 				BlameResult result = blame.setFilePath(filePath).call();
-				// TODO: Special case in JEXL
+				// TODO: Special case in Configuration and JEXL
 				if (result == null) {
 					LOGGER.info("Generated code? {}", filePath);
-					filePath = "src/main/java/" + pkgName + "/" + "Parser.jjt";
+					if (pkgName.contains("configuration")) {
+						filePath = "src/main/javacc/PropertyListParser.jj";
+					} else if (pkgName.contains("jexl")) {
+						filePath = "src/main/java/" + pkgName + "/" + "Parser.jjt";
+					}
 					File file = new File(filePath);
 					if (file.exists()) {
 						LOGGER.info("Found {} as target source", filePath);
