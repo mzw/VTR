@@ -100,7 +100,7 @@ public class Detector implements CheckoutConductor.Listener {
 			for (TestCase tc : ts.getTestCases()) {
 				File site = new File(dir, tc.getFullName());
 				if (!site.exists()) {
-					LOGGER.info("Coverage file does not exist: {}", site.getPath());
+					LOGGER.info("Coverage file does not exist (i.e., not-modified test case): {}", site.getPath());
 					continue;
 				}
 				File result = this.getOutputFile(commit, tc, false);
