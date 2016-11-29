@@ -82,7 +82,7 @@ public class TestRunner implements CheckoutConductor.Listener {
 						if (modified(commit, blame, tc)) {
 							int status = run(tc);
 							if (status == 0) {
-								LOGGER.warn("Copy coverage results: {} @ {}", tc.getFullName(), commit.getId());
+								LOGGER.info("Copy coverage results: {} @ {}", tc.getFullName(), commit.getId());
 								// site/jacoco/jacoco.xml
 								copy(commit, tc);
 								cleanDir(siteDir);
