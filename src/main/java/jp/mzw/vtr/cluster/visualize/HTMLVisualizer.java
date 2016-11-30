@@ -103,35 +103,38 @@ public class HTMLVisualizer extends VisualizerBase {
 				// Previous
 				StringBuilder prv = new StringBuilder();
 				delim = "";
-//				for (int line = 1; line < prvTestCase.getStartLineNumber(); line++) {
-//					prv.append(delim).append("");
-//					delim = "\n";
-//				}
+				// for (int line = 1; line < prvTestCase.getStartLineNumber();
+				// line++) {
+				// prv.append(delim).append("");
+				// delim = "\n";
+				// }
 				for (int line = prvTestCase.getStartLineNumber(); line <= prvTestCase.getEndLineNumber(); line++) {
 					prv.append(delim).append(prvTestCaseContent.get(line - 1));
 					delim = "\n";
 				}
-//				for (int line = prvTestCase.getEndLineNumber(); line < prvTestCaseContent.size(); line++) {
-//					prv.append(delim).append("");
-//					delim = "\n";
-//				}
+				// for (int line = prvTestCase.getEndLineNumber(); line <
+				// prvTestCaseContent.size(); line++) {
+				// prv.append(delim).append("");
+				// delim = "\n";
+				// }
 				// Current
 				StringBuilder cur = new StringBuilder();
 				delim = "";
-//				for (int line = 1; line < curTestCase.getStartLineNumber(); line++) {
-//					cur.append(delim).append("");
-//					delim = "\n";
-//				}
+				// for (int line = 1; line < curTestCase.getStartLineNumber();
+				// line++) {
+				// cur.append(delim).append("");
+				// delim = "\n";
+				// }
 				for (int line = curTestCase.getStartLineNumber(); line <= curTestCase.getEndLineNumber(); line++) {
 					cur.append(delim).append(curTestCaseContent.get(line - 1));
 					delim = "\n";
 				}
-//				for (int line = curTestCase.getEndLineNumber(); line < curTestCaseContent.size(); line++) {
-//					cur.append(delim).append("");
-//					delim = "\n";
-//				}
-				patch = ValidatorBase.genPatch(prv.toString(), cur.toString(),
-						prvTestCase.getTestFile(), curTestCase.getTestFile());
+				// for (int line = curTestCase.getEndLineNumber(); line <
+				// curTestCaseContent.size(); line++) {
+				// cur.append(delim).append("");
+				// delim = "\n";
+				// }
+				patch = ValidatorBase.genPatch(prv.toString(), cur.toString(), prvTestCase.getTestFile(), curTestCase.getTestFile());
 			}
 			// Get URL
 			Git git = GitUtils.getGit(project.getProjectDir());
@@ -231,7 +234,7 @@ public class HTMLVisualizer extends VisualizerBase {
 			tr.appendChild(new Td().appendText("&nbsp;&nbsp;").appendText(blameCommit.getDate().toString()).appendText("&nbsp;&nbsp;"));
 			tr.appendChild(new Td().appendText("&nbsp;&nbsp;").appendChild(getBlameAnchor(url, blameCommit, relative, lineno)).appendText("&nbsp;&nbsp;"));
 			tr.appendChild(new Td().setAlign("right").appendText(new Integer(lineno).toString()));
-			tr.appendChild(new Td().setAlign("left").appendChild(new Pre().appendText(lines.get(lineno - 1))));
+			tr.appendChild(new Td().setAlign("left").appendChild(new Pre().appendText(StringEscapeUtils.escapeHtml4(lines.get(lineno - 1)))));
 			// append
 			tbody.appendChild(tr);
 		}
@@ -311,7 +314,7 @@ public class HTMLVisualizer extends VisualizerBase {
 						tr.appendChild(new Td().appendText("&nbsp;&nbsp;").appendChild(getBlameAnchor(url, blameCommit, filePath, nr))
 								.appendText("&nbsp;&nbsp;"));
 						tr.appendChild(new Td().setAlign("right").appendText(new Integer(nr).toString()));
-						tr.appendChild(new Td().setAlign("left").appendChild(new Pre().appendText(lines.get(nr - 1))));
+						tr.appendChild(new Td().setAlign("left").appendChild(new Pre().appendText(StringEscapeUtils.escapeHtml4(lines.get(nr - 1)))));
 						// append
 						tbody.appendChild(tr);
 					}
