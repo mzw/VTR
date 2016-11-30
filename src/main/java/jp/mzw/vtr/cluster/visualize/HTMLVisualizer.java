@@ -44,12 +44,11 @@ import com.hp.gagawa.java.elements.Table;
 import com.hp.gagawa.java.elements.Tbody;
 import com.hp.gagawa.java.elements.Td;
 import com.hp.gagawa.java.elements.Text;
+import com.hp.gagawa.java.elements.Tfoot;
 import com.hp.gagawa.java.elements.Th;
 import com.hp.gagawa.java.elements.Thead;
 import com.hp.gagawa.java.elements.Tr;
 import com.hp.gagawa.java.elements.Tt;
-
-;
 
 public class HTMLVisualizer extends VisualizerBase {
 	static Logger LOGGER = LoggerFactory.getLogger(HTMLVisualizer.class);
@@ -89,11 +88,51 @@ public class HTMLVisualizer extends VisualizerBase {
 			cc.checkout(prvCommit);
 			List<TestSuite> prvTestSuites = MavenUtils.getTestSuites(projectDir);
 			TestCase prvTestCase = TestSuite.getTestCaseWithClassMethodName(prvTestSuites, leaf.getClassName(), leaf.getMethodName());
+			List<String> prvTestCaseContent = prvTestCase != null ? FileUtils.readLines(prvTestCase.getTestFile()) : null;
 			cc.checkout(curCommit);
 			List<TestSuite> curTestSuites = MavenUtils.getTestSuites(projectDir);
 			TestCase curTestCase = TestSuite.getTestCaseWithClassMethodName(curTestSuites, leaf.getClassName(), leaf.getMethodName());
-			List<String> patch = ValidatorBase.genPatch(prvTestCase.getMethodDeclaration().toString(), curTestCase.getMethodDeclaration().toString(),
-					prvTestCase.getTestFile(), curTestCase.getTestFile());
+			List<String> curTestCaseContent = FileUtils.readLines(curTestCase.getTestFile());
+			// Get patch
+			List<String> patch = null;
+			if (prvTestCase == null) {
+				patch = new ArrayList<>();
+				patch.add("Addition");
+			} else {
+				String delim = "";
+				// Previous
+				StringBuilder prv = new StringBuilder();
+				delim = "";
+//				for (int line = 1; line < prvTestCase.getStartLineNumber(); line++) {
+//					prv.append(delim).append("");
+//					delim = "\n";
+//				}
+				for (int line = prvTestCase.getStartLineNumber(); line <= prvTestCase.getEndLineNumber(); line++) {
+					prv.append(delim).append(prvTestCaseContent.get(line - 1));
+					delim = "\n";
+				}
+//				for (int line = prvTestCase.getEndLineNumber(); line < prvTestCaseContent.size(); line++) {
+//					prv.append(delim).append("");
+//					delim = "\n";
+//				}
+				// Current
+				StringBuilder cur = new StringBuilder();
+				delim = "";
+//				for (int line = 1; line < curTestCase.getStartLineNumber(); line++) {
+//					cur.append(delim).append("");
+//					delim = "\n";
+//				}
+				for (int line = curTestCase.getStartLineNumber(); line <= curTestCase.getEndLineNumber(); line++) {
+					cur.append(delim).append(curTestCaseContent.get(line - 1));
+					delim = "\n";
+				}
+//				for (int line = curTestCase.getEndLineNumber(); line < curTestCaseContent.size(); line++) {
+//					cur.append(delim).append("");
+//					delim = "\n";
+//				}
+				patch = ValidatorBase.genPatch(prv.toString(), cur.toString(),
+						prvTestCase.getTestFile(), curTestCase.getTestFile());
+			}
 			// Get URL
 			Git git = GitUtils.getGit(project.getProjectDir());
 			String url = GitUtils.getRemoteOriginUrl(git);
@@ -125,6 +164,7 @@ public class HTMLVisualizer extends VisualizerBase {
 			document.body.appendChild(new P().appendChild(new Text("* Note that line numbers below are not correct")));
 			{
 				Table table = new Table().setRules("groups");
+				table.appendChild(new Thead().appendChild(new Tr().appendChild(new Th().appendText("&nbsp;"))));
 				Tbody tbody = new Tbody();
 				for (String line : patch) {
 					Tr tr = new Tr();
@@ -132,6 +172,7 @@ public class HTMLVisualizer extends VisualizerBase {
 					tbody.appendChild(tr);
 				}
 				table.appendChild(tbody);
+				table.appendChild(new Tfoot().appendChild(new Tr().appendChild(new Td().appendText("&nbsp;"))));
 				document.body.appendChild(table);
 			}
 
@@ -195,6 +236,7 @@ public class HTMLVisualizer extends VisualizerBase {
 			tbody.appendChild(tr);
 		}
 		table.appendChild(tbody);
+		table.appendChild(new Tfoot().appendChild(new Tr().appendChild(new Td().appendText("&nbsp;"))));
 		return table;
 	}
 
@@ -275,6 +317,7 @@ public class HTMLVisualizer extends VisualizerBase {
 					}
 					if (covered) {
 						table.appendChild(tbody);
+						table.appendChild(new Tfoot().appendChild(new Tr().appendChild(new Td().appendText("&nbsp;"))));
 						ret.add(table);
 					}
 				}
