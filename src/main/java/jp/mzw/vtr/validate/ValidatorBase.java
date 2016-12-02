@@ -65,14 +65,18 @@ abstract public class ValidatorBase implements CheckoutConductor.Listener {
 	 * @throws ClassNotFoundException
 	 */
 	public static List<ValidatorBase> getValidators(Project project, String filename) throws IOException, InstantiationException, IllegalAccessException,
-			IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException, ClassNotFoundException {
+			IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException {
 		InputStream is = ValidatorBase.class.getClassLoader().getResourceAsStream(filename);
 		List<String> lines = IOUtils.readLines(is);
 		List<ValidatorBase> validators = new ArrayList<>();
 		for (String line : lines) {
-			Class<?> clazz = Class.forName(line);
-			ValidatorBase validator = (ValidatorBase) clazz.getConstructor(Project.class).newInstance(project);
-			validators.add(validator);
+			try {
+				Class<?> clazz = Class.forName(line);
+				ValidatorBase validator = (ValidatorBase) clazz.getConstructor(Project.class).newInstance(project);
+				validators.add(validator);
+			} catch (ClassNotFoundException e) {
+				LOGGER.warn("Invalid validator: {}", line);
+			}
 		}
 		return validators;
 	}

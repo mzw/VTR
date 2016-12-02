@@ -107,18 +107,6 @@ public class DoNotSwallowTestErrorsSilently extends ValidatorBase {
 
 	@Override
 	public void generate(ValidationResult result) {
-		if (!this.getClass().toString().equals(result.getValidatorName())) {
-			return;
-		}
-		if (new Boolean(false).equals(result.isTruePositive())) {
-			LOGGER.info("Skip due to false-positive: {}#{} @ {} by {}", result.getTestCaseClassName(), result.getTestCaseMathodName(), result.getCommitId(),
-					result.getValidatorName());
-			return;
-		} else if (result.isTruePositive() == null) {
-			LOGGER.info("Check whether true-positive or not: {}#{} @ {} by {}", result.getTestCaseClassName(), result.getTestCaseMathodName(),
-					result.getCommitId(), result.getValidatorName());
-			return;
-		}
 		try {
 			// Pattern
 			String pattern = result.getValidatorName().replace("class ", "");

@@ -174,6 +174,18 @@ public class CLI {
 		for (ValidatorBase validator : validators) {
 			List<ValidationResult> results = ValidatorBase.parse(project);
 			for (ValidationResult result : results) {
+				if (!validator.getClass().toString().equals(result.getValidatorName())) {
+					continue;
+				}
+				if (new Boolean(false).equals(result.isTruePositive())) {
+					LOGGER.info("Skip due to false-positive: {}#{} @ {} by {}", result.getTestCaseClassName(), result.getTestCaseMathodName(),
+							result.getCommitId(), result.getValidatorName());
+					continue;
+				} else if (result.isTruePositive() == null) {
+					LOGGER.info("Check whether true-positive or not: {}#{} @ {} by {}", result.getTestCaseClassName(), result.getTestCaseMathodName(),
+							result.getCommitId(), result.getValidatorName());
+					continue;
+				}
 				validator.generate(result);
 			}
 		}
