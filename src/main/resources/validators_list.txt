@@ -1,1 +1,2 @@
 jp.mzw.vtr.validate.DoNotSwallowTestErrorsSilently
+jp.mzw.vtr.validate.AddTestAnnotations

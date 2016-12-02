@@ -33,11 +33,8 @@ import jp.mzw.vtr.maven.TestSuite;
 public class DoNotSwallowTestErrorsSilently extends ValidatorBase {
 	protected static Logger LOGGER = LoggerFactory.getLogger(DoNotSwallowTestErrorsSilently.class);
 
-	private List<String> invalidTestCases;
-
 	public DoNotSwallowTestErrorsSilently(Project project) {
 		super(project);
-		invalidTestCases = new ArrayList<>();
 	}
 
 	@Override
@@ -61,7 +58,7 @@ public class DoNotSwallowTestErrorsSilently extends ValidatorBase {
 	 * @param tc
 	 */
 	protected void validate(Commit commit, TestCase tc) {
-		if (this.invalidTestCases.contains(tc.getFullName())) {
+		if (this.dupulicates.contains(tc.getFullName())) {
 			return;
 		}
 		for (ASTNode node : tc.getNodes()) {
@@ -98,7 +95,7 @@ public class DoNotSwallowTestErrorsSilently extends ValidatorBase {
 			LOGGER.info("Find try-statement but its catch-block contains assertion(s): {} @ {}", tc.getFullName(), commit.getId());
 		} else {
 			// Prevent duplicated detection
-			this.invalidTestCases.add(tc.getFullName());
+			this.dupulicates.add(tc.getFullName());
 			// Register detection result
 			ValidationResult vr = new ValidationResult(this.projectId, commit, tc, tc.getStartLineNumber(catchClause), tc.getEndLineNumber(catchClause), this);
 			this.validationResultList.add(vr);
@@ -109,7 +106,7 @@ public class DoNotSwallowTestErrorsSilently extends ValidatorBase {
 	public void generate(ValidationResult result) {
 		try {
 			// Pattern
-			String pattern = result.getValidatorName().replace("class ", "");
+			String pattern = result.getValidatorName();
 			// Checkout
 			String projectId = result.getProjectId();
 			Project project = new Project(projectId).setConfig(CLI.CONFIG_FILENAME);

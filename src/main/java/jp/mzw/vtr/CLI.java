@@ -174,7 +174,7 @@ public class CLI {
 		for (ValidatorBase validator : validators) {
 			List<ValidationResult> results = ValidatorBase.parse(project);
 			for (ValidationResult result : results) {
-				if (!validator.getClass().toString().equals(result.getValidatorName())) {
+				if (!validator.getClass().getName().equals(result.getValidatorName())) {
 					continue;
 				}
 				if (new Boolean(false).equals(result.isTruePositive())) {

@@ -24,7 +24,7 @@ public class ValidationResult {
 		this.testCaseMethodName = testCase.getName();
 		this.startLineNumber = startLineNumber;
 		this.endLineNumber = endLineNumber;
-		this.validatorName = validator.getClass().toString();
+		this.validatorName = validator.getClass().getName();
 		this.truePositive = null;
 		this.actuallyModified = null;
 		this.properlyModified = null;

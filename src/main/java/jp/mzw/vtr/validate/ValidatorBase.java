@@ -37,11 +37,13 @@ abstract public class ValidatorBase implements CheckoutConductor.Listener {
 	protected File projectDir;
 
 	protected List<ValidationResult> validationResultList;
+	protected List<String> dupulicates;
 
 	public ValidatorBase(Project project) {
 		this.projectId = project.getProjectId();
 		this.projectDir = project.getProjectDir();
 		this.validationResultList = new ArrayList<>();
+		this.dupulicates = new ArrayList<>();
 	}
 
 	@Override
@@ -74,6 +76,7 @@ abstract public class ValidatorBase implements CheckoutConductor.Listener {
 				Class<?> clazz = Class.forName(line);
 				ValidatorBase validator = (ValidatorBase) clazz.getConstructor(Project.class).newInstance(project);
 				validators.add(validator);
+				LOGGER.info("Register validator: {}", line);
 			} catch (ClassNotFoundException e) {
 				LOGGER.warn("Invalid validator: {}", line);
 			}
