@@ -52,7 +52,7 @@ abstract public class ValidatorBase implements CheckoutConductor.Listener {
 	abstract public void generate(ValidationResult result);
 
 	/**
-	 * TODO: Give validator list from resources
+	 * Get validator list from resources
 	 * 
 	 * @param project
 	 *            Project
