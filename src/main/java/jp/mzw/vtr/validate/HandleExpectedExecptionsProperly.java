@@ -1,0 +1,51 @@
+package jp.mzw.vtr.validate;
+
+import java.io.IOException;
+
+import jp.mzw.vtr.core.Project;
+import jp.mzw.vtr.git.Commit;
+import jp.mzw.vtr.maven.MavenUtils;
+import jp.mzw.vtr.maven.TestCase;
+import jp.mzw.vtr.maven.TestSuite;
+
+import org.eclipse.jdt.core.dom.MethodDeclaration;
+
+public class HandleExpectedExecptionsProperly extends ValidatorBase {
+
+	public HandleExpectedExecptionsProperly(Project project) {
+		super(project);
+	}
+	
+	@Override
+	public void onCheckout(Commit commit) {
+		try {
+			for (TestSuite ts : MavenUtils.getTestSuites(this.projectDir)) {
+				for (TestCase tc : ts.getTestCases()) {
+					if (this.dupulicates.contains(tc.getFullName())) {
+						continue;
+					}
+					if (!detect(commit, tc)) {
+						this.dupulicates.add(tc.getFullName());
+						MethodDeclaration method = tc.getMethodDeclaration();
+						ValidationResult vr = new ValidationResult(this.projectId, commit, tc, tc.getStartLineNumber(method), tc.getEndLineNumber(method), this);
+						this.validationResultList.add(vr);
+					}
+				}
+			}
+		} catch (IOException e) {
+			LOGGER.warn("Failed to checkout: {}", commit.getId());
+		}
+	}
+	
+	private boolean detect(Commit commit, TestCase tc) {
+		// try {...} catch(FooException e) { /* expected */ }
+		
+		return false;
+	}
+
+	@Override
+	public void generate(ValidationResult result) {
+		// @Test(expected=FooException.class)
+	}
+
+}
