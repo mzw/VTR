@@ -128,6 +128,7 @@ abstract public class DistAnalyzer {
 			TestCaseModification result1 = tcmList.get(i);
 			for (int j = i + 1; j < tcmList.size(); j++) {
 				TestCaseModification result2 = tcmList.get(j);
+				LOGGER.info("Measuring similarity between {} and {}", result1.hashCode(), result2.hashCode());
 				double sim = sim(result1.getCommitMessage(), result2.getCommitMessage());
 				double dist = 1.0 - sim;
 				map.add(dist, i, j);

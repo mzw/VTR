@@ -128,6 +128,7 @@ public class TestCaseModification {
 		for (RevCommit commit : commits) {
 			if (commit.getId().name().equals(this.commitId)) {
 				this.commitMessage = commit.getFullMessage();
+				LOGGER.info("Get commit message: {} on {}", this.commitId, this.projectId);
 				break;
 			}
 		}
