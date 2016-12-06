@@ -7,7 +7,7 @@ output/
 sh/ba.sh
 sh/slack.php
 docker/
-src/main/resources/validators_list.txt
+validators_list.txt
 
 # Maven
 target/
