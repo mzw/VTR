@@ -14,15 +14,6 @@ import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
-import org.eclipse.jdt.core.dom.ASTNode;
-import org.eclipse.jdt.core.dom.Block;
-import org.eclipse.jdt.core.dom.CatchClause;
-import org.eclipse.jdt.core.dom.ExpressionStatement;
-import org.eclipse.jdt.core.dom.MethodDeclaration;
-import org.eclipse.jdt.core.dom.MethodInvocation;
-import org.eclipse.jdt.core.dom.TryStatement;
-import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
-import org.eclipse.jdt.core.dom.rewrite.ListRewrite;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -239,7 +230,7 @@ abstract public class ValidatorBase implements CheckoutConductor.Listener {
 		// Return
 		return ret;
 	}
-	
+
 	protected TestCase getTestCase(ValidationResult result) throws IOException, ParseException, GitAPIException {
 		this.projectId = result.getProjectId();
 		Project project = new Project(projectId).setConfig(CLI.CONFIG_FILENAME);
@@ -262,7 +253,7 @@ abstract public class ValidatorBase implements CheckoutConductor.Listener {
 		}
 		return null;
 	}
-	
+
 	protected void output(ValidationResult result, TestCase tc, List<String> patch) throws IOException {
 		File projectDir = new File(this.outputDir, this.projectId);
 		File validateDir = new File(projectDir, ValidatorBase.VALIDATOR_DIRNAME);
@@ -275,7 +266,6 @@ abstract public class ValidatorBase implements CheckoutConductor.Listener {
 		FileUtils.writeLines(patchFile, patch);
 		LOGGER.info("Succeeded to generate patch: {}", tc.getTestFile().getPath());
 	}
-	
 
 	/**
 	 * Generate patch
@@ -290,44 +280,5 @@ abstract public class ValidatorBase implements CheckoutConductor.Listener {
 		List<String> modifyList = Arrays.asList(modified.split("\n"));
 		Patch<String> patch = DiffUtils.diff(originList, modifyList);
 		return DiffUtils.generateUnifiedDiff(org.getAbsolutePath(), mod.getAbsolutePath(), originList, patch, 0);
-	}
-	
-
-	protected void removeCatches(ASTRewrite rewriter, TryStatement tryStatement, List<CatchClause> catches, MethodDeclaration method) {
-		boolean all = true;
-		for (Object object : tryStatement.catchClauses()) {
-			CatchClause raw = (CatchClause) object;
-			boolean equals = false;
-			for (CatchClause target : catches) {
-				if (raw.equals(target)) {
-					equals = true;
-					break;
-				}
-			}
-			if (!equals) {
-				all = false;
-				break;
-			}
-		}
-		if (all) {
-			ListRewrite lr = rewriter.getListRewrite(method.getBody(), Block.STATEMENTS_PROPERTY);
-			for (ASTNode statement : MavenUtils.getChildren(tryStatement.getBody())) {
-				if (statement instanceof ExpressionStatement) {
-					ExpressionStatement expr = (ExpressionStatement) statement;
-					if (expr.getExpression() instanceof MethodInvocation) {
-						MethodInvocation call = (MethodInvocation) expr.getExpression();
-						if (call.getName().toString().equals("fail")) {
-							break;
-						}
-					}
-				}
-				lr.insertBefore(statement, tryStatement, null);
-			}
-			rewriter.remove(tryStatement, null);
-		} else {
-			for (CatchClause target : catches) {
-				rewriter.remove(target, null);
-			}
-		}
 	}
 }

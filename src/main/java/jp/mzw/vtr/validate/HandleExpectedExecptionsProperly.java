@@ -20,7 +20,6 @@ import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.SimpleType;
 import org.eclipse.jdt.core.dom.TryStatement;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
-import org.eclipse.jdt.core.dom.rewrite.ListRewrite;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.text.edits.MalformedTreeException;
@@ -107,8 +106,8 @@ public class HandleExpectedExecptionsProperly extends ValidatorBase {
 		try {
 			TestCase tc = getTestCase(result);
 			String origin = FileUtils.readFileToString(tc.getTestFile());
-			CatchClause cc = detectExpectedExceptions(tc, result.getStartLineNumber(), result.getEndLineNumber());
-			String modified = setExpectedExceptionAtTestAnnotation(origin, tc, cc);
+			CatchClause expects = RewriterUtils.getCatchClause(tc, result.getStartLineNumber(), result.getEndLineNumber());
+			String modified = setExpectedExceptionAtTestAnnotation(origin, tc, expects);
 			List<String> patch = genPatch(origin, modified, tc.getTestFile(), tc.getTestFile());
 			output(result, tc, patch);
 		} catch (IOException | ParseException | GitAPIException | MalformedTreeException | BadLocationException e) {
@@ -133,13 +132,13 @@ public class HandleExpectedExecptionsProperly extends ValidatorBase {
 		List<SimpleType> exceptions = ValidatorUtils.getThrowedExceptions(nodes);
 		List<CatchClause> expects = detectExpectedException(tc, origin, (TryStatement) cc.getParent());
 		for (CatchClause expect : expects) {
-			insertException(rewriter, expect, exceptions, tc.getMethodDeclaration());
+			RewriterUtils.insertException(rewriter, expect, exceptions, tc.getMethodDeclaration());
 		}
 		// AtTest(expected=FooException.class)
 		Annotation annot = ValidatorUtils.getTestAnnotation(tc);
 		insertExpectedExceptions(rewriter, expects, annot, tc.getMethodDeclaration());
 		// Remove unnecessary catches
-		removeCatches(rewriter, (TryStatement) cc.getParent(), expects, tc.getMethodDeclaration());
+		RewriterUtils.removeCatches(rewriter, (TryStatement) cc.getParent(), expects, tc.getMethodDeclaration());
 		// Rewrite
 		org.eclipse.jface.text.Document document = new org.eclipse.jface.text.Document(origin);
 		TextEdit edit = rewriter.rewriteAST(document, null);
@@ -164,27 +163,4 @@ public class HandleExpectedExecptionsProperly extends ValidatorBase {
 		rewriter.replace(annot, placeholder, null);
 	}
 
-	private void insertException(ASTRewrite rewriter, CatchClause cc, List<SimpleType> exceptions, MethodDeclaration method) {
-		boolean exist = false;
-		for (SimpleType exception : exceptions) {
-			if (cc.getException().getType().toString().equals(exception.toString())) {
-				exist = true;
-			}
-		}
-		if (!exist) {
-			ListRewrite lr = rewriter.getListRewrite(method, MethodDeclaration.THROWN_EXCEPTION_TYPES_PROPERTY);
-			lr.insertLast(cc.getException().getType(), null);
-		}
-	}
-
-	private CatchClause detectExpectedExceptions(TestCase tc, int start, int end) {
-		for (ASTNode node : tc.getNodes()) {
-			if (start == tc.getStartLineNumber(node) && end == tc.getEndLineNumber(node)) {
-				if (node instanceof CatchClause) {
-					return (CatchClause) node;
-				}
-			}
-		}
-		return null;
-	}
 }
