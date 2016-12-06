@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -14,16 +15,27 @@ import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.eclipse.jdt.core.dom.ASTNode;
+import org.eclipse.jdt.core.dom.Block;
+import org.eclipse.jdt.core.dom.CatchClause;
+import org.eclipse.jdt.core.dom.ExpressionStatement;
+import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
+import org.eclipse.jdt.core.dom.TryStatement;
+import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
+import org.eclipse.jdt.core.dom.rewrite.ListRewrite;
+import org.eclipse.jgit.api.errors.GitAPIException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import difflib.DiffUtils;
 import difflib.Patch;
+import jp.mzw.vtr.CLI;
 import jp.mzw.vtr.core.Project;
 import jp.mzw.vtr.git.CheckoutConductor;
 import jp.mzw.vtr.git.Commit;
 import jp.mzw.vtr.maven.MavenUtils;
+import jp.mzw.vtr.maven.TestCase;
+import jp.mzw.vtr.maven.TestSuite;
 
 abstract public class ValidatorBase implements CheckoutConductor.Listener {
 	protected static Logger LOGGER = LoggerFactory.getLogger(ValidatorBase.class);
@@ -35,6 +47,7 @@ abstract public class ValidatorBase implements CheckoutConductor.Listener {
 
 	protected String projectId;
 	protected File projectDir;
+	protected File outputDir;
 
 	protected List<ValidationResult> validationResultList;
 	protected List<String> dupulicates;
@@ -91,36 +104,6 @@ abstract public class ValidatorBase implements CheckoutConductor.Listener {
 	public List<ValidationResult> getValidationResultList() {
 		return this.validationResultList;
 	}
-
-	/**
-	 * Determine whether given node has JUnit assert method invocation
-	 * 
-	 * @param node
-	 * @return
-	 */
-	protected boolean hasAssertMethodInvocation(ASTNode node) {
-		if (node instanceof MethodInvocation) {
-			MethodInvocation method = (MethodInvocation) node;
-			for (String name : JUNIT_ASSERT_METHODS) {
-				if (name.equals(method.getName().toString())) {
-					return true;
-				}
-			}
-		}
-		for (Object child : MavenUtils.getChildren(node)) {
-			boolean has = hasAssertMethodInvocation((ASTNode) child);
-			if (has) {
-				return true;
-			}
-		}
-		return false;
-	}
-
-	/**
-	 * List of JUnit assert method names
-	 */
-	public static final String[] JUNIT_ASSERT_METHODS = { "assertArrayEquals", "assertEquals", "assertFalse", "assertNotNull", "assertNotSame", "assertNull",
-			"assertSame", "assertThat", "assertTrue", "fail", };
 
 	/**
 	 * Output validation results in CSV file
@@ -256,6 +239,43 @@ abstract public class ValidatorBase implements CheckoutConductor.Listener {
 		// Return
 		return ret;
 	}
+	
+	protected TestCase getTestCase(ValidationResult result) throws IOException, ParseException, GitAPIException {
+		this.projectId = result.getProjectId();
+		Project project = new Project(projectId).setConfig(CLI.CONFIG_FILENAME);
+		this.projectDir = project.getProjectDir();
+		this.outputDir = project.getOutputDir();
+		CheckoutConductor cc = new CheckoutConductor(project);
+		// Commit
+		String commitId = result.getCommitId();
+		Commit commit = new Commit(commitId, null);
+		cc.checkout(commit);
+		// Detect test case
+		String clazz = result.getTestCaseClassName();
+		String method = result.getTestCaseMathodName();
+		List<TestSuite> testSuites = MavenUtils.getTestSuites(project.getProjectDir());
+		for (TestSuite ts : testSuites) {
+			TestCase tc = ts.getTestCaseBy(clazz, method);
+			if (tc != null) {
+				return tc;
+			}
+		}
+		return null;
+	}
+	
+	protected void output(ValidationResult result, TestCase tc, List<String> patch) throws IOException {
+		File projectDir = new File(this.outputDir, this.projectId);
+		File validateDir = new File(projectDir, ValidatorBase.VALIDATOR_DIRNAME);
+		File commitDir = new File(validateDir, result.getCommitId());
+		File patternDir = new File(commitDir, result.getValidatorName());
+		if (!patternDir.exists()) {
+			patternDir.mkdirs();
+		}
+		File patchFile = new File(patternDir, tc.getFullName() + ".patch");
+		FileUtils.writeLines(patchFile, patch);
+		LOGGER.info("Succeeded to generate patch: {}", tc.getTestFile().getPath());
+	}
+	
 
 	/**
 	 * Generate patch
@@ -270,5 +290,44 @@ abstract public class ValidatorBase implements CheckoutConductor.Listener {
 		List<String> modifyList = Arrays.asList(modified.split("\n"));
 		Patch<String> patch = DiffUtils.diff(originList, modifyList);
 		return DiffUtils.generateUnifiedDiff(org.getAbsolutePath(), mod.getAbsolutePath(), originList, patch, 0);
+	}
+	
+
+	protected void removeCatches(ASTRewrite rewriter, TryStatement tryStatement, List<CatchClause> catches, MethodDeclaration method) {
+		boolean all = true;
+		for (Object object : tryStatement.catchClauses()) {
+			CatchClause raw = (CatchClause) object;
+			boolean equals = false;
+			for (CatchClause target : catches) {
+				if (raw.equals(target)) {
+					equals = true;
+					break;
+				}
+			}
+			if (!equals) {
+				all = false;
+				break;
+			}
+		}
+		if (all) {
+			ListRewrite lr = rewriter.getListRewrite(method.getBody(), Block.STATEMENTS_PROPERTY);
+			for (ASTNode statement : MavenUtils.getChildren(tryStatement.getBody())) {
+				if (statement instanceof ExpressionStatement) {
+					ExpressionStatement expr = (ExpressionStatement) statement;
+					if (expr.getExpression() instanceof MethodInvocation) {
+						MethodInvocation call = (MethodInvocation) expr.getExpression();
+						if (call.getName().toString().equals("fail")) {
+							break;
+						}
+					}
+				}
+				lr.insertBefore(statement, tryStatement, null);
+			}
+			rewriter.remove(tryStatement, null);
+		} else {
+			for (CatchClause target : catches) {
+				rewriter.remove(target, null);
+			}
+		}
 	}
 }

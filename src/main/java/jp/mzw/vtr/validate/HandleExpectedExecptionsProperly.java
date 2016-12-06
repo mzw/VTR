@@ -1,6 +1,7 @@
 package jp.mzw.vtr.validate;
 
 import java.io.IOException;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -12,9 +13,18 @@ import jp.mzw.vtr.maven.TestSuite;
 
 import org.apache.commons.io.FileUtils;
 import org.eclipse.jdt.core.dom.ASTNode;
+import org.eclipse.jdt.core.dom.Annotation;
 import org.eclipse.jdt.core.dom.CatchClause;
 import org.eclipse.jdt.core.dom.Comment;
+import org.eclipse.jdt.core.dom.MethodDeclaration;
+import org.eclipse.jdt.core.dom.SimpleType;
 import org.eclipse.jdt.core.dom.TryStatement;
+import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
+import org.eclipse.jdt.core.dom.rewrite.ListRewrite;
+import org.eclipse.jface.text.BadLocationException;
+import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.text.edits.MalformedTreeException;
+import org.eclipse.text.edits.TextEdit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,32 +51,25 @@ public class HandleExpectedExecptionsProperly extends ValidatorBase {
 		}
 	}
 
+	/**
+	 * try {...Assert...} catch(FooException e) {...expected...}
+	 * 
+	 * @param commit
+	 * @param tc
+	 * @throws IOException
+	 */
 	private void detect(Commit commit, TestCase tc) throws IOException {
 		String content = FileUtils.readFileToString(tc.getTestFile());
-		// try {...Assert...} catch(FooException e) { /* expected */ }
 		for (ASTNode node : tc.getNodes()) {
 			if (node instanceof TryStatement) {
 				TryStatement tryStatement = (TryStatement) node;
-				if (this.hasAssertMethodInvocation(tryStatement.getBody())) {
-					catchExpectedException(commit, tc, content, (TryStatement) node);
-				}
-			}
-		}
-	}
-
-	private void catchExpectedException(Commit commit, TestCase tc, String content, TryStatement tryStatement) {
-		// ...} catch (FooException e) {...expect...}
-		for (Object object : tryStatement.catchClauses()) {
-			CatchClause cc = (CatchClause) object;
-			for (Comment comment : getComments(tc, cc)) {
-				String[] split = getContent(content, comment).split(" ");
-				for (String expect : split) {
-					if (expect.contains("expect")) {
+				if (ValidatorUtils.hasAssertMethodInvocation(tryStatement.getBody())) {
+					List<CatchClause> ccList = detectExpectedException(tc, content, (TryStatement) node);
+					for (CatchClause cc : ccList) {
 						// Prevent duplicated detection
 						this.dupulicates.add(tc.getFullName());
 						// Register detection result
-						ValidationResult vr = new ValidationResult(this.projectId, commit, tc,
-								tc.getStartLineNumber(cc), tc.getEndLineNumber(cc), this);
+						ValidationResult vr = new ValidationResult(this.projectId, commit, tc, tc.getStartLineNumber(cc), tc.getEndLineNumber(cc), this);
 						this.validationResultList.add(vr);
 						LOGGER.info("Detect {} in {} at {}", this.getClass().getName(), tc.getFullName(), commit.getId());
 					}
@@ -75,31 +78,113 @@ public class HandleExpectedExecptionsProperly extends ValidatorBase {
 		}
 	}
 
-	private List<Comment> getComments(TestCase tc, ASTNode node) {
-		int start = tc.getStartLineNumber(node);
-		int end = tc.getEndLineNumber(node);
-		List<Comment> comments = new ArrayList<>();
-		for (Object object : tc.getCompilationUnit().getCommentList()) {
-			Comment comment = (Comment) object;
-			if (start <= tc.getStartLineNumber(comment) && tc.getEndLineNumber(comment) <= end) {
-				comments.add(comment);
+	/**
+	 * ...} catch (FooException e) {...expect...}
+	 * 
+	 * @param commit
+	 * @param tc
+	 * @param content
+	 * @param tryStatement
+	 */
+	private List<CatchClause> detectExpectedException(TestCase tc, String content, TryStatement tryStatement) {
+		List<CatchClause> ret = new ArrayList<>();
+		for (Object object : tryStatement.catchClauses()) {
+			CatchClause cc = (CatchClause) object;
+			for (Comment comment : ValidatorUtils.getComments(tc, cc)) {
+				String[] split = ValidatorUtils.getCommentContent(content, comment).split(" ");
+				for (String expect : split) {
+					if (expect.contains("expect")) {
+						ret.add(cc);
+					}
+				}
 			}
 		}
-		return comments;
-	}
-
-	private String getContent(String content, Comment comment) {
-		char[] charArray = content.toCharArray();
-		char[] ret = new char[comment.getLength()];
-		for (int offset = 0; offset < comment.getLength(); offset++) {
-			ret[offset] = charArray[comment.getStartPosition() + offset];
-		}
-		return String.valueOf(ret);
+		return ret;
 	}
 
 	@Override
 	public void generate(ValidationResult result) {
-		// @Test(expected=FooException.class)
+		try {
+			TestCase tc = getTestCase(result);
+			String origin = FileUtils.readFileToString(tc.getTestFile());
+			CatchClause cc = detectExpectedExceptions(tc, result.getStartLineNumber(), result.getEndLineNumber());
+			String modified = setExpectedExceptionAtTestAnnotation(origin, tc, cc);
+			List<String> patch = genPatch(origin, modified, tc.getTestFile(), tc.getTestFile());
+			output(result, tc, patch);
+		} catch (IOException | ParseException | GitAPIException | MalformedTreeException | BadLocationException e) {
+			LOGGER.warn("Failed to generate patch: {}", e.getMessage());
+		}
 	}
 
+	/**
+	 * AtTest(expected=FooException.class) public void testFoo() throws
+	 * FooException {...}
+	 * 
+	 * @param origin
+	 * @param tc
+	 * @return
+	 * @throws MalformedTreeException
+	 * @throws BadLocationException
+	 */
+	private String setExpectedExceptionAtTestAnnotation(String origin, TestCase tc, CatchClause cc) throws MalformedTreeException, BadLocationException {
+		ASTRewrite rewriter = ASTRewrite.create(tc.getCompilationUnit().getAST());
+		// public void testFoo throws "exception, exception, ..., exception"
+		List<ASTNode> nodes = tc.getNodes();
+		List<SimpleType> exceptions = ValidatorUtils.getThrowedExceptions(nodes);
+		List<CatchClause> expects = detectExpectedException(tc, origin, (TryStatement) cc.getParent());
+		for (CatchClause expect : expects) {
+			insertException(rewriter, expect, exceptions, tc.getMethodDeclaration());
+		}
+		// AtTest(expected=FooException.class)
+		Annotation annot = ValidatorUtils.getTestAnnotation(tc);
+		insertExpectedExceptions(rewriter, expects, annot, tc.getMethodDeclaration());
+		// Remove unnecessary catches
+		removeCatches(rewriter, (TryStatement) cc.getParent(), expects, tc.getMethodDeclaration());
+		// Rewrite
+		org.eclipse.jface.text.Document document = new org.eclipse.jface.text.Document(origin);
+		TextEdit edit = rewriter.rewriteAST(document, null);
+		edit.apply(document);
+		return document.get();
+	}
+
+	private void insertExpectedExceptions(ASTRewrite rewriter, List<CatchClause> expects, Annotation annot, MethodDeclaration method) {
+		StringBuilder classes = new StringBuilder();
+		String delim = "";
+		for (CatchClause cc : expects) {
+			classes.append(delim).append(cc.getException().getType()).append(".class");
+			delim = ", ";
+		}
+		String code = annot.toString();
+		if (annot.getProperty("expected") == null) {
+			code += "(expected = " + classes.toString() + ")";
+		} else {
+			code.replace("expected = ", "expected = " + classes.toString());
+		}
+		ASTNode placeholder = rewriter.createStringPlaceholder(code, ASTNode.ANNOTATION_TYPE_DECLARATION);
+		rewriter.replace(annot, placeholder, null);
+	}
+
+	private void insertException(ASTRewrite rewriter, CatchClause cc, List<SimpleType> exceptions, MethodDeclaration method) {
+		boolean exist = false;
+		for (SimpleType exception : exceptions) {
+			if (cc.getException().getType().toString().equals(exception.toString())) {
+				exist = true;
+			}
+		}
+		if (!exist) {
+			ListRewrite lr = rewriter.getListRewrite(method, MethodDeclaration.THROWN_EXCEPTION_TYPES_PROPERTY);
+			lr.insertLast(cc.getException().getType(), null);
+		}
+	}
+
+	private CatchClause detectExpectedExceptions(TestCase tc, int start, int end) {
+		for (ASTNode node : tc.getNodes()) {
+			if (start == tc.getStartLineNumber(node) && end == tc.getEndLineNumber(node)) {
+				if (node instanceof CatchClause) {
+					return (CatchClause) node;
+				}
+			}
+		}
+		return null;
+	}
 }

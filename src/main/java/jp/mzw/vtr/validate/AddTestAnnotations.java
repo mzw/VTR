@@ -8,7 +8,6 @@ import java.util.List;
 
 import org.apache.commons.io.FileUtils;
 import org.eclipse.jdt.core.dom.ASTNode;
-import org.eclipse.jdt.core.dom.Annotation;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.ImportDeclaration;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
@@ -20,16 +19,10 @@ import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.text.edits.MalformedTreeException;
 import org.eclipse.text.edits.TextEdit;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Element;
-import org.jsoup.parser.Parser;
-import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import jp.mzw.vtr.CLI;
 import jp.mzw.vtr.core.Project;
-import jp.mzw.vtr.git.CheckoutConductor;
 import jp.mzw.vtr.git.Commit;
 import jp.mzw.vtr.maven.MavenUtils;
 import jp.mzw.vtr.maven.TestCase;
@@ -45,14 +38,14 @@ public class AddTestAnnotations extends ValidatorBase {
 	@Override
 	public void onCheckout(Commit commit) {
 		try {
-			boolean isJunit4 = isJunit4(new File(this.projectDir, "pom.xml"));
+			boolean isJunit4 = ValidatorUtils.isJunit4(new File(this.projectDir, "pom.xml"));
 			if (isJunit4) {
 				for (TestSuite ts : MavenUtils.getTestSuites(this.projectDir)) {
 					for (TestCase tc : ts.getTestCases()) {
 						if (this.dupulicates.contains(tc.getFullName())) {
 							continue;
 						}
-						boolean hasTestAnnotation = hasTestAnnotation(tc);
+						boolean hasTestAnnotation = ValidatorUtils.hasTestAnnotation(tc);
 						if (!hasTestAnnotation) {
 							this.dupulicates.add(tc.getFullName());
 							MethodDeclaration method = tc.getMethodDeclaration();
@@ -68,103 +61,18 @@ public class AddTestAnnotations extends ValidatorBase {
 		}
 	}
 
-	/**
-	 * Determine whether JUnit version is 4
-	 * 
-	 * @param pom
-	 * @return
-	 * @throws IOException
-	 */
-	private boolean isJunit4(File pom) throws IOException {
-		String content = FileUtils.readFileToString(pom);
-		org.jsoup.nodes.Document document = Jsoup.parse(content, "", Parser.xmlParser());
-		for (Element dependency : document.select("project dependencies dependency")) {
-			if ("junit".equals(dependency.select("artifactid").text())) {
-				Elements version = dependency.select("version");
-				if (version != null) {
-					if (version.text().startsWith("4")) {
-						return true;
-					}
-				}
-			}
-		}
-		return false;
-	}
-
-	/**
-	 * Determine whether given test case has Test annotation
-	 * 
-	 * @param testCase
-	 * @return
-	 */
-	private boolean hasTestAnnotation(TestCase testCase) {
-		for (ASTNode node : MavenUtils.getChildren(testCase.getMethodDeclaration())) {
-			if (node instanceof Annotation) {
-				Annotation annot = (Annotation) node;
-				if ("Test".equals(annot.getTypeName().toString())) {
-					return true;
-				}
-			}
-		}
-		return false;
-	}
-
 	@Override
 	public void generate(ValidationResult result) {
 		try {
-			// Pattern
-			String pattern = result.getValidatorName();
-			// Checkout
-			String projectId = result.getProjectId();
-			Project project = new Project(projectId).setConfig(CLI.CONFIG_FILENAME);
-			CheckoutConductor cc = new CheckoutConductor(project);
-			// Commit
-			String commitId = result.getCommitId();
-			Commit commit = new Commit(commitId, null);
-			cc.checkout(commit);
-			// Detect test case
-			String clazz = result.getTestCaseClassName();
-			String method = result.getTestCaseMathodName();
-			List<TestSuite> testSuites = MavenUtils.getTestSuites(project.getProjectDir());
-			for (TestSuite ts : testSuites) {
-				TestCase tc = ts.getTestCaseBy(clazz, method);
-				if (tc != null) {
-					File file = ts.getTestFile();
-					String origin = FileUtils.readFileToString(file);
-					List<String> content = genPatch(origin, tc);
-					if (content != null) {
-						File projectDir = new File(project.getOutputDir(), projectId);
-						File validateDir = new File(projectDir, ValidatorBase.VALIDATOR_DIRNAME);
-						File commitDir = new File(validateDir, commitId);
-						File patternDir = new File(commitDir, pattern);
-						if (!patternDir.exists()) {
-							patternDir.mkdirs();
-						}
-						File patchFile = new File(patternDir, tc.getFullName() + ".patch");
-						FileUtils.writeLines(patchFile, content);
-						LOGGER.warn("Succeeded to generate patch: {}", file.getPath());
-					}
-					break;
-				}
-			}
+			TestCase tc = getTestCase(result);
+			String origin = FileUtils.readFileToString(tc.getTestFile());
+			String hasTestAnnot = insertTestAnnotation(origin, tc);
+			String hasJunitImports = insertJuitImports(hasTestAnnot, tc);
+			List<String> patch = genPatch(origin, hasJunitImports, tc.getTestFile(), tc.getTestFile());
+			output(result, tc, patch);
 		} catch (IOException | ParseException | GitAPIException | MalformedTreeException | BadLocationException e) {
 			LOGGER.warn("Failed to generate patch: {}", e.getMessage());
 		}
-	}
-
-	/**
-	 * Generate patch
-	 * 
-	 * @param origin
-	 * @param tc
-	 * @return
-	 * @throws MalformedTreeException
-	 * @throws BadLocationException
-	 */
-	private List<String> genPatch(String origin, TestCase tc) throws MalformedTreeException, BadLocationException {
-		String hasTestAnnot = insertTestAnnotation(origin, tc);
-		String hasJunitImports = insertJuitImports(hasTestAnnot, tc);
-		return genPatch(origin, hasJunitImports, tc.getTestFile(), tc.getTestFile());
 	}
 
 	/**

@@ -1,2 +1,3 @@
 jp.mzw.vtr.validate.DoNotSwallowTestErrorsSilently
 jp.mzw.vtr.validate.AddTestAnnotations
+jp.mzw.vtr.validate.HandleExpectedExecptionsProperly

@@ -91,7 +91,7 @@ public class DoNotSwallowTestErrorsSilently extends ValidatorBase {
 	 * @param catchClause
 	 */
 	protected void validate(Commit commit, TestCase tc, CatchClause catchClause) {
-		if (hasAssertMethodInvocation(catchClause.getBody())) {
+		if (ValidatorUtils.hasAssertMethodInvocation(catchClause.getBody())) {
 			LOGGER.info("Find try-statement but its catch-block contains assertion(s): {} @ {}", tc.getFullName(), commit.getId());
 		} else {
 			// Prevent duplicated detection

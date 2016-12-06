@@ -1,13 +1,10 @@
 package jp.mzw.vtr.validate;
 
-import java.io.File;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.List;
 
-import jp.mzw.vtr.CLI;
 import jp.mzw.vtr.core.Project;
-import jp.mzw.vtr.git.CheckoutConductor;
 import jp.mzw.vtr.git.Commit;
 import jp.mzw.vtr.maven.MavenUtils;
 import jp.mzw.vtr.maven.TestCase;
@@ -52,11 +49,17 @@ public class AddFinalModifiers extends ValidatorBase {
 		}
 	}
 
+	/**
+	 * try {} catch (FooException e) {}
+	 * 
+	 * @param commit
+	 * @param tc
+	 * @return
+	 */
 	private boolean detect(Commit commit, TestCase tc) {
-		// try {} catch (FooException e) {}
 		for (ASTNode node : tc.getNodes()) {
 			if (node instanceof TryStatement) {
-				
+
 			}
 		}
 		return false;
@@ -69,9 +72,9 @@ public class AddFinalModifiers extends ValidatorBase {
 			}
 		}
 	}
-	
+
 	protected void validate(Commit commit, TestCase tc, CatchClause catchClause) {
-		if (hasAssertMethodInvocation(catchClause.getBody())) {
+		if (ValidatorUtils.hasAssertMethodInvocation(catchClause.getBody())) {
 			LOGGER.info("Find try-statement but its catch-block contains assertion(s): {} @ {}", tc.getFullName(), commit.getId());
 		} else {
 			// Register detection result
@@ -82,49 +85,23 @@ public class AddFinalModifiers extends ValidatorBase {
 
 	@Override
 	public void generate(ValidationResult result) {
-		// try {} catch (final FooException e) {}
 		try {
-			// Pattern
-			String pattern = result.getValidatorName();
-			// Checkout
-			String projectId = result.getProjectId();
-			Project project = new Project(projectId).setConfig(CLI.CONFIG_FILENAME);
-			CheckoutConductor cc = new CheckoutConductor(project);
-			// Commit
-			String commitId = result.getCommitId();
-			Commit commit = new Commit(commitId, null);
-			cc.checkout(commit);
-			// Detect test case
-			String clazz = result.getTestCaseClassName();
-			String method = result.getTestCaseMathodName();
-			List<TestSuite> testSuites = MavenUtils.getTestSuites(project.getProjectDir());
-			for (TestSuite ts : testSuites) {
-				TestCase tc = ts.getTestCaseBy(clazz, method);
-				if (tc != null) {
-					File file = ts.getTestFile();
-					String origin = FileUtils.readFileToString(file);
-					List<String> content = genPatch(origin, tc);
-					if (content != null) {
-						File projectDir = new File(project.getOutputDir(), projectId);
-						File validateDir = new File(projectDir, ValidatorBase.VALIDATOR_DIRNAME);
-						File commitDir = new File(validateDir, commitId);
-						File patternDir = new File(commitDir, pattern);
-						if (!patternDir.exists()) {
-							patternDir.mkdirs();
-						}
-						File patchFile = new File(patternDir, tc.getFullName() + ".patch");
-						FileUtils.writeLines(patchFile, content);
-						LOGGER.warn("Succeeded to generate patch: {}", file.getPath());
-					}
-					break;
-				}
-			}
+			TestCase tc = getTestCase(result);
+			String origin = FileUtils.readFileToString(tc.getTestFile());
+			String modified = insertFinalModifier(origin, tc);
+			List<String> patch = genPatch(origin, modified, tc.getTestFile(), tc.getTestFile());
+			output(result, tc, patch);
 		} catch (IOException | ParseException | GitAPIException | MalformedTreeException | BadLocationException e) {
 			LOGGER.warn("Failed to generate patch: {}", e.getMessage());
 		}
 	}
-	
-	private List<String> genPatch(String origin, TestCase tc) throws MalformedTreeException, IllegalArgumentException, BadLocationException {
-		return null;
+
+	/**
+	 * try {} catch (final FooException e) {}
+	 * 
+	 * @return
+	 */
+	private String insertFinalModifier(String origin, TestCase tc) throws MalformedTreeException, BadLocationException {
+		return "";
 	}
 }
