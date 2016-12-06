@@ -123,6 +123,7 @@ public class TestCaseModification {
 	public TestCaseModification parseCommitMessage() throws IOException, NoHeadException, GitAPIException {
 		Project project = new Project(this.projectId).setConfig(CLI.CONFIG_FILENAME);
 		Git git = GitUtils.getGit(project.getProjectDir());
+		git.checkout().setName(GitUtils.getRefToCompareBranch(git)).call();
 		Iterable<RevCommit> commits = git.log().call();
 		for (RevCommit commit : commits) {
 			if (commit.getId().name().equals(this.commitId)) {

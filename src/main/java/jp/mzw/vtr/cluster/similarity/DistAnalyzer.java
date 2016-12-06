@@ -126,7 +126,6 @@ abstract public class DistAnalyzer {
 		}
 		for (int i = 0; i < tcmList.size() - 1; i++) {
 			TestCaseModification result1 = tcmList.get(i);
-			System.out.println(result1.getCommitMessage());
 			for (int j = i + 1; j < tcmList.size(); j++) {
 				TestCaseModification result2 = tcmList.get(j);
 				double sim = sim(result1.getCommitMessage(), result2.getCommitMessage());
