@@ -145,7 +145,7 @@ public class CLI {
 		cc.checkout();
 	}
 
-	private static void cluster(Project project, String analyzer, String strategy, double threshold) throws IOException, ParseException {
+	private static void cluster(Project project, String analyzer, String strategy, double threshold) throws IOException, ParseException, NoHeadException, GitAPIException {
 		// Similarity
 		DistAnalyzer distAnalyzer = DistAnalyzer.analyzerFactory(project.getOutputDir(), analyzer);
 		List<TestCaseModification> tcmList = distAnalyzer.parseTestCaseModifications();

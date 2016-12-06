@@ -12,6 +12,8 @@ import jp.mzw.vtr.detect.Detector;
 import jp.mzw.vtr.detect.TestCaseModification;
 
 import org.apache.commons.io.FileUtils;
+import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.api.errors.NoHeadException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -98,8 +100,53 @@ abstract public class DistAnalyzer {
 	 * @return
 	 * @throws IOException
 	 * @throws ParseException
+	 * @throws GitAPIException 
+	 * @throws NoHeadException 
 	 */
-	public DistMap analyze(List<TestCaseModification> tcmList) throws IOException, ParseException {
+	public DistMap analyze(List<TestCaseModification> tcmList) throws IOException, ParseException, NoHeadException, GitAPIException {
+		// TODO change methods on demand
+		return analyzeByCommitMessages(tcmList);
+	}
+
+	/**
+	 * Analyze similarity distance among test-case modifications
+	 * by using commit messages
+	 * 
+	 * @param tcmList
+	 * @return
+	 * @throws IOException
+	 * @throws ParseException
+	 * @throws GitAPIException 
+	 * @throws NoHeadException 
+	 */
+	public DistMap analyzeByCommitMessages(List<TestCaseModification> tcmList) throws IOException, ParseException, NoHeadException, GitAPIException {
+		DistMap map = new DistMap(tcmList);
+		for (TestCaseModification tcm : tcmList) {
+			tcm.parseCommitMessage();
+		}
+		for (int i = 0; i < tcmList.size() - 1; i++) {
+			TestCaseModification result1 = tcmList.get(i);
+			System.out.println(result1.getCommitMessage());
+			for (int j = i + 1; j < tcmList.size(); j++) {
+				TestCaseModification result2 = tcmList.get(j);
+				double sim = sim(result1.getCommitMessage(), result2.getCommitMessage());
+				double dist = 1.0 - sim;
+				map.add(dist, i, j);
+			}
+		}
+		return map;
+	}
+
+	/**
+	 * Analyze similarity distance among test-case modifications
+	 * by using syntax elements
+	 * 
+	 * @param tcmList
+	 * @return
+	 * @throws IOException
+	 * @throws ParseException
+	 */
+	public DistMap analyzeBySyntaxElements(List<TestCaseModification> tcmList) throws IOException, ParseException {
 		DistMap map = new DistMap(tcmList);
 		for (int i = 0; i < tcmList.size() - 1; i++) {
 			TestCaseModification result1 = tcmList.get(i);

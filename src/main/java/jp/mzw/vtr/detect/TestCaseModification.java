@@ -3,19 +3,30 @@ package jp.mzw.vtr.detect;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.apache.commons.io.FileUtils;
 import org.eclipse.jdt.core.dom.ASTNode;
+import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.api.errors.NoHeadException;
+import org.eclipse.jgit.revwalk.RevCommit;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.parser.Parser;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import jp.mzw.vtr.CLI;
+import jp.mzw.vtr.core.Project;
 import jp.mzw.vtr.git.Commit;
+import jp.mzw.vtr.git.GitUtils;
 import jp.mzw.vtr.maven.TestCase;
 
 public class TestCaseModification {
+	protected static Logger LOGGER = LoggerFactory.getLogger(TestCaseModification.class);
 
 	private Commit commit;
 	private TestCase testCase;
@@ -57,6 +68,8 @@ public class TestCaseModification {
 	private String commitId;
 	private String clazz;
 	private String method;
+	
+	private String commitMessage;
 
 	public TestCaseModification(File file, String projectId, String commitId, String clazz, String method) throws IOException {
 		this.file = file;
@@ -105,5 +118,28 @@ public class TestCaseModification {
 
 	public List<String> getOriginalNodeClasses() {
 		return this.originalNodeClasses;
+	}
+	
+	public TestCaseModification parseCommitMessage() throws IOException, NoHeadException, GitAPIException {
+		Project project = new Project(this.projectId).setConfig(CLI.CONFIG_FILENAME);
+		Git git = GitUtils.getGit(project.getProjectDir());
+		Iterable<RevCommit> commits = git.log().call();
+		for (RevCommit commit : commits) {
+			if (commit.getId().name().equals(this.commitId)) {
+				this.commitMessage = commit.getFullMessage();
+				break;
+			}
+		}
+		return this;
+	}
+	
+	public List<String> getCommitMessage() {
+		if (this.commitMessage == null) {
+			LOGGER.warn("Commit message not found: {} on {}", this.commitId, this.projectId);
+			LOGGER.warn("Git-checkout might solve this problem");
+			return null;
+		}
+		String[] words = this.commitMessage.split("\\s+");
+		return Arrays.asList(words);
 	}
 }
