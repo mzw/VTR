@@ -4,7 +4,11 @@ import java.io.File;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Properties;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringEscapeUtils;
@@ -53,6 +57,9 @@ public class Detector implements CheckoutConductor.Listener {
 	private List<TestSuite> curTestSuites;
 	private List<TestSuite> prvTestSuites;
 
+	public static final String GENERATED_SOURCE_FILE_LIST = "generated_source_file_list.properties";
+	protected Properties generated_source_file_list;
+
 	public Detector(Project project) throws IOException, ParseException {
 		this.projectId = project.getProjectId();
 		this.projectDir = project.getProjectDir();
@@ -62,6 +69,12 @@ public class Detector implements CheckoutConductor.Listener {
 		this.dict = new Dictionary(this.outputDir, this.projectId).parse().createPrevCommitByCommitIdMap();
 		this.curTestSuites = null;
 		this.prvTestSuites = null;
+		this.generated_source_file_list = new Properties();
+	}
+	
+	public Detector loadGeneratedSourceFileList(String filename) throws IOException {
+		this.generated_source_file_list.load(Detector.class.getClassLoader().getResourceAsStream(filename));
+		return this;
 	}
 
 	@Override
@@ -130,14 +143,10 @@ public class Detector implements CheckoutConductor.Listener {
 				String srcName = src.attr("name");
 				String filePath = "src/main/java/" + pkgName + "/" + srcName;
 				BlameResult result = blame.setFilePath(filePath).call();
-				// TODO: Special cases for JavaCC code generation
+				// Special cases for JavaCC code generation
 				if (result == null) {
 					LOGGER.info("Generated code? {}", filePath);
-					if (pkgName.contains("configuration")) { // Commons-Configuration
-						filePath = "src/main/javacc/PropertyListParser.jj";
-					} else if (pkgName.contains("jexl")) { // Commons-JEXL
-						filePath = "src/main/java/" + pkgName + "/" + "Parser.jjt";
-					}
+					filePath = getActualSourceFile(filePath);
 					File file = new File(this.projectDir, filePath);
 					if (file.exists()) {
 						LOGGER.info("Found {} as target source", filePath);
@@ -190,6 +199,20 @@ public class Detector implements CheckoutConductor.Listener {
 			}
 		}
 		return detect;
+	}
+	
+	protected String getActualSourceFile(String filePath) {
+		for (Iterator<Object> it = this.generated_source_file_list.keySet().iterator(); it.hasNext();) {
+			String key = (String) it.next();
+			String value = this.generated_source_file_list.getProperty(key);
+			String regex = "src/main/java/" + key.replaceAll("\\.", "/");
+			Pattern p = Pattern.compile(regex);
+			Matcher m = p.matcher(filePath);
+			if (m.find()) {
+				return value;
+			}
+		}
+		return null;
 	}
 
 	/**

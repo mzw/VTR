@@ -12,6 +12,8 @@ import jp.mzw.vtr.cluster.similarity.LcsAnalyzer;
 import jp.mzw.vtr.cluster.similarity.DistMap;
 import jp.mzw.vtr.detect.TestCaseModification;
 
+import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.api.errors.NoHeadException;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -34,7 +36,7 @@ public class LCSAnalyzerTest extends VtrTestBase {
 	}
 	
 	@Test
-	public void testMeasureLcs() throws IOException, ParseException {
+	public void testMeasureLcs() throws IOException, ParseException, NoHeadException, GitAPIException {
 		LcsAnalyzer analyzer = new LcsAnalyzer(this.project.getOutputDir());
 		List<TestCaseModification> tcmList = analyzer.parseTestCaseModifications();
 		DistMap map = analyzer.analyze(tcmList);

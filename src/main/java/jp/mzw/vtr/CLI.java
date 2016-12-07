@@ -94,7 +94,7 @@ public class CLI {
 			String method = args[1];
 			VisualizerBase visualizer = VisualizerBase.visualizerFactory(method, new Project(null).setConfig(CONFIG_FILENAME).getOutputDir());
 			if (visualizer != null) {
-				visualizer.visualize();
+				visualizer.loadGeneratedSourceFileList(Detector.GENERATED_SOURCE_FILE_LIST).visualize();
 			} else {
 				LOGGER.info("$ java -cp=<class-path> jp.mzw.vtr.CLI visualize <method>");
 			}
@@ -141,11 +141,12 @@ public class CLI {
 
 	private static void detect(Project project) throws IOException, ParseException, GitAPIException {
 		CheckoutConductor cc = new CheckoutConductor(project);
-		cc.addListener(new Detector(project));
+		cc.addListener(new Detector(project).loadGeneratedSourceFileList(Detector.GENERATED_SOURCE_FILE_LIST));
 		cc.checkout();
 	}
 
-	private static void cluster(Project project, String analyzer, String strategy, double threshold) throws IOException, ParseException, NoHeadException, GitAPIException {
+	private static void cluster(Project project, String analyzer, String strategy, double threshold) throws IOException, ParseException, NoHeadException,
+			GitAPIException {
 		// Similarity
 		DistAnalyzer distAnalyzer = DistAnalyzer.analyzerFactory(project.getOutputDir(), analyzer);
 		List<TestCaseModification> tcmList = distAnalyzer.parseTestCaseModifications();

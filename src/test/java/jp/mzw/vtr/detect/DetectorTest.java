@@ -31,4 +31,13 @@ public class DetectorTest extends VtrTestBase {
 		Assert.assertNotNull(this.detector);
 	}
 
+	@Test
+	public void testGeneratedSources() throws IOException, ParseException {
+		Detector detector = new Detector(this.project).loadGeneratedSourceFileList("test-" + Detector.GENERATED_SOURCE_FILE_LIST);
+		Assert.assertArrayEquals("src/main/java/jp/mzw/vtr/JavaCC.jjt".toCharArray(), detector.getActualSourceFile("src/main/java/jp/mzw/vtr/FileUtils.java")
+				.toCharArray());
+		Assert.assertArrayEquals(("src/main/java/" + "bar").toCharArray(), detector.getActualSourceFile("src/main/java/" + "foo").toCharArray());
+		Assert.assertNull(detector.getActualSourceFile("src/main/java/" + "bar"));
+	}
+
 }

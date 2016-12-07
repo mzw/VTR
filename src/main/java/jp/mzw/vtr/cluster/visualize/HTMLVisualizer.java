@@ -88,35 +88,11 @@ public class HTMLVisualizer extends VisualizerBase {
 			cc.checkout(prvCommit);
 			List<TestSuite> prvTestSuites = MavenUtils.getTestSuites(projectDir);
 			TestCase prvTestCase = TestSuite.getTestCaseWithClassMethodName(prvTestSuites, leaf.getClassName(), leaf.getMethodName());
-			List<String> prvTestCaseContent = prvTestCase != null ? FileUtils.readLines(prvTestCase.getTestFile()) : null;
 			cc.checkout(curCommit);
 			List<TestSuite> curTestSuites = MavenUtils.getTestSuites(projectDir);
 			TestCase curTestCase = TestSuite.getTestCaseWithClassMethodName(curTestSuites, leaf.getClassName(), leaf.getMethodName());
-			List<String> curTestCaseContent = FileUtils.readLines(curTestCase.getTestFile());
 			// Get patch
-			List<String> patch = null;
-			if (prvTestCase == null) {
-				patch = new ArrayList<>();
-				patch.add("Addition");
-			} else {
-				String delim = "";
-				// Previous
-				StringBuilder prv = new StringBuilder();
-				delim = "";
-				for (int line = prvTestCase.getStartLineNumber(); line <= prvTestCase.getEndLineNumber(); line++) {
-					prv.append(delim).append(prvTestCaseContent.get(line - 1));
-					delim = "\n";
-				}
-				// Current
-				StringBuilder cur = new StringBuilder();
-				delim = "";
-				// }
-				for (int line = curTestCase.getStartLineNumber(); line <= curTestCase.getEndLineNumber(); line++) {
-					cur.append(delim).append(curTestCaseContent.get(line - 1));
-					delim = "\n";
-				}
-				patch = ValidatorBase.genPatch(prv.toString(), cur.toString(), prvTestCase.getTestFile(), curTestCase.getTestFile());
-			}
+			List<String> patch = getPatch(prvTestCase, curTestCase);
 			// Get URL
 			Git git = GitUtils.getGit(project.getProjectDir());
 			String url = GitUtils.getRemoteOriginUrl(git);
@@ -146,19 +122,8 @@ public class HTMLVisualizer extends VisualizerBase {
 			// Patch
 			document.body.appendChild(new H1().appendChild(new Text("Patch")));
 			document.body.appendChild(new P().appendChild(new Text("* Note that line numbers below are not correct")));
-			{
-				Table table = new Table().setRules("groups");
-				table.appendChild(new Thead().appendChild(new Tr().appendChild(new Th().appendText("&nbsp;"))));
-				Tbody tbody = new Tbody();
-				for (String line : patch) {
-					Tr tr = new Tr();
-					tr.appendChild(new Td().setAlign("left").appendChild(new Pre().appendChild(new Code().appendText(StringEscapeUtils.escapeHtml4(line)))));
-					tbody.appendChild(tr);
-				}
-				table.appendChild(tbody);
-				table.appendChild(new Tfoot().appendChild(new Tr().appendChild(new Td().appendText("&nbsp;"))));
-				document.body.appendChild(table);
-			}
+			Table patchTable = getPatchTable(patch);
+			document.body.appendChild(patchTable);
 
 			// Source code
 			document.body.appendChild(new H1().appendChild(new Text("Source Blame")));
@@ -170,6 +135,53 @@ public class HTMLVisualizer extends VisualizerBase {
 			e.printStackTrace();
 		}
 		return document.write();
+	}
+
+	private List<String> getPatch(TestCase cur, TestCase prv) throws IOException {
+		List<String> patch = null;
+		if (prv == null) {
+			patch = new ArrayList<>();
+			patch.add("Addition");
+		} else {
+			String delim = "";
+			// Previous
+			StringBuilder original = new StringBuilder();
+			delim = "";
+			List<String> originalContent = FileUtils.readLines(cur.getTestFile());
+			for (int line = prv.getStartLineNumber(); line <= prv.getEndLineNumber(); line++) {
+				original.append(delim).append(originalContent.get(line - 1));
+				delim = "\n";
+			}
+			// Current
+			StringBuilder revised = new StringBuilder();
+			delim = "";
+			List<String> revisedContent = FileUtils.readLines(cur.getTestFile());
+			for (int line = cur.getStartLineNumber(); line <= cur.getEndLineNumber(); line++) {
+				revised.append(delim).append(revisedContent.get(line - 1));
+				delim = "\n";
+			}
+			patch = ValidatorBase.genPatch(original.toString(), revised.toString(), prv.getTestFile(), cur.getTestFile());
+		}
+		return patch;
+	}
+
+	/**
+	 * 
+	 * @param patch
+	 * @return
+	 */
+	private Table getPatchTable(List<String> patch) {
+		Table table = new Table().setRules("groups");
+		table.appendChild(new Thead().appendChild(new Tr().appendChild(new Th().appendText("&nbsp;"))));
+		Tbody tbody = new Tbody();
+		for (String line : patch) {
+			Tr tr = new Tr();
+			tr.appendChild(new Td().setAlign("left").appendChild(new Pre().appendChild(new Code().appendText(StringEscapeUtils.escapeHtml4(line)))));
+			tbody.appendChild(tr);
+		}
+		table.appendChild(tbody);
+		table.appendChild(new Tfoot().appendChild(new Tr().appendChild(new Td().appendText("&nbsp;"))));
+		return table;
 	}
 
 	/**
@@ -259,11 +271,7 @@ public class HTMLVisualizer extends VisualizerBase {
 				// Special cases for JavaCC code generation
 				if (!file.exists()) {
 					LOGGER.info("Generated code? {}", filePath);
-					if (pkgName.contains("configuration")) { // Commons-Configuration
-						filePath = "src/main/javacc/PropertyListParser.jj";
-					} else if (pkgName.contains("jexl")) { // Commons-JEXL
-						filePath = "src/main/java/" + pkgName + "/" + "Parser.jjt";
-					}
+					filePath = getActualSourceFile(filePath);
 					Tbody tbody = new Tbody();
 					Tr tr = new Tr();
 					tr.appendChild(new Td().setAlign("left").appendText("&nbsp;&nbsp;").appendText("Generated from").appendText("&nbsp;&nbsp;")
@@ -272,40 +280,39 @@ public class HTMLVisualizer extends VisualizerBase {
 					tbody.appendChild(tr);
 					table.appendChild(tbody);
 					ret.add(table);
-				} else {
-					table.appendChild(new Thead().appendChild(new Tr().appendChild(new Th().appendText("Tag")).appendChild(new Th().appendText("Date"))
-							.appendChild(new Th().appendText("Blame")).appendChild(new Th().appendText("Line")).appendChild(new Th().appendText("Source"))));
-					boolean covered = false;
-					List<String> lines = FileUtils.readLines(file);
-					BlameResult result = blame.setFilePath(filePath).call();
-					Tbody tbody = new Tbody();
-					for (org.jsoup.nodes.Element line : src.select("line")) {
-						int nr = Integer.parseInt(line.attr("nr"));
-						int ci = Integer.parseInt(line.attr("ci"));
-						int cb = Integer.parseInt(line.attr("cb"));
-						Commit blameCommit = new Commit(result.getSourceCommit(nr));
-						Tag tag = dict.getTagBy(blameCommit);
-						// Create line
-						Tr tr = new Tr();
-						if (0 < ci || 0 < cb) { // Covered
-							covered = true;
-							tr.setCSSClass("target");
-						}
-						tr.appendChild(new Td().appendText("&nbsp;&nbsp;").appendChild(getTagAnchor(url, tag)).appendText("&nbsp;&nbsp;"));
-						tr.appendChild(new Td().appendText("&nbsp;&nbsp;").appendText(blameCommit.getDate().toString()).appendText("&nbsp;&nbsp;"));
-						tr.appendChild(new Td().appendText("&nbsp;&nbsp;").appendChild(getBlameAnchor(url, blameCommit, filePath, nr))
-								.appendText("&nbsp;&nbsp;"));
-						tr.appendChild(new Td().setAlign("right").appendText(new Integer(nr).toString()));
-						tr.appendChild(new Td().setAlign("left").appendChild(
-								new Pre().appendChild(new Code().appendText(StringEscapeUtils.escapeHtml4(lines.get(nr - 1))))));
-						// append
-						tbody.appendChild(tr);
+					continue;
+				}
+				table.appendChild(new Thead().appendChild(new Tr().appendChild(new Th().appendText("Tag")).appendChild(new Th().appendText("Date"))
+						.appendChild(new Th().appendText("Blame")).appendChild(new Th().appendText("Line")).appendChild(new Th().appendText("Source"))));
+				boolean covered = false;
+				List<String> lines = FileUtils.readLines(file);
+				BlameResult result = blame.setFilePath(filePath).call();
+				Tbody tbody = new Tbody();
+				for (org.jsoup.nodes.Element line : src.select("line")) {
+					int nr = Integer.parseInt(line.attr("nr"));
+					int ci = Integer.parseInt(line.attr("ci"));
+					int cb = Integer.parseInt(line.attr("cb"));
+					Commit blameCommit = new Commit(result.getSourceCommit(nr));
+					Tag tag = dict.getTagBy(blameCommit);
+					// Create line
+					Tr tr = new Tr();
+					if (0 < ci || 0 < cb) { // Covered
+						covered = true;
+						tr.setCSSClass("target");
 					}
-					if (covered) {
-						table.appendChild(tbody);
-						table.appendChild(new Tfoot().appendChild(new Tr().appendChild(new Td().appendText("&nbsp;"))));
-						ret.add(table);
-					}
+					tr.appendChild(new Td().appendText("&nbsp;&nbsp;").appendChild(getTagAnchor(url, tag)).appendText("&nbsp;&nbsp;"));
+					tr.appendChild(new Td().appendText("&nbsp;&nbsp;").appendText(blameCommit.getDate().toString()).appendText("&nbsp;&nbsp;"));
+					tr.appendChild(new Td().appendText("&nbsp;&nbsp;").appendChild(getBlameAnchor(url, blameCommit, filePath, nr)).appendText("&nbsp;&nbsp;"));
+					tr.appendChild(new Td().setAlign("right").appendText(new Integer(nr).toString()));
+					tr.appendChild(new Td().setAlign("left").appendChild(
+							new Pre().appendChild(new Code().appendText(StringEscapeUtils.escapeHtml4(lines.get(nr - 1))))));
+					// append
+					tbody.appendChild(tr);
+				}
+				if (covered) {
+					table.appendChild(tbody);
+					table.appendChild(new Tfoot().appendChild(new Tr().appendChild(new Td().appendText("&nbsp;"))));
+					ret.add(table);
 				}
 			}
 		}

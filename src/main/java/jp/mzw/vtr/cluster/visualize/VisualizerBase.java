@@ -5,13 +5,18 @@ import java.io.IOException;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import jp.mzw.vtr.CLI;
 import jp.mzw.vtr.cluster.HCluster;
 import jp.mzw.vtr.cluster.similarity.DistAnalyzer;
 import jp.mzw.vtr.core.Project;
+import jp.mzw.vtr.detect.Detector;
 import jp.mzw.vtr.dict.Dictionary;
 import jp.mzw.vtr.dict.DictionaryMaker;
 
@@ -37,6 +42,8 @@ abstract public class VisualizerBase {
 	private Map<String, Dictionary> dicts;
 	private List<ClusterResult> results;
 
+	protected Properties generated_source_file_list;
+
 	public VisualizerBase(File outputDir) throws IOException, ParseException {
 		this.outputDir = outputDir;
 		this.visualDir = new File(this.outputDir, VISUAL_DIR);
@@ -45,6 +52,27 @@ abstract public class VisualizerBase {
 		}
 		parseDicts();
 		this.results = parseClusteringResults();
+		this.generated_source_file_list = new Properties();
+		this.generated_source_file_list.load(Detector.class.getClassLoader().getResourceAsStream(Detector.GENERATED_SOURCE_FILE_LIST));
+	}
+
+	public VisualizerBase loadGeneratedSourceFileList(String filename) throws IOException {
+		this.generated_source_file_list.load(Detector.class.getClassLoader().getResourceAsStream(filename));
+		return this;
+	}
+
+	protected String getActualSourceFile(String filePath) {
+		for (Iterator<Object> it = this.generated_source_file_list.keySet().iterator(); it.hasNext();) {
+			String key = (String) it.next();
+			String value = this.generated_source_file_list.getProperty(key);
+			String regex = "src/main/java/" + key.replaceAll("\\.", "/");
+			Pattern p = Pattern.compile(regex);
+			Matcher m = p.matcher(filePath);
+			if (m.find()) {
+				return value;
+			}
+		}
+		return null;
 	}
 
 	abstract public String getContent(ClusterLeaf leaf);
