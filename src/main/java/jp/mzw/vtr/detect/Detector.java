@@ -179,6 +179,11 @@ public class Detector implements CheckoutConductor.Listener {
 					int ci = Integer.parseInt(line.attr("ci"));
 					int cb = Integer.parseInt(line.attr("cb"));
 					if (0 < ci || 0 < cb) { // Covered
+						try {
+							result.getSourceCommit(nr);
+						} catch (ArrayIndexOutOfBoundsException e) { // for EOF
+							continue;
+						}
 						Tag tag = dict.getTagBy(new Commit(result.getSourceCommit(nr)));
 						if (cur.getDate().after(tag.getDate())) {
 							// Previous
