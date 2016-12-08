@@ -50,6 +50,8 @@ public class CLI {
 			LOGGER.info("$ java -cp=<class-path> jp.mzw.vtr.CLI cov       <subject-id> At    <commit-id>");
 			LOGGER.info("$ java -cp=<class-path> jp.mzw.vtr.CLI cov       <subject-id> After <commit-id>");
 			LOGGER.info("$ java -cp=<class-path> jp.mzw.vtr.CLI detect    <subject-id>");
+			LOGGER.info("$ java -cp=<class-path> jp.mzw.vtr.CLI detect    <subject-id> At    <commit-id>");
+			LOGGER.info("$ java -cp=<class-path> jp.mzw.vtr.CLI detect    <subject-id> After <commit-id>");
 			LOGGER.info("$ java -cp=<class-path> jp.mzw.vtr.CLI cluster   <similarity> <cluster-method> <threshold>");
 			LOGGER.info("$ java -cp=<class-path> jp.mzw.vtr.CLI visualize <method>");
 			LOGGER.info("$ java -cp=<class-path> jp.mzw.vtr.CLI validate  <subject-id>");
@@ -80,7 +82,17 @@ public class CLI {
 		} else if ("detect".equals(command)) {
 			String projectId = args[1];
 			Project project = new Project(projectId).setConfig(CONFIG_FILENAME);
-			detect(project);
+			if (args.length == 2) { // all commits
+				detect(project);
+			} else if (args.length == 4) { // specific commit(s)
+				CheckoutConductor.Type type = CheckoutConductor.Type.valueOf(args[2]);
+				String commitId = args[3];
+				detect(project, type, commitId);
+			} else {
+				LOGGER.info("$ java -cp=<class-path> jp.mzw.vtr.CLI detect <subject-id>");
+				LOGGER.info("$ java -cp=<class-path> jp.mzw.vtr.CLI detect <subject-id> At    <commit-id>");
+				LOGGER.info("$ java -cp=<class-path> jp.mzw.vtr.CLI detect <subject-id> After <commit-id>");
+			}
 		} else if ("cluster".equals(command)) {
 			if (args.length == 4) {
 				String analyzer = args[1];
@@ -143,6 +155,12 @@ public class CLI {
 		CheckoutConductor cc = new CheckoutConductor(project);
 		cc.addListener(new Detector(project).loadGeneratedSourceFileList(Detector.GENERATED_SOURCE_FILE_LIST));
 		cc.checkout();
+	}
+
+	private static void detect(Project project, CheckoutConductor.Type type, String commitId) throws IOException, ParseException, GitAPIException {
+		CheckoutConductor cc = new CheckoutConductor(project);
+		cc.addListener(new Detector(project).loadGeneratedSourceFileList(Detector.GENERATED_SOURCE_FILE_LIST));
+		cc.checkout(type, commitId);
 	}
 
 	private static void cluster(Project project, String analyzer, String strategy, double threshold) throws IOException, ParseException, NoHeadException,

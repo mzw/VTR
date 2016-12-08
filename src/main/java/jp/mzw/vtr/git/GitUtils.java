@@ -139,6 +139,7 @@ public class GitUtils {
 				String raw = baos.toString();
 				InputStream is = new ByteArrayInputStream(raw.getBytes());
 				patch.parse(is);
+				is.close();
 			}
 		}
 		return patch;
