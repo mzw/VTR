@@ -92,7 +92,7 @@ public class HTMLVisualizer extends VisualizerBase {
 			List<TestSuite> curTestSuites = MavenUtils.getTestSuites(projectDir);
 			TestCase curTestCase = TestSuite.getTestCaseWithClassMethodName(curTestSuites, leaf.getClassName(), leaf.getMethodName());
 			// Get patch
-			List<String> patch = getPatch(prvTestCase, curTestCase);
+			List<String> patch = getPatch(curTestCase, prvTestCase);
 			// Get URL
 			Git git = GitUtils.getGit(project.getProjectDir());
 			String url = GitUtils.getRemoteOriginUrl(git);
