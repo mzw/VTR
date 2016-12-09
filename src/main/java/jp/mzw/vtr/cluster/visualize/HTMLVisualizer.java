@@ -292,6 +292,11 @@ public class HTMLVisualizer extends VisualizerBase {
 					int nr = Integer.parseInt(line.attr("nr"));
 					int ci = Integer.parseInt(line.attr("ci"));
 					int cb = Integer.parseInt(line.attr("cb"));
+					try {
+						result.getSourceCommit(nr);
+					} catch (ArrayIndexOutOfBoundsException e) { // for EOF
+						continue;
+					}
 					Commit blameCommit = new Commit(result.getSourceCommit(nr));
 					Tag tag = dict.getTagBy(blameCommit);
 					// Create line
