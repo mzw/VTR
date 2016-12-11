@@ -149,16 +149,24 @@ public class HTMLVisualizer extends VisualizerBase {
 			delim = "";
 			List<String> originalContent = FileUtils.readLines(cur.getTestFile());
 			for (int line = prv.getStartLineNumber(); line <= prv.getEndLineNumber(); line++) {
-				original.append(delim).append(originalContent.get(line - 1));
-				delim = "\n";
+				try {
+					original.append(delim).append(originalContent.get(line - 1));
+					delim = "\n";
+				} catch (IndexOutOfBoundsException e) {
+					continue;
+				}
 			}
 			// Current
 			StringBuilder revised = new StringBuilder();
 			delim = "";
 			List<String> revisedContent = FileUtils.readLines(cur.getTestFile());
 			for (int line = cur.getStartLineNumber(); line <= cur.getEndLineNumber(); line++) {
-				revised.append(delim).append(revisedContent.get(line - 1));
-				delim = "\n";
+				try {
+					revised.append(delim).append(revisedContent.get(line - 1));
+					delim = "\n";
+				} catch (IndexOutOfBoundsException e) {
+					continue;
+				}
 			}
 			patch = ValidatorBase.genPatch(original.toString(), revised.toString(), prv.getTestFile(), cur.getTestFile());
 		}
