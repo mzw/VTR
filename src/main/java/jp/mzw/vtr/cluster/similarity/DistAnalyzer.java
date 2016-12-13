@@ -6,10 +6,13 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import jp.mzw.vtr.detect.Detector;
 import jp.mzw.vtr.detect.TestCaseModification;
+import jp.mzw.vtr.detect.TestCaseModification.ProjectCommitPair;
 
 import org.apache.commons.io.FileUtils;
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -121,15 +124,19 @@ abstract public class DistAnalyzer {
 	 */
 	public DistMap analyzeByCommitMessages(List<TestCaseModification> tcmList) throws IOException, ParseException, NoHeadException, GitAPIException {
 		DistMap map = new DistMap(tcmList);
+		Map<ProjectCommitPair, String> parsed = new HashMap<>();
 		for (TestCaseModification tcm : tcmList) {
-			tcm.parseCommitMessage();
+			ProjectCommitPair pair = tcm.parseCommitMessage(parsed);
+			if (pair != null) {
+				parsed.put(pair, tcm.getCommitMessage());
+			}
 		}
 		for (int i = 0; i < tcmList.size() - 1; i++) {
 			TestCaseModification result1 = tcmList.get(i);
 			for (int j = i + 1; j < tcmList.size(); j++) {
 				TestCaseModification result2 = tcmList.get(j);
 				LOGGER.info("Measuring similarity between {} and {}", result1.hashCode(), result2.hashCode());
-				double sim = sim(result1.getCommitMessage(), result2.getCommitMessage());
+				double sim = sim(result1.getCommitMessageSplitted(), result2.getCommitMessageSplitted());
 				double dist = 1.0 - sim;
 				map.add(dist, i, j);
 			}

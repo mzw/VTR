@@ -4,7 +4,9 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.io.FileUtils;
 import org.eclipse.jdt.core.dom.ASTNode;
@@ -120,7 +122,16 @@ public class TestCaseModification {
 		return this.originalNodeClasses;
 	}
 	
-	public TestCaseModification parseCommitMessage() throws IOException, NoHeadException, GitAPIException {
+	public ProjectCommitPair parseCommitMessage(Map<ProjectCommitPair, String> parsed) throws IOException, NoHeadException, GitAPIException {
+		for (Iterator<ProjectCommitPair> it = parsed.keySet().iterator(); it.hasNext(); ) {
+			ProjectCommitPair pair = it.next();
+			if (pair.equals(this.projectId, this.commitId)) {
+				this.commitMessage = parsed.get(pair);
+				LOGGER.info("Set commit message from previous results: {} on {}", this.commitId, this.projectId);
+				return null;
+			}
+		}
+		ProjectCommitPair ret = null;
 		Project project = new Project(this.projectId).setConfig(CLI.CONFIG_FILENAME);
 		Git git = GitUtils.getGit(project.getProjectDir());
 		git.checkout().setName(GitUtils.getRefToCompareBranch(git)).call();
@@ -128,14 +139,41 @@ public class TestCaseModification {
 		for (RevCommit commit : commits) {
 			if (commit.getId().name().equals(this.commitId)) {
 				this.commitMessage = commit.getFullMessage();
+				ret = new ProjectCommitPair(this.projectId, this.commitId);
 				LOGGER.info("Get commit message: {} on {}", this.commitId, this.projectId);
 				break;
 			}
 		}
-		return this;
+		return ret;
 	}
 	
-	public List<String> getCommitMessage() {
+	public static class ProjectCommitPair {
+		private final String projectId;
+		private final String commitId;
+		public ProjectCommitPair(String projectId, String commitId) {
+			this.projectId = projectId;
+			this.commitId = commitId;
+		}
+		public String getProjectId() {
+			return this.projectId;
+		}
+		public String getCommitId() {
+			return this.commitId;
+		}
+		public boolean equals(String projectId, String commitId) {
+			if (this.getProjectId().equals(projectId) && this.getCommitId().equals(commitId)) {
+				return true;
+			} else {
+				return false;
+			}
+		}
+	}
+	
+	public String getCommitMessage() {
+		return this.commitMessage;
+	}
+	
+	public List<String> getCommitMessageSplitted() {
 		if (this.commitMessage == null) {
 			LOGGER.warn("Commit message not found: {} on {}", this.commitId, this.projectId);
 			LOGGER.warn("Git-checkout might solve this problem");
