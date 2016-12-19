@@ -2,23 +2,35 @@ package jp.mzw.vtr.validate;
 
 import java.io.File;
 import java.io.IOException;
+import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
-import java.util.Properties;
+import java.util.Map;
 
+import org.apache.commons.io.FileUtils;
+import org.eclipse.core.runtime.NullProgressMonitor;
+import org.eclipse.jdt.core.JavaCore;
+import org.eclipse.jdt.core.ToolFactory;
+import org.eclipse.jdt.core.dom.AST;
+import org.eclipse.jdt.core.dom.ASTParser;
+import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.core.dom.MethodDeclaration;
+import org.eclipse.jdt.core.formatter.CodeFormatter;
+import org.eclipse.jface.text.BadLocationException;
+import org.eclipse.jface.text.Document;
+import org.eclipse.jface.text.IDocument;
+import org.eclipse.jface.text.TextUtilities;
+import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.text.edits.MalformedTreeException;
+import org.eclipse.text.edits.TextEdit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.xml.sax.InputSource;
-
-import com.puppycrawl.tools.checkstyle.Checker;
-import com.puppycrawl.tools.checkstyle.ConfigurationLoader;
-import com.puppycrawl.tools.checkstyle.PropertiesExpander;
-import com.puppycrawl.tools.checkstyle.api.AuditEvent;
-import com.puppycrawl.tools.checkstyle.api.CheckstyleException;
-import com.puppycrawl.tools.checkstyle.api.Configuration;
 
 import jp.mzw.vtr.core.Project;
 import jp.mzw.vtr.git.Commit;
+import jp.mzw.vtr.maven.AllMethodFindVisitor;
 import jp.mzw.vtr.maven.MavenUtils;
 import jp.mzw.vtr.maven.TestCase;
 import jp.mzw.vtr.maven.TestSuite;
@@ -39,37 +51,15 @@ public class FormatCode extends ValidatorBase {
 						continue;
 					}
 					try {
-						// Instantiate checker
-						final Checker checker = new Checker();
-						checker.setModuleClassLoader(Checker.class.getClassLoader());
-						// Config for checker
-						Properties properties = new Properties();
-						properties.put("checkstyle.cache.file", this.getPathToCheckStyleCacheFile().getAbsolutePath());
-						// Set config to checker
-						InputSource configSource = new InputSource(this.getClass().getClassLoader().getResourceAsStream(FormatCode.CHECKSTYPE));
-						PropertiesExpander overridePropsResolver = new PropertiesExpander(properties);
-						Configuration config = ConfigurationLoader.loadConfiguration(configSource, overridePropsResolver, true);
-						checker.configure(config);
-						// Set stream to get results
-						CheckstyleListener listener = new CheckstyleListener();
-						checker.addListener(listener);
-						// Invoke checker
-						List<File> files = new ArrayList<>();
-						files.add(tc.getTestFile());
-						checker.process(files);
-						// Get results
-						for (AuditEvent error : listener.getErrors()) {
-							if (tc.getStartLineNumber() <= error.getLine() && error.getLine() <= tc.getEndLineNumber()) {
-								this.dupulicates.add(tc.getFullName());
-								ValidationResult vr = new ValidationResult(this.projectId, commit, tc, error.getLine(), error.getLine(), this);
-								this.validationResultList.add(vr);
-							}
+						if (detect(tc)) {
+							this.dupulicates.add(tc.getFullName());
+							ValidationResult vr = new ValidationResult(this.projectId, commit, tc, tc.getStartLineNumber(), tc.getEndLineNumber(), this);
+							this.validationResultList.add(vr);
 						}
-						// Finalize
-						checker.destroy();
-					} catch (CheckstyleException e) {
+					} catch (IOException | MalformedTreeException | BadLocationException e) {
 						LOGGER.warn("Failed to invoke Checkstyle: {}", e.getMessage());
 					}
+
 				}
 			}
 		} catch (IOException e) {
@@ -77,17 +67,120 @@ public class FormatCode extends ValidatorBase {
 		}
 	}
 
-	public static final String CHECKSTYPE = "jp/mzw/vtr/validate/FormatCode.xml";
-
-	protected File getPathToCheckStyleCacheFile() {
-		File targetDir = new File(this.projectDir, "target");
-		File classesDir = new File(targetDir, "classes");
-		return new File(classesDir, "checkstyle.cache");
+	private boolean detect(TestCase tc) throws IOException, MalformedTreeException, BadLocationException {
+		String origin = FileUtils.readFileToString(tc.getTestFile());
+		String modified = getModified(origin.toString(), tc);
+		List<String> patch = genPatch(getTestCaseSource(origin, tc.getName()), getTestCaseSource(modified, tc.getName()), tc.getTestFile(), tc.getTestFile(),
+				(tc.getStartLineNumber() - 1) * -1);
+		if (patch.size() == 0) {
+			return false;
+		} else {
+			return true;
+		}
 	}
 
 	@Override
 	public void generate(ValidationResult result) {
-		// TODO implement
+		try {
+			TestCase tc = getTestCase(result);
+			String origin = FileUtils.readFileToString(tc.getTestFile());
+			String modified = getModified(origin.toString(), tc);
+			List<String> patch = genPatch(getTestCaseSource(origin, tc.getName()), getTestCaseSource(modified, tc.getName()), tc.getTestFile(),
+					tc.getTestFile(), (tc.getStartLineNumber() - 1) * -1);
+			output(result, tc, patch);
+		} catch (IOException | ParseException | GitAPIException | MalformedTreeException | BadLocationException e) {
+			LOGGER.warn("Failed to generate patch: {}", e.getMessage());
+		}
 	}
 
+	private String getTestCaseSource(String content, String methodName) {
+		char[] array = content.toCharArray();
+		ASTParser parser = ASTParser.newParser(AST.JLS8);
+		parser.setSource(array);
+		CompilationUnit cu = (CompilationUnit) parser.createAST(new NullProgressMonitor());
+		AllMethodFindVisitor visitor = new AllMethodFindVisitor();
+		cu.accept(visitor);
+		List<MethodDeclaration> methods = visitor.getFoundMethods();
+		for (MethodDeclaration method : methods) {
+			if (method.getName().getIdentifier().equals(methodName)) {
+				int start = cu.getLineNumber(method.getStartPosition());
+				int end = cu.getLineNumber(method.getStartPosition() + method.getLength());
+				List<String> lines = toList(content);
+				StringBuilder builder = new StringBuilder();
+				String delim = "";
+				for (int line = start; line <= end; line++) {
+					builder.append(delim).append(lines.get(line));
+					delim = "\n";
+				}
+				return builder.toString();
+			}
+		}
+		return "";
+	}
+
+	public static List<String> toList(String content) {
+		List<String> ret = new ArrayList<>();
+		StringBuilder line = new StringBuilder();
+		for (char c : content.toCharArray()) {
+			if (c == '\n') {
+				ret.add(line.toString());
+				line = new StringBuilder();
+			} else {
+				line.append(c);
+			}
+		}
+		return ret;
+	}
+
+	/**
+	 * 
+	 * @param origin
+	 * @param tc
+	 * @param version
+	 * @return
+	 * @throws MalformedTreeException
+	 * @throws BadLocationException
+	 * @throws IOException
+	 */
+	private String getModified(String origin, TestCase tc) throws MalformedTreeException, BadLocationException, IOException {
+		// Make document from original source code
+		IDocument document = new Document(origin);
+		String delim = TextUtilities.getDefaultLineDelimiter(document);
+		// Instantiate CodeFormatter
+		Map<String, String> options = new HashMap<>();
+		options.put(JavaCore.COMPILER_SOURCE, getJavaVersion());
+		CodeFormatter formatter = ToolFactory.createCodeFormatter(options);
+		// Format
+		TextEdit edit = formatter.format(CodeFormatter.K_COMPILATION_UNIT, document.get(), 0, document.getLength(), 0, delim);
+		if (edit != null) {
+			edit.apply(document);
+		} else {
+			LOGGER.warn("Failed to code format");
+		}
+		return document.get();
+	}
+
+	/**
+	 * Get Java version from pom.xml
+	 * 
+	 * @param pom
+	 * @return
+	 * @throws IOException
+	 */
+	private String getJavaVersion() throws IOException {
+		File pom = getPomFile();
+		String content = FileUtils.readFileToString(pom);
+		org.jsoup.nodes.Document document = org.jsoup.Jsoup.parse(content, "", org.jsoup.parser.Parser.xmlParser());
+		org.jsoup.select.Elements elements = document.select("properties");
+		for (Iterator<org.jsoup.nodes.Element> it = elements.iterator(); it.hasNext();) {
+			org.jsoup.nodes.Element element = it.next();
+			for (org.jsoup.nodes.Element child : element.children()) {
+				if ("maven.compile.source".equals(child.tagName())) {
+					return child.text();
+				}
+			}
+		}
+		LOGGER.warn("Java version not found");
+		return "1.8"; // TODO as default
+	}
 }

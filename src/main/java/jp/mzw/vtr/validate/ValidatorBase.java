@@ -254,6 +254,10 @@ abstract public class ValidatorBase implements CheckoutConductor.Listener {
 		return null;
 	}
 
+	protected File getPomFile() {
+		return new File(this.projectDir, "pom.xml");
+	}
+
 	protected void output(ValidationResult result, TestCase tc, List<String> patch) throws IOException {
 		File projectDir = new File(this.outputDir, this.projectId);
 		File validateDir = new File(projectDir, ValidatorBase.VALIDATOR_DIRNAME);
@@ -280,5 +284,21 @@ abstract public class ValidatorBase implements CheckoutConductor.Listener {
 		List<String> modifyList = Arrays.asList(modified.split("\n"));
 		Patch<String> patch = DiffUtils.diff(originList, modifyList);
 		return DiffUtils.generateUnifiedDiff(org.getAbsolutePath(), mod.getAbsolutePath(), originList, patch, 0);
+	}
+
+	/**
+	 * Generate patch
+	 * 
+	 * @param origin
+	 * @param modified
+	 * @param file
+	 * @param contextSize
+	 * @return
+	 */
+	public static List<String> genPatch(String origin, String modified, File org, File mod, int contextSize) {
+		List<String> originList = Arrays.asList(origin.split("\n"));
+		List<String> modifyList = Arrays.asList(modified.split("\n"));
+		Patch<String> patch = DiffUtils.diff(originList, modifyList);
+		return DiffUtils.generateUnifiedDiff(org.getAbsolutePath(), mod.getAbsolutePath(), originList, patch, contextSize);
 	}
 }
