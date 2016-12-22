@@ -171,7 +171,8 @@ public class MavenUtils {
 	/**
 	 * Get children from given parent
 	 * 
-	 * @param node Parent
+	 * @param node
+	 *            Parent
 	 * @return Children
 	 */
 	public static List<ASTNode> getChildren(ASTNode node) {

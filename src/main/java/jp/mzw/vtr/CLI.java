@@ -113,7 +113,17 @@ public class CLI {
 		} else if ("validate".equals(command)) {
 			String projectId = args[1];
 			Project project = new Project(projectId).setConfig(CONFIG_FILENAME);
-			validate(project);
+			if (args.length == 2) { // all commits
+				validate(project);
+			} else if (args.length == 4) { // specific commit(s)
+				CheckoutConductor.Type type = CheckoutConductor.Type.valueOf(args[2]);
+				String commitId = args[3];
+				validate(project, type, commitId);
+			} else {
+				LOGGER.info("$ java -cp=<class-path> jp.mzw.vtr.CLI cov <subject-id>");
+				LOGGER.info("$ java -cp=<class-path> jp.mzw.vtr.CLI cov <subject-id> At    <commit-id>");
+				LOGGER.info("$ java -cp=<class-path> jp.mzw.vtr.CLI cov <subject-id> After <commit-id>");
+			}
 		} else if ("gen".equals(command)) {
 			String projectId = args[1];
 			Project project = new Project(projectId).setConfig(CONFIG_FILENAME);
@@ -184,6 +194,18 @@ public class CLI {
 			cc.addListener(validator);
 		}
 		cc.checkout();
+		ValidatorBase.output(project, validators);
+	}
+
+	private static void validate(Project project, CheckoutConductor.Type type, String commitId) throws IOException, ParseException, GitAPIException,
+			InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException,
+			ClassNotFoundException {
+		CheckoutConductor cc = new CheckoutConductor(project);
+		List<ValidatorBase> validators = ValidatorBase.getValidators(project, ValidatorBase.VALIDATORS_LIST);
+		for (ValidatorBase validator : validators) {
+			cc.addListener(validator);
+		}
+		cc.checkout(type, commitId);
 		ValidatorBase.output(project, validators);
 	}
 
