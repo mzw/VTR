@@ -5,16 +5,22 @@
 	<artifactId>VTR</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 
+	<repositories>
+		<repository>
+			<id>WSO2 Repository</id>
+			<url>http://dist.wso2.org/maven2/</url>
+		</repository>
+		<repository>
+			<id>Eclipse Releases Repository</id>
+			<url>https://repo.eclipse.org/content/groups/releases/</url>
+		</repository>
+	</repositories>
+
 	<dependencies>
 		<dependency>
 			<groupId>org.eclipse.jgit</groupId>
 			<artifactId>org.eclipse.jgit</artifactId>
 			<version>3.7.0.201502260915-r</version>
-		</dependency>
-		<dependency>
-			<groupId>com.github.javaparser</groupId>
-			<artifactId>javaparser-core</artifactId>
-			<version>2.2.2</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.maven.shared</groupId>
@@ -25,11 +31,6 @@
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
 			<version>4.12</version>
-		</dependency>
-		<dependency>
-			<groupId>de.defmacro</groupId>
-			<artifactId>eclipse-astparser</artifactId>
-			<version>8.1</version>
 		</dependency>
 		<dependency>
 			<groupId>org.jacoco</groupId>
@@ -52,11 +53,6 @@
 			<groupId>com.hp.gagawa</groupId>
 			<artifactId>gagawa</artifactId>
 			<version>1.0.1</version>
-		</dependency>
-		<dependency>
-			<groupId>javax.mail</groupId>
-			<artifactId>mail</artifactId>
-			<version>1.4.7</version>
 		</dependency>
 		<dependency>
 			<groupId>org.jsoup</groupId>
@@ -109,10 +105,32 @@
 			<version>1.2</version>
 		</dependency>
 		<dependency>
-			<groupId>com.puppycrawl.tools</groupId>
-			<artifactId>checkstyle</artifactId>
-			<version>7.3</version>
+			<groupId>de.defmacro</groupId>
+			<artifactId>eclipse-astparser</artifactId>
+			<version>8.1</version>
 		</dependency>
+		<dependency>
+			<groupId>org.eclipse.jdt</groupId>
+			<artifactId>org.eclipse.jdt.ui</artifactId>
+			<version>3.13.0</version>
+			<scope>system</scope>
+			<systemPath>${project.basedir}/lib/org.eclipse.jdt.ui-3.13.0-SNAPSHOT.jar</systemPath>
+		</dependency>
+		<dependency>
+			<groupId>org.eclipse.jdt</groupId>
+			<artifactId>org.eclipse.ltk.core.refactoring</artifactId>
+			<version>3.8.0</version>
+			<scope>system</scope>
+			<systemPath>${project.basedir}/lib/org.eclipse.ltk.core.refactoring-3.8.0-SNAPSHOT.jar</systemPath>
+		</dependency>
+		<dependency>
+			<groupId>org.eclipse.jdt</groupId>
+			<artifactId>org.eclipse.jdt.core.manipulation</artifactId>
+			<version>1.9.0</version>
+			<scope>system</scope>
+			<systemPath>${project.basedir}/lib/org.eclipse.jdt.core.manipulation-1.9.0-SNAPSHOT.jar</systemPath>
+		</dependency>
+
 	</dependencies>
 
 	<build>

@@ -39,6 +39,7 @@ abstract public class ValidatorBase implements CheckoutConductor.Listener {
 	protected String projectId;
 	protected File projectDir;
 	protected File outputDir;
+	protected File mavenHome;
 
 	protected List<ValidationResult> validationResultList;
 	protected List<String> dupulicates;
@@ -46,6 +47,7 @@ abstract public class ValidatorBase implements CheckoutConductor.Listener {
 	public ValidatorBase(Project project) {
 		this.projectId = project.getProjectId();
 		this.projectDir = project.getProjectDir();
+		this.mavenHome = project.getMavenHome();
 		this.validationResultList = new ArrayList<>();
 		this.dupulicates = new ArrayList<>();
 	}
