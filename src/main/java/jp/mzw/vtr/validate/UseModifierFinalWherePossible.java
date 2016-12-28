@@ -38,10 +38,10 @@ import org.eclipse.text.edits.TextEdit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class AddFinalModifiers extends ValidatorBase {
-	protected static Logger LOGGER = LoggerFactory.getLogger(AddFinalModifiers.class);
+public class UseModifierFinalWherePossible extends ValidatorBase {
+	protected static Logger LOGGER = LoggerFactory.getLogger(UseModifierFinalWherePossible.class);
 
-	public AddFinalModifiers(Project project) {
+	public UseModifierFinalWherePossible(Project project) {
 		super(project);
 	}
 
