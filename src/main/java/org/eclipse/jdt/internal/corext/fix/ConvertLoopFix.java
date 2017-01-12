@@ -76,6 +76,7 @@ public class ConvertLoopFix extends CompilationUnitRewriteOperationsFix {
 		}
 
 		private ConvertLoopOperation getConvertOperation(ForStatement node) {
+
 			Collection<String> usedNamesCollection = fUsedNames.values();
 			String[] usedNames = usedNamesCollection.toArray(new String[usedNamesCollection.size()]);
 			ConvertLoopOperation convertForLoopOperation = new ConvertForLoopOperation(node, usedNames, fMakeFinal);
@@ -86,7 +87,6 @@ public class ConvertLoopFix extends CompilationUnitRewriteOperationsFix {
 				}
 			} else if (fConvertIterableForLoops) {
 				ConvertLoopOperation iterableConverter = new ConvertIterableLoopOperation(node, usedNames, fMakeFinal);
-				System.out.println("koko: " + iterableConverter.satisfiesPreconditions());
 				if (iterableConverter.satisfiesPreconditions().isOK()) {
 					fUsedNames.put(node, iterableConverter.getIntroducedVariableName());
 					return iterableConverter;
@@ -107,6 +107,10 @@ public class ConvertLoopFix extends CompilationUnitRewriteOperationsFix {
 	}
 
 	public static ICleanUpFix createCleanUp(CompilationUnit compilationUnit, boolean convertForLoops, boolean convertIterableForLoops, boolean makeFinal) {
+		// if
+		// (!JavaModelUtil.is50OrHigher(compilationUnit.getJavaElement().getJavaProject()))
+		// return null;
+
 		if (!convertForLoops && !convertIterableForLoops)
 			return null;
 
@@ -114,9 +118,8 @@ public class ConvertLoopFix extends CompilationUnitRewriteOperationsFix {
 		ControlStatementFinder finder = new ControlStatementFinder(convertForLoops, convertIterableForLoops, makeFinal, operations);
 		compilationUnit.accept(finder);
 
-		if (operations.isEmpty()) {
+		if (operations.isEmpty())
 			return null;
-		}
 
 		CompilationUnitRewriteOperation[] ops = operations.toArray(new CompilationUnitRewriteOperation[operations.size()]);
 		return new ConvertLoopFix(FixMessages.ControlStatementsFix_change_name, compilationUnit, ops, null);

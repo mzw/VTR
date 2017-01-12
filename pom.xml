@@ -113,158 +113,40 @@
 			<artifactId>eclipse-astparser</artifactId>
 			<version>8.1</version>
 		</dependency>
-		<!-- Start: Minimal set to bootstrap Eclipse -->
-		<!-- http://stackoverflow.com/questions/12827104/executing-headless-eclipse-in-command-line -->
-		<dependency>
-			<groupId>eclipse.platform.runtime</groupId>
-			<artifactId>org.eclipse.core.contenttype</artifactId>
-			<version>3.6.0-SNAPSHOT</version>
-			<scope>system</scope>
-			<systemPath>${project.basedir}/lib/org.eclipse.core.contenttype-3.6.0-SNAPSHOT.jar</systemPath>
-		</dependency>
-		<dependency>
-			<groupId>eclipse.platform.runtime</groupId>
-			<artifactId>org.eclipse.core.jobs</artifactId>
-			<version>3.9.0-SNAPSHOT</version>
-			<scope>system</scope>
-			<systemPath>${project.basedir}/lib/org.eclipse.core.jobs-3.9.0-SNAPSHOT.jar</systemPath>
-		</dependency>
-		<dependency>
-			<groupId>org.eclipse.core</groupId>
-			<artifactId>org.eclipse.core.runtime.compatibility.auth</artifactId>
-			<version>3.2.200.v20100517</version>
-		</dependency>
-		<dependency>
-			<groupId>org.eclipse.core.runtime.compatibility</groupId>
-			<artifactId>registry</artifactId>
-			<version>3.2.100-v20070316</version>
-		</dependency>
-		<dependency>
-			<groupId>eclipse.platform.runtime</groupId>
-			<artifactId>org.eclipse.core.runtime</artifactId>
-			<version>3.13.0-SNAPSHOT</version>
-			<scope>system</scope>
-			<systemPath>${project.basedir}/lib/org.eclipse.core.runtime-3.13.0-SNAPSHOT.jar</systemPath>
-		</dependency>
-		<dependency>
-			<groupId>rt.equinox.bundles</groupId>
-			<artifactId>org.eclipse.equinox.app</artifactId>
-			<version>1.3.400-SNAPSHOT</version>
-			<scope>system</scope>
-			<systemPath>${project.basedir}/lib/org.eclipse.equinox.app-1.3.400-SNAPSHOT.jar</systemPath>
-		</dependency>
-		<dependency>
-			<groupId>rt.equinox.bundles</groupId>
-			<artifactId>org.eclipse.equinox.common</artifactId>
-			<version>3.9.0-SNAPSHOT</version>
-			<scope>system</scope>
-			<systemPath>${project.basedir}/lib/org.eclipse.equinox.common-3.9.0-SNAPSHOT.jar</systemPath>
-		</dependency>
-		<dependency>
-			<groupId>eclipse.plugins</groupId>
-			<artifactId>org.eclipse.equinox.launcher</artifactId>
-			<version>1.3.0.v20140415-2008</version>
-			<scope>system</scope>
-			<systemPath>${project.basedir}/lib/org.eclipse.equinox.launcher_1.3.0.v20140415-2008.jar</systemPath>
-		</dependency>
-		<dependency>
-			<groupId>rt.equinox.bundles</groupId>
-			<artifactId>org.eclipse.equinox.preferences</artifactId>
-			<version>3.6.100-SNAPSHOT</version>
-			<scope>system</scope>
-			<systemPath>${project.basedir}/lib/org.eclipse.equinox.preferences-3.6.100-SNAPSHOT.jar</systemPath>
-		</dependency>
-		<dependency>
-			<groupId>rt.equinox.bundles</groupId>
-			<artifactId>org.eclipse.equinox.registry</artifactId>
-			<version>3.6.200-SNAPSHOT</version>
-			<scope>system</scope>
-			<systemPath>${project.basedir}/lib/org.eclipse.equinox.registry-3.6.200-SNAPSHOT.jar</systemPath>
-		</dependency>
-		<dependency>
-			<groupId>rt.equinox.framework</groupId>
-			<artifactId>org.eclipse.osgi.services</artifactId>
-			<version>3.5.100-SNAPSHOT</version>
-			<scope>system</scope>
-			<systemPath>${project.basedir}/lib/org.eclipse.osgi.services-3.5.100-SNAPSHOT.jar</systemPath>
-		</dependency>
-		<dependency>
-			<groupId>eclipse.plugins</groupId>
-			<artifactId>org.eclipse.osgi.util</artifactId>
-			<version>3.3.0.v20131023-1243</version>
-			<scope>system</scope>
-			<systemPath>${project.basedir}/lib/org.eclipse.osgi.util_3.3.0.v20131023-1243.jar</systemPath>
-		</dependency>
-		<dependency>
-			<groupId>rt.equinox.framework</groupId>
-			<artifactId>org.eclipse.osgi</artifactId>
-			<version>3.12.0</version>
-			<scope>system</scope>
-			<systemPath>${project.basedir}/lib/org.eclipse.osgi-3.12.0-SNAPSHOT.jar</systemPath>
-		</dependency>
-		<!-- End: Minimal set to bootstrap Eclipse -->
 		<dependency>
 			<groupId>org.eclipse.jdt</groupId>
 			<artifactId>org.eclipse.jdt.ui</artifactId>
-			<version>3.13.0</version>
+			<version>3.13.0-SNAPSHOT</version>
 			<scope>system</scope>
 			<systemPath>${project.basedir}/lib/org.eclipse.jdt.ui-3.13.0-SNAPSHOT.jar</systemPath>
 		</dependency>
 		<dependency>
 			<groupId>org.eclipse.jdt</groupId>
-			<artifactId>org.eclipse.jdt.ui.tests</artifactId>
-			<version>3.13.0</version>
-			<scope>system</scope>
-			<systemPath>${project.basedir}/lib/org.eclipse.jdt.ui.tests-3.13.0-SNAPSHOT.jar</systemPath>
-		</dependency>
-		<dependency>
-			<groupId>org.eclipse.jdt</groupId>
 			<artifactId>org.eclipse.ltk.core.refactoring</artifactId>
-			<version>3.8.0</version>
+			<version>3.8.0-SNAPSHOT</version>
 			<scope>system</scope>
 			<systemPath>${project.basedir}/lib/org.eclipse.ltk.core.refactoring-3.8.0-SNAPSHOT.jar</systemPath>
 		</dependency>
 		<dependency>
 			<groupId>org.eclipse.jdt</groupId>
 			<artifactId>org.eclipse.jdt.core.manipulation</artifactId>
-			<version>1.9.0</version>
+			<version>1.9.0-SNAPSHOT</version>
 			<scope>system</scope>
 			<systemPath>${project.basedir}/lib/org.eclipse.jdt.core.manipulation-1.9.0-SNAPSHOT.jar</systemPath>
 		</dependency>
 		<dependency>
-			<groupId>org.eclipse.jdt</groupId>
-			<artifactId>org.eclipse.jdt.core.manipulation</artifactId>
-			<version>1.9.0</version>
+			<groupId>eclipse.jdt.debug</groupId>
+			<artifactId>org.eclipse.jdt.launching</artifactId>
+			<version>3.9.0-SNAPSHOT</version>
 			<scope>system</scope>
-			<systemPath>${project.basedir}/lib/org.eclipse.jdt.core.manipulation-1.9.0-SNAPSHOT.jar</systemPath>
-		</dependency>
-		<dependency>
-			<groupId>eclipse.platform.swt</groupId>
-			<artifactId>eclipse.platform.swt</artifactId>
-			<version>3.106.0</version>
-			<scope>system</scope>
-			<systemPath>${project.basedir}/lib/org.eclipse.swt-3.106.0-SNAPSHOT.jar</systemPath>
-		</dependency>
-		<dependency>
-			<groupId>eclipse.platform.ui</groupId>
-			<artifactId>org.eclipse.ui.workbench</artifactId>
-			<version>3.109.0</version>
-			<scope>system</scope>
-			<systemPath>${project.basedir}/lib/org.eclipse.ui.workbench-3.109.0-SNAPSHOT.jar</systemPath>
+			<systemPath>${project.basedir}/lib/org.eclipse.jdt.launching-3.9.0-SNAPSHOT.jar</systemPath>
 		</dependency>
 		<dependency>
 			<groupId>eclipse.platform.swt.binaries</groupId>
 			<artifactId>org.eclipse.swt.cocoa.macosx.x86_64</artifactId>
-			<version>3.106.0</version>
+			<version>3.106.0-SNAPSHOT</version>
 			<scope>system</scope>
 			<systemPath>${project.basedir}/lib/org.eclipse.swt.cocoa.macosx.x86_64-3.106.0-SNAPSHOT.jar</systemPath>
-		</dependency>
-		<dependency>
-			<groupId>eclipse.platform.ui</groupId>
-			<artifactId>org.eclipse.ui.ide</artifactId>
-			<version>3.13.0</version>
-			<scope>system</scope>
-			<systemPath>${project.basedir}/lib/org.eclipse.ui.ide-3.13.0-SNAPSHOT.jar</systemPath>
 		</dependency>
 		<dependency>
 			<groupId>com.ibm.icu</groupId>
