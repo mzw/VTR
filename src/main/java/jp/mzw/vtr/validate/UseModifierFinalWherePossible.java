@@ -32,6 +32,7 @@ import org.eclipse.jdt.core.dom.rewrite.ListRewrite;
 import org.eclipse.jdt.internal.corext.fix.CompilationUnitRewriteOperationsFix.CompilationUnitRewriteOperation;
 import org.eclipse.jdt.internal.corext.fix.VariableDeclarationFix;
 import org.eclipse.jface.text.BadLocationException;
+import org.eclipse.jface.text.Document;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.text.edits.MalformedTreeException;
 import org.eclipse.text.edits.TextEdit;
@@ -171,7 +172,7 @@ public class UseModifierFinalWherePossible extends ValidatorBase {
 				lr.insertLast(rewriter.createStringPlaceholder("final", VariableDeclarationExpression.MODIFIER), null);
 			}
 		}
-		org.eclipse.jface.text.Document document = new org.eclipse.jface.text.Document(origin);
+		Document document = new Document(origin);
 		TextEdit edit = rewriter.rewriteAST(document, null);
 		edit.apply(document);
 		return document.get();
