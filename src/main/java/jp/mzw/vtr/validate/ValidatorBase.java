@@ -7,13 +7,20 @@ import java.lang.reflect.InvocationTargetException;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.eclipse.core.runtime.NullProgressMonitor;
+import org.eclipse.jdt.core.dom.AST;
+import org.eclipse.jdt.core.dom.ASTParser;
+import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.core.dom.FileASTRequestor;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,6 +29,7 @@ import difflib.DiffUtils;
 import difflib.Patch;
 import jp.mzw.vtr.CLI;
 import jp.mzw.vtr.core.Project;
+import jp.mzw.vtr.core.VtrUtils;
 import jp.mzw.vtr.git.CheckoutConductor;
 import jp.mzw.vtr.git.Commit;
 import jp.mzw.vtr.maven.MavenUtils;
@@ -302,5 +310,33 @@ abstract public class ValidatorBase implements CheckoutConductor.Listener {
 		List<String> modifyList = Arrays.asList(modified.split("\n"));
 		Patch<String> patch = DiffUtils.diff(originList, modifyList);
 		return DiffUtils.generateUnifiedDiff(org.getAbsolutePath(), mod.getAbsolutePath(), originList, patch, contextSize);
+	}
+
+	protected CompilationUnit getCompilationUnit(File file) throws IOException {
+		ASTParser parser = ASTParser.newParser(AST.JLS8);
+		parser.setResolveBindings(true);
+		parser.setBindingsRecovery(true);
+		parser.setEnvironment(null, null, null, true);
+		final Map<String, CompilationUnit> units = new HashMap<>();
+		FileASTRequestor requestor = new FileASTRequestor() {
+			@Override
+			public void acceptAST(String sourceFilePath, CompilationUnit ast) {
+				units.put(sourceFilePath, ast);
+			}
+		};
+		parser.createASTs(getSources(), null, new String[] {}, requestor, new NullProgressMonitor());
+		CompilationUnit cu = units.get(file.getCanonicalPath());
+		return cu;
+	}
+
+	protected String[] getSources() throws IOException {
+		List<File> files = new ArrayList<>();
+		files.addAll(VtrUtils.getFiles(new File(this.projectDir, "src/main/java")));
+		files.addAll(VtrUtils.getFiles(new File(this.projectDir, "src/test/java")));
+		String[] sources = new String[files.size()];
+		for (int i = 0; i < files.size(); i++) {
+			sources[i] = files.get(i).getCanonicalPath();
+		}
+		return sources;
 	}
 }

@@ -55,6 +55,8 @@ public class CLI {
 			LOGGER.info("$ java -cp=<class-path> jp.mzw.vtr.CLI cluster   <similarity> <cluster-method> <threshold>");
 			LOGGER.info("$ java -cp=<class-path> jp.mzw.vtr.CLI visualize <method>");
 			LOGGER.info("$ java -cp=<class-path> jp.mzw.vtr.CLI validate  <subject-id>");
+			LOGGER.info("$ java -cp=<class-path> jp.mzw.vtr.CLI validate  <subject-id> At    <commit-id>");
+			LOGGER.info("$ java -cp=<class-path> jp.mzw.vtr.CLI validate  <subject-id> After <commit-id>");
 			LOGGER.info("$ java -cp=<class-path> jp.mzw.vtr.CLI gen       <subject-id>");
 			LOGGER.info("$ java -cp=<class-path> jp.mzw.vtr.CLI repair    <subject-id> <source-classes>");
 			return;
@@ -120,9 +122,9 @@ public class CLI {
 				String commitId = args[3];
 				validate(project, type, commitId);
 			} else {
-				LOGGER.info("$ java -cp=<class-path> jp.mzw.vtr.CLI cov <subject-id>");
-				LOGGER.info("$ java -cp=<class-path> jp.mzw.vtr.CLI cov <subject-id> At    <commit-id>");
-				LOGGER.info("$ java -cp=<class-path> jp.mzw.vtr.CLI cov <subject-id> After <commit-id>");
+				LOGGER.info("$ java -cp=<class-path> jp.mzw.vtr.CLI validate <subject-id>");
+				LOGGER.info("$ java -cp=<class-path> jp.mzw.vtr.CLI validate <subject-id> At    <commit-id>");
+				LOGGER.info("$ java -cp=<class-path> jp.mzw.vtr.CLI validate <subject-id> After <commit-id>");
 			}
 		} else if ("gen".equals(command)) {
 			String projectId = args[1];

@@ -1,6 +1,5 @@
 package jp.mzw.vtr.validate;
 
-import java.io.File;
 import java.io.IOException;
 import java.text.ParseException;
 import java.util.ArrayList;
@@ -9,7 +8,6 @@ import java.util.List;
 import java.util.Map;
 
 import jp.mzw.vtr.core.Project;
-import jp.mzw.vtr.core.VtrUtils;
 import jp.mzw.vtr.git.Commit;
 import jp.mzw.vtr.maven.MavenUtils;
 import jp.mzw.vtr.maven.TestCase;
@@ -106,17 +104,6 @@ public class UseModifierFinalWherePossible extends ValidatorBase {
 			}
 		}
 		return ret;
-	}
-
-	private String[] getSources() throws IOException {
-		List<File> files = new ArrayList<>();
-		files.addAll(VtrUtils.getFiles(new File(this.projectDir, "src/main/java")));
-		files.addAll(VtrUtils.getFiles(new File(this.projectDir, "src/test/java")));
-		String[] sources = new String[files.size()];
-		for (int i = 0; i < files.size(); i++) {
-			sources[i] = files.get(i).getCanonicalPath();
-		}
-		return sources;
 	}
 
 	@Override
