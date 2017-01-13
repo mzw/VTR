@@ -11,7 +11,6 @@ import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.CompilationUnit;
-import org.eclipse.jdt.core.dom.InfixExpression;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 import org.eclipse.jface.text.BadLocationException;
@@ -21,10 +20,10 @@ import org.eclipse.text.edits.TextEdit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class UseAssertNotSameProperly extends SimpleValidatorBase {
-	protected static Logger LOGGER = LoggerFactory.getLogger(UseAssertNotSameProperly.class);
+public class UseAssertEqualsProperly extends SimpleValidatorBase {
+	protected static Logger LOGGER = LoggerFactory.getLogger(UseAssertEqualsProperly.class);
 
-	public UseAssertNotSameProperly(Project project) {
+	public UseAssertEqualsProperly(Project project) {
 		super(project);
 	}
 
@@ -42,9 +41,13 @@ public class UseAssertNotSameProperly extends SimpleValidatorBase {
 		for (MethodInvocation target : targets) {
 			if ("assertTrue".equals(target.getName().toString())) {
 				for (Object object : target.arguments()) {
-					if (object instanceof InfixExpression) {
-						InfixExpression expression = (InfixExpression) object;
-						if ("!=".equals(expression.getOperator().toString())) {
+					if (object instanceof MethodInvocation) {
+						MethodInvocation method = (MethodInvocation) object;
+						if ("equals".equals(method.getName().toString())) {
+							if (method.arguments().size() != 1) {
+								LOGGER.info("Might be sepecific 'equals' method invocation: {}", method);
+								continue;
+							}
 							ret.add(target);
 						}
 					}
@@ -64,19 +67,19 @@ public class UseAssertNotSameProperly extends SimpleValidatorBase {
 		// detect
 		for (ASTNode node : detect(tc)) {
 			MethodInvocation target = (MethodInvocation) node;
-			InfixExpression expression = null;
+			MethodInvocation equals = null;
 			for (Object object : target.arguments()) {
-				if (object instanceof InfixExpression) {
-					expression = (InfixExpression) object;
+				if (object instanceof MethodInvocation) {
+					equals = (MethodInvocation) object;
 					break;
 				}
 			}
 			MethodInvocation replace = ast.newMethodInvocation();
-			replace.setName(ast.newSimpleName(target.getName().toString().replace("assertTrue", "assertNotSame")));
+			replace.setName(ast.newSimpleName(target.getName().toString().replace("assertTrue", "assertEquals")));
 			for (Object object : target.arguments()) {
-				if (object.equals(expression)) {
-					replace.arguments().add(ASTNode.copySubtree(ast, expression.getLeftOperand()));
-					replace.arguments().add(ASTNode.copySubtree(ast, expression.getRightOperand()));
+				if (object.equals(equals)) {
+					replace.arguments().add(ASTNode.copySubtree(ast, equals.getExpression()));
+					replace.arguments().add(ASTNode.copySubtree(ast, (ASTNode) equals.arguments().get(0)));
 				} else {
 					replace.arguments().add(ASTNode.copySubtree(ast, (ASTNode) object));
 				}
