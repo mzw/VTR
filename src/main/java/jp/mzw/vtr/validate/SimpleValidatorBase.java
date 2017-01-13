@@ -5,6 +5,7 @@ import java.text.ParseException;
 import java.util.List;
 
 import org.apache.commons.io.FileUtils;
+import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.text.edits.MalformedTreeException;
@@ -33,7 +34,7 @@ abstract public class SimpleValidatorBase extends ValidatorBase {
 						continue;
 					}
 					try {
-						if (detect(tc)) {
+						if (!detect(tc).isEmpty()) {
 							this.dupulicates.add(tc.getFullName());
 							ValidationResult vr = new ValidationResult(this.projectId, commit, tc, tc.getStartLineNumber(), tc.getEndLineNumber(), this);
 							this.validationResultList.add(vr);
@@ -49,7 +50,7 @@ abstract public class SimpleValidatorBase extends ValidatorBase {
 		}
 	}
 
-	abstract protected boolean detect(TestCase tc) throws IOException, MalformedTreeException, BadLocationException;
+	abstract protected List<ASTNode> detect(TestCase tc) throws IOException, MalformedTreeException, BadLocationException;
 
 	@Override
 	public void generate(ValidationResult result) {

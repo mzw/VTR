@@ -29,7 +29,8 @@ public class UseAssertNotSameProperly extends SimpleValidatorBase {
 	}
 
 	@Override
-	protected boolean detect(TestCase tc) throws IOException, MalformedTreeException, BadLocationException {
+	protected List<ASTNode> detect(TestCase tc) throws IOException, MalformedTreeException, BadLocationException {
+		List<ASTNode> ret = new ArrayList<>();
 		final List<MethodInvocation> targets = new ArrayList<>();
 		tc.getMethodDeclaration().accept(new ASTVisitor() {
 			@Override
@@ -44,13 +45,13 @@ public class UseAssertNotSameProperly extends SimpleValidatorBase {
 					if (object instanceof InfixExpression) {
 						InfixExpression expression = (InfixExpression) object;
 						if ("!=".equals(expression.getOperator().toString())) {
-							return true;
+							ret.add(target);
 						}
 					}
 				}
 			}
 		}
-		return false;
+		return ret;
 	}
 
 	@SuppressWarnings("unchecked")
@@ -61,29 +62,14 @@ public class UseAssertNotSameProperly extends SimpleValidatorBase {
 		AST ast = cu.getAST();
 		ASTRewrite rewrite = ASTRewrite.create(ast);
 		// detect
-		final List<MethodInvocation> targets = new ArrayList<>();
-		tc.getMethodDeclaration().accept(new ASTVisitor() {
-			@Override
-			public boolean visit(MethodInvocation node) {
-				targets.add(node);
-				return super.visit(node);
-			}
-		});
-		for (MethodInvocation target : targets) {
-			if ("assertTrue".equals(target.getName().toString())) {
-				for (Object object : target.arguments()) {
-					if (object instanceof InfixExpression) {
-						InfixExpression expression = (InfixExpression) object;
-						if ("!=".equals(expression.getOperator().toString())) {
-							MethodInvocation replace = ast.newMethodInvocation();
-							replace.setName(ast.newSimpleName(target.getName().toString().replace("assertTrue", "assertNotSame")));
-							replace.arguments().add(ASTNode.copySubtree(ast, expression.getLeftOperand()));
-							replace.arguments().add(ASTNode.copySubtree(ast, expression.getRightOperand()));
-							rewrite.replace(target, replace, null);
-						}
-					}
-				}
-			}
+		for (ASTNode node : detect(tc)) {
+			MethodInvocation target = (MethodInvocation) node;
+			InfixExpression expression = (InfixExpression) target.arguments().get(0);
+			MethodInvocation replace = ast.newMethodInvocation();
+			replace.setName(ast.newSimpleName(target.getName().toString().replace("assertTrue", "assertNotSame")));
+			replace.arguments().add(ASTNode.copySubtree(ast, expression.getLeftOperand()));
+			replace.arguments().add(ASTNode.copySubtree(ast, expression.getRightOperand()));
+			rewrite.replace(target, replace, null);
 		}
 		// modify
 		Document document = new Document(origin);
