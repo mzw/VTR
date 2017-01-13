@@ -141,14 +141,13 @@ public class UseArithmeticAssignmentOperators extends ValidatorBase {
 		public String getOprator() {
 			return operator.toString();
 		}
+		
+		public Expression getTarget() {
+			return target;
+		}
 
 		public Expression getRest() {
 			return rest;
-		}
-
-		@Override
-		public String toString() {
-			return target + " " + operator + " " + rest;
 		}
 	}
 
