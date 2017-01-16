@@ -93,45 +93,6 @@ public class FormatCode extends ValidatorBase {
 		}
 	}
 
-	private String getTestCaseSource(String content, String methodName) {
-		char[] array = content.toCharArray();
-		ASTParser parser = ASTParser.newParser(AST.JLS8);
-		parser.setSource(array);
-		CompilationUnit cu = (CompilationUnit) parser.createAST(new NullProgressMonitor());
-		AllMethodFindVisitor visitor = new AllMethodFindVisitor();
-		cu.accept(visitor);
-		List<MethodDeclaration> methods = visitor.getFoundMethods();
-		for (MethodDeclaration method : methods) {
-			if (method.getName().getIdentifier().equals(methodName)) {
-				int start = cu.getLineNumber(method.getStartPosition());
-				int end = cu.getLineNumber(method.getStartPosition() + method.getLength());
-				List<String> lines = toList(content);
-				StringBuilder builder = new StringBuilder();
-				String delim = "";
-				for (int line = start; line <= end; line++) {
-					builder.append(delim).append(lines.get(line));
-					delim = "\n";
-				}
-				return builder.toString();
-			}
-		}
-		return "";
-	}
-
-	public static List<String> toList(String content) {
-		List<String> ret = new ArrayList<>();
-		StringBuilder line = new StringBuilder();
-		for (char c : content.toCharArray()) {
-			if (c == '\n') {
-				ret.add(line.toString());
-				line = new StringBuilder();
-			} else {
-				line.append(c);
-			}
-		}
-		return ret;
-	}
-
 	/**
 	 * 
 	 * @param origin
