@@ -42,8 +42,6 @@ public class UseStringContains extends SimpleValidatorBase {
 		});
 		for (MethodInvocation target: targets) {
 			if ("indexOf".equals(target.getName().toString())) {
-				//System.out.println(target);
-				//System.out.println(target.getExpression());
 				if (target.getParent() instanceof InfixExpression) {
 					InfixExpression expression = (InfixExpression) target.getParent();
 					if ("!=".equals(expression.getOperator().toString()) && "-1".equals(expression.getRightOperand().toString())) {
