@@ -17,11 +17,21 @@ import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.eclipse.core.runtime.NullProgressMonitor;
+import org.eclipse.jdt.core.JavaCore;
+import org.eclipse.jdt.core.ToolFactory;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTParser;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.FileASTRequestor;
+import org.eclipse.jdt.core.dom.MethodDeclaration;
+import org.eclipse.jdt.core.formatter.CodeFormatter;
+import org.eclipse.jdt.core.formatter.DefaultCodeFormatterConstants;
+import org.eclipse.jface.text.BadLocationException;
+import org.eclipse.jface.text.Document;
+import org.eclipse.jface.text.IDocument;
 import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.text.edits.MalformedTreeException;
+import org.eclipse.text.edits.TextEdit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,6 +42,7 @@ import jp.mzw.vtr.core.Project;
 import jp.mzw.vtr.core.VtrUtils;
 import jp.mzw.vtr.git.CheckoutConductor;
 import jp.mzw.vtr.git.Commit;
+import jp.mzw.vtr.maven.AllMethodFindVisitor;
 import jp.mzw.vtr.maven.MavenUtils;
 import jp.mzw.vtr.maven.TestCase;
 import jp.mzw.vtr.maven.TestSuite;
@@ -312,6 +323,50 @@ abstract public class ValidatorBase implements CheckoutConductor.Listener {
 		return DiffUtils.generateUnifiedDiff(org.getAbsolutePath(), mod.getAbsolutePath(), originList, patch, contextSize);
 	}
 
+	public static List<String> genPatch(String origin, String modified, TestCase tc) {
+		return genPatch(getTestCaseSource(origin, tc.getName()), getTestCaseSource(modified, tc.getName()), tc.getTestFile(),
+				tc.getTestFile(), (tc.getStartLineNumber() - 1) * -1);
+	}
+
+	public static String getTestCaseSource(String content, String methodName) {
+		char[] array = content.toCharArray();
+		ASTParser parser = ASTParser.newParser(AST.JLS8);
+		parser.setSource(array);
+		CompilationUnit cu = (CompilationUnit) parser.createAST(new NullProgressMonitor());
+		AllMethodFindVisitor visitor = new AllMethodFindVisitor();
+		cu.accept(visitor);
+		List<MethodDeclaration> methods = visitor.getFoundMethods();
+		for (MethodDeclaration method : methods) {
+			if (method.getName().getIdentifier().equals(methodName)) {
+				int start = cu.getLineNumber(method.getStartPosition());
+				int end = cu.getLineNumber(method.getStartPosition() + method.getLength());
+				List<String> lines = toList(content);
+				StringBuilder builder = new StringBuilder();
+				String delim = "";
+				for (int line = start; line <= end; line++) {
+					builder.append(delim).append(lines.get(line));
+					delim = "\n";
+				}
+				return builder.toString();
+			}
+		}
+		return "";
+	}
+
+	public static List<String> toList(String content) {
+		List<String> ret = new ArrayList<>();
+		StringBuilder line = new StringBuilder();
+		for (char c : content.toCharArray()) {
+			if (c == '\n') {
+				ret.add(line.toString());
+				line = new StringBuilder();
+			} else {
+				line.append(c);
+			}
+		}
+		return ret;
+	}
+
 	protected CompilationUnit getCompilationUnit(File file) throws IOException {
 		ASTParser parser = ASTParser.newParser(AST.JLS8);
 		parser.setResolveBindings(true);
@@ -338,5 +393,21 @@ abstract public class ValidatorBase implements CheckoutConductor.Listener {
 			sources[i] = files.get(i).getCanonicalPath();
 		}
 		return sources;
+	}
+
+	@SuppressWarnings("unchecked")
+	public static String format(String source) throws MalformedTreeException, BadLocationException {
+		@SuppressWarnings("rawtypes")
+		Map options = DefaultCodeFormatterConstants.getEclipseDefaultSettings();
+		options.put(JavaCore.COMPILER_COMPLIANCE, JavaCore.VERSION_1_8);
+		options.put(JavaCore.COMPILER_CODEGEN_TARGET_PLATFORM, JavaCore.VERSION_1_8);
+		options.put(JavaCore.COMPILER_SOURCE, JavaCore.VERSION_1_8);
+		options.put(DefaultCodeFormatterConstants.FORMATTER_ALIGNMENT_FOR_ENUM_CONSTANTS, DefaultCodeFormatterConstants.createAlignmentValue(true,
+				DefaultCodeFormatterConstants.WRAP_ONE_PER_LINE, DefaultCodeFormatterConstants.INDENT_ON_COLUMN));
+		final CodeFormatter codeFormatter = ToolFactory.createCodeFormatter(options);
+		final TextEdit edit = codeFormatter.format(CodeFormatter.K_COMPILATION_UNIT, source, 0, source.length(), 0, System.getProperty("line.separator"));
+		IDocument document = new Document(source);
+		edit.apply(document);
+		return document.get();
 	}
 }
