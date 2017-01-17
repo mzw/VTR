@@ -47,7 +47,7 @@ public class UseCodeAnnotationsAtJavaDoc extends SimpleValidatorBase {
 							}
 						});
 					} else {
-						LOGGER.warn("Unknow tag-element class: {}", tag.getClass());
+						LOGGER.warn("Unknown tag-element class: {}", tag.getClass());
 					}
 				}
 			}
