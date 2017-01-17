@@ -19,7 +19,6 @@ import org.apache.maven.shared.invoker.Invoker;
 import org.apache.maven.shared.invoker.MavenInvocationException;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
-import org.eclipse.jdt.core.dom.Annotation;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.SingleMemberAnnotation;
@@ -44,21 +43,18 @@ public class AddSuppressWarningsAnnotation extends SimpleValidatorBase {
 	@Override
 	protected List<ASTNode> detect(TestCase tc) throws IOException, MalformedTreeException, BadLocationException {
 		final List<ASTNode> targets = new ArrayList<>();
-		if (!"org.apache.commons.codec.binary.Base64Test#testCodeInteger1".equals(tc.getFullName())) {
-			// TODO
-			//return targets;
-		}
+
 		try {
 			if (warnings.isEmpty()) {
-				maven(this.projectDir);
+				warningsMessages(this.projectDir);
 			}
 			List<String> deprecatedMessages = deprecatedMessages();
-			List<Integer> deprecatedNodePositions = deprecatedNodePositions(deprecatedMessages, tc);
 
 			AllElementsFindVisitor visitor = new AllElementsFindVisitor();
 			tc.getMethodDeclaration().accept(visitor);
 			List<ASTNode> nodes = visitor.getNodes();
 			List<ASTNode> deprecatedNodes = new ArrayList<>();
+			List<Integer> deprecatedNodePositions = deprecatedNodePositions(deprecatedMessages, tc);
 			for (ASTNode node: nodes) {
 				if (deprecatedNodePositions.contains(node.getStartPosition())) {
 					deprecatedNodes.add(node);
@@ -105,11 +101,10 @@ public class AddSuppressWarningsAnnotation extends SimpleValidatorBase {
 		Document document = new Document(origin);
 		TextEdit edit = rewrite.rewriteAST(document, null);
 		edit.apply(document);
-		String source = document.get();
-		return source;
+		return document.get();
 	}
 	
-	private void maven(File subject) throws MavenInvocationException {
+	private void warningsMessages(File subject) throws MavenInvocationException {
 		InvocationRequest request = new DefaultInvocationRequest();
 		request.setPomFile(new File(subject, JacocoInstrumenter.FILENAME_POM));
 		List<String> goals = Arrays.asList("clean", "test-compile", "-Dmaven.compiler.showDeprecation=true");
