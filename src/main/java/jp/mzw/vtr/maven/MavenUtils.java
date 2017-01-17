@@ -85,6 +85,24 @@ public class MavenUtils {
 		return testSuites;
 	}
 
+	public static List<TestSuite> getTestSuitesAtLevel2(File subjectDir) throws IOException {
+		ArrayList<TestSuite> testSuites = new ArrayList<TestSuite>();
+		File testDir = new File(subjectDir, "src/test/java");
+		// Determine
+		ArrayList<File> mvnTestFileList = new ArrayList<File>();
+		for (File file : VtrUtils.getFiles(testDir)) {
+			if (Pattern.compile(".*Test(Case)?.*\\.java").matcher(file.getName()).find()) {
+				mvnTestFileList.add(file);
+			}
+		}
+		// Return
+		for (File testFile : mvnTestFileList) {
+			TestSuite testSuite = new TestSuite(testDir, testFile).parseJuitTestCaseList(subjectDir);
+			testSuites.add(testSuite);
+		}
+		return testSuites;
+	}
+
 	/**
 	 * 
 	 * @param subjectDir

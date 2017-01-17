@@ -4,15 +4,23 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
+import jp.mzw.vtr.core.VtrUtils;
 
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTParser;
 import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.core.dom.FileASTRequestor;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class TestSuite {
+	protected static Logger LOGGER = LoggerFactory.getLogger(TestSuite.class);
 
 	protected File testBaseDir;
 	protected File testFile;
@@ -20,7 +28,7 @@ public class TestSuite {
 	List<TestCase> testCases;
 
 	protected CompilationUnit cu;
-
+	
 	public TestSuite(File testBaseDir, File testFile) {
 		this.testBaseDir = testBaseDir;
 		this.testFile = testFile;
@@ -31,6 +39,12 @@ public class TestSuite {
 		this.testCases = new ArrayList<TestCase>();
 	}
 
+	/**
+	 * Parse source codes at level 1
+	 * 
+	 * @return
+	 * @throws IOException
+	 */
 	public TestSuite parseJuitTestCaseList() throws IOException {
 		ArrayList<Character> _source = new ArrayList<Character>();
 		FileReader reader = new FileReader(testFile);
@@ -61,6 +75,66 @@ public class TestSuite {
 		}
 
 		return this;
+	}
+
+	/**
+	 * for reducing computational cost to parse source codes at level 2
+	 */
+	protected static Map<File, Map<String, CompilationUnit>> compilationUnitsBySubjectDir;
+	
+	/**
+	 * Parse source codes at level 2
+	 * 
+	 * @param subjectDir
+	 * @return
+	 * @throws IOException
+	 */
+	public TestSuite parseJuitTestCaseList(File subjectDir) throws IOException {
+		if (compilationUnitsBySubjectDir == null) {
+			compilationUnitsBySubjectDir = new HashMap<>();
+		}
+		Map<String, CompilationUnit> units = compilationUnitsBySubjectDir.get(subjectDir);
+		if (units == null) {
+			ASTParser parser = ASTParser.newParser(AST.JLS8);
+			parser.setResolveBindings(true);
+			parser.setBindingsRecovery(true);
+			parser.setEnvironment(null, null, null, true);
+			final Map<String, CompilationUnit> parse = new HashMap<>();
+			FileASTRequestor requestor = new FileASTRequestor() {
+				@Override
+				public void acceptAST(String sourceFilePath, CompilationUnit ast) {
+					parse.put(sourceFilePath, ast);
+				}
+			};
+			parser.createASTs(getSources(subjectDir), null, new String[] {}, requestor, new NullProgressMonitor());
+			units = parse;
+			compilationUnitsBySubjectDir.put(subjectDir, units);
+		}
+		this.cu = units.get(testFile.getCanonicalPath());
+
+		AllMethodFindVisitor visitor = new AllMethodFindVisitor();
+		cu.accept(visitor);
+		List<MethodDeclaration> methods = visitor.getFoundMethods();
+
+		for (MethodDeclaration method : methods) {
+			if (MavenUtils.isJUnitTest(method)) {
+				TestCase testcase = new TestCase(method.getName().getIdentifier(), testClassName, method, cu, this);
+				testCases.add(testcase);
+			}
+		}
+
+		return this;
+	}
+
+	protected String[] getSources(File subjectDir) throws IOException {
+		List<File> files = new ArrayList<>();
+		files.addAll(VtrUtils.getFiles(new File(subjectDir, "src/main/java")));
+		files.addAll(VtrUtils.getFiles(new File(subjectDir, "src/test/java")));
+		String[] sources = new String[files.size()];
+		for (int i = 0; i < files.size(); i++) {
+			sources[i] = files.get(i).getCanonicalPath();
+		}
+		return sources;
 	}
 
 	public CompilationUnit getCompilationUnit() {

@@ -265,7 +265,7 @@ abstract public class ValidatorBase implements CheckoutConductor.Listener {
 		// Detect test case
 		String clazz = result.getTestCaseClassName();
 		String method = result.getTestCaseMathodName();
-		List<TestSuite> testSuites = MavenUtils.getTestSuites(project.getProjectDir());
+		List<TestSuite> testSuites = MavenUtils.getTestSuitesAtLevel2(project.getProjectDir());
 		for (TestSuite ts : testSuites) {
 			TestCase tc = ts.getTestCaseBy(clazz, method);
 			if (tc != null) {

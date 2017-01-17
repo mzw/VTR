@@ -18,7 +18,6 @@ import org.eclipse.jdt.core.dom.Block;
 import org.eclipse.jdt.core.dom.ClassInstanceCreation;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.Expression;
-import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.Statement;
@@ -56,7 +55,7 @@ public class UseTryWithResources extends SimpleValidatorBase {
 							if (!"close".equals(node.getName().toString())) {
 								return super.visit(node);
 							}
-							if (isClosable(node.getExpression())) {
+							if (ValidatorUtils.isClosable(node.getExpression())) {
 								ret.add(node);
 							}
 							return super.visit(node);
@@ -67,22 +66,6 @@ public class UseTryWithResources extends SimpleValidatorBase {
 			}
 		});
 		return ret;
-	}
-
-	public static boolean isClosable(Expression expression) {
-		if (expression == null) {
-			return false;
-		}
-		ITypeBinding binding = expression.resolveTypeBinding();
-		while (binding != null) {
-			for (ITypeBinding interfaze : binding.getInterfaces()) {
-				if ("java.io.Closeable".equals(interfaze.getQualifiedName())) {
-					return true;
-				}
-			}
-			binding = binding.getSuperclass();
-		}
-		return false;
 	}
 
 	public static VariableDeclarationStatement getVariableDeclarationStatement(final Expression expression) {
