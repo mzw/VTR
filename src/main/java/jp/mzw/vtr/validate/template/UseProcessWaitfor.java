@@ -66,11 +66,12 @@ public class UseProcessWaitfor extends SimpleValidatorBase {
 		for (ASTNode node: detect(tc)) {
 			WhileStatement target = (WhileStatement) node;
 			// create
-			MethodInvocation replace = ast.newMethodInvocation();
-			MethodInvocation method = (MethodInvocation) target.getExpression();
-			replace = (MethodInvocation) ASTNode.copySubtree(ast, method);
-			replace.setName(ast.newSimpleName("waitfor"));
-			replace.arguments().clear();
+			MethodInvocation isAlive = (MethodInvocation) target.getExpression();
+			MethodInvocation waitfor = ast.newMethodInvocation();
+			waitfor = (MethodInvocation) ASTNode.copySubtree(ast, isAlive);
+			waitfor.setName(ast.newSimpleName("waitfor"));
+			waitfor.arguments().clear();
+			Statement replace = ast.newExpressionStatement(waitfor);
 			rewrite.replace(target, replace, null);
 		}
 		// modify
