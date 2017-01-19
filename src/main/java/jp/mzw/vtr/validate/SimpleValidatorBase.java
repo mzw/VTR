@@ -34,7 +34,11 @@ abstract public class SimpleValidatorBase extends ValidatorBase {
 						continue;
 					}
 					try {
-						if (!detect(tc).isEmpty()) {
+						List<ASTNode> detects = detect(tc);
+						if (detects == null) {
+							continue;
+						}
+						if (!detects.isEmpty()) {
 							this.dupulicates.add(tc.getFullName());
 							ValidationResult vr = new ValidationResult(this.projectId, commit, tc, tc.getStartLineNumber(), tc.getEndLineNumber(), this);
 							this.validationResultList.add(vr);
