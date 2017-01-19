@@ -15,6 +15,14 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.maven.shared.invoker.MavenInvocationException;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
+import org.eclipse.jdt.core.dom.ASTVisitor;
+import org.eclipse.jdt.core.dom.ITypeBinding;
+import org.eclipse.jdt.core.dom.Javadoc;
+import org.eclipse.jdt.core.dom.MethodDeclaration;
+import org.eclipse.jdt.core.dom.SimpleName;
+import org.eclipse.jdt.core.dom.SimpleType;
+import org.eclipse.jdt.core.dom.TagElement;
+import org.eclipse.jdt.core.dom.TextElement;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.Document;
@@ -94,6 +102,8 @@ public class FixJavadocErrors extends SimpleValidatorBase {
 		private int pos;
 		private String type;
 		private String message;
+		
+		private MethodDeclaration method;
 
 		public JavadocErrorMessage(String filepath, int lineno, int pos, String type, String message) {
 			this.filepath = filepath;
@@ -122,12 +132,21 @@ public class FixJavadocErrors extends SimpleValidatorBase {
 		public String getMessage() {
 			return message;
 		}
+		
+		public void setMethod(MethodDeclaration method) {
+			this.method = method;
+		}
+		
+		public MethodDeclaration getMethod() {
+			return method;
+		}
 
 		public String toString() {
 			return filepath + ": [" + type + "] " + message + " (" + lineno + ", " + pos + ")";
 		}
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	protected String getModified(String origin, TestCase tc) throws IOException, MalformedTreeException, BadLocationException {
 		List<ASTNode> detects = detect(tc);
@@ -136,7 +155,70 @@ public class FixJavadocErrors extends SimpleValidatorBase {
 		}
 		AST ast = detects.get(0).getAST();
 		ASTRewrite rewrite = ASTRewrite.create(ast);
-		// TODO generate modified content
+		try {
+			// get method declarations
+			final List<MethodDeclaration> methods = new ArrayList<>();
+			tc.getCompilationUnit().accept(new ASTVisitor() {
+				@Override
+				public boolean visit(MethodDeclaration node) {
+					methods.add(node);
+					return super.visit(node);
+				}
+			});
+			// relate JavaDoc error messages to method declarations
+			final List<JavadocErrorMessage> messages = getJavadocErrorMessages(tc);
+			for (MethodDeclaration method : methods) {
+				if (method.getJavadoc() == null) {
+					continue;
+				}
+				int start = tc.getCompilationUnit().getLineNumber(method.getStartPosition());
+				int end = tc.getCompilationUnit().getLineNumber(method.getStartPosition() + method.getLength());
+				for (JavadocErrorMessage message : messages) {
+					if (start <= message.getLineno() && message.getLineno() <= end) {
+						message.setMethod(method);
+					}
+				}
+			}
+			// rewrite
+			for (JavadocErrorMessage message : messages) {
+				if (message.getMessage().startsWith("no @throws for ")) {
+					String exception = message.getMessage().replace("no @throws for ", "");
+					final List<ITypeBinding> exceptions = new ArrayList<>();
+					for (Object object : message.getMethod().thrownExceptionTypes()) {
+						if (object instanceof SimpleType) {
+							SimpleType type = (SimpleType) object;
+							exceptions.add(type.resolveBinding());
+						} else {
+							System.out.println("TODO: implement for thrown exception type, " + object.getClass());
+						}
+					}
+					TagElement tag = null;
+					for (ITypeBinding type : exceptions) {
+						if (exception.equals(type.getQualifiedName())) {
+							tag = ast.newTagElement();
+							tag.setTagName(TagElement.TAG_THROWS);
+							SimpleName name = ast.newSimpleName(type.getName());
+							tag.fragments().add(name);
+							TextElement text = ast.newTextElement();
+							text.setText("May occur in some failure modes");
+							tag.fragments().add(text);
+							break;
+						}
+					}
+					System.out.println(tag);
+					if (tag != null) {
+						Javadoc javadoc = message.getMethod().getJavadoc();
+						Javadoc copy = (Javadoc) ASTNode.copySubtree(ast, javadoc);
+						copy.tags().add(tag);
+						rewrite.replace(javadoc, copy, null);
+					}
+				} else {
+					System.out.println("TODO: " + message.getMessage());
+				}
+			}
+		} catch (MavenInvocationException | InterruptedException e) {
+			LOGGER.warn("Failed to get JavaDoc error/warning messages: {}", e.getMessage());
+		}
 		// modify
 		Document document = new Document(origin);
 		TextEdit edit = rewrite.rewriteAST(document, null);
