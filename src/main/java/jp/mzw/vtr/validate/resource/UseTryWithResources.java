@@ -1,4 +1,4 @@
-package jp.mzw.vtr.validate;
+package jp.mzw.vtr.validate.resource;
 
 import java.io.IOException;
 import java.lang.reflect.Modifier;
@@ -8,6 +8,9 @@ import java.util.List;
 
 import jp.mzw.vtr.core.Project;
 import jp.mzw.vtr.maven.TestCase;
+import jp.mzw.vtr.validate.SimpleValidatorBase;
+import jp.mzw.vtr.validate.ValidationResult;
+import jp.mzw.vtr.validate.ValidatorUtils;
 
 import org.apache.commons.io.FileUtils;
 import org.eclipse.jdt.core.dom.AST;

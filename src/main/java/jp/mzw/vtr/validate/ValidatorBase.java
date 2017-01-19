@@ -410,4 +410,13 @@ abstract public class ValidatorBase implements CheckoutConductor.Listener {
 		edit.apply(document);
 		return document.get();
 	}
+
+	public static String getPackageName(TestCase tc) {
+		String className = tc.getClassName();
+		int index = className.lastIndexOf('.');
+		if (index < 0) {
+			return className;
+		}
+		return className.substring(0, index);
+	}
 }

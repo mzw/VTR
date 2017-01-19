@@ -1,4 +1,4 @@
-package jp.mzw.vtr.validate;
+package jp.mzw.vtr.validate.junit;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -6,6 +6,7 @@ import java.util.List;
 
 import jp.mzw.vtr.core.Project;
 import jp.mzw.vtr.maven.TestCase;
+import jp.mzw.vtr.validate.SimpleValidatorBase;
 
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;

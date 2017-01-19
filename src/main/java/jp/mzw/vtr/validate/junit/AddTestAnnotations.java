@@ -1,4 +1,4 @@
-package jp.mzw.vtr.validate;
+package jp.mzw.vtr.validate.junit;
 
 import java.io.File;
 import java.io.IOException;
@@ -27,6 +27,9 @@ import jp.mzw.vtr.git.Commit;
 import jp.mzw.vtr.maven.MavenUtils;
 import jp.mzw.vtr.maven.TestCase;
 import jp.mzw.vtr.maven.TestSuite;
+import jp.mzw.vtr.validate.ValidationResult;
+import jp.mzw.vtr.validate.ValidatorBase;
+import jp.mzw.vtr.validate.ValidatorUtils;
 
 public class AddTestAnnotations extends ValidatorBase {
 	protected static Logger LOGGER = LoggerFactory.getLogger(AddTestAnnotations.class);

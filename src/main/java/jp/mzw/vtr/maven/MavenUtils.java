@@ -64,6 +64,43 @@ public class MavenUtils {
 
 	/**
 	 * 
+	 * @param subject
+	 * @param goals
+	 * @param mavenHome
+	 * @param stdio
+	 * @param stderr
+	 * @return
+	 * @throws MavenInvocationException
+	 */
+	public static List<String> maven(File subject, List<String> goals, File mavenHome, final boolean stdio, final boolean stderr) throws MavenInvocationException {
+		final List<String> ret = new ArrayList<>();
+		InvocationRequest request = new DefaultInvocationRequest();
+		request.setPomFile(new File(subject, JacocoInstrumenter.FILENAME_POM));
+		request.setGoals(goals);
+		Invoker invoker = new DefaultInvoker();
+		invoker.setMavenHome(mavenHome);
+		invoker.setOutputHandler(new InvocationOutputHandler() {
+			@Override
+			public void consumeLine(String line) {
+				if (stdio) {
+					ret.add(line);
+				}
+			}
+		});
+		invoker.setErrorHandler(new InvocationOutputHandler() {
+			@Override
+			public void consumeLine(String line) {
+				if (stderr) {
+					ret.add(line);
+				}
+			}
+		});
+		invoker.execute(request);
+		return ret;
+	}
+
+	/**
+	 * 
 	 * @return
 	 * @throws IOException
 	 */

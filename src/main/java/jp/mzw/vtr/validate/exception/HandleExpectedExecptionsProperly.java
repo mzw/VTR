@@ -1,4 +1,4 @@
-package jp.mzw.vtr.validate;
+package jp.mzw.vtr.validate.exception;
 
 import java.io.IOException;
 import java.text.ParseException;
@@ -10,6 +10,10 @@ import jp.mzw.vtr.git.Commit;
 import jp.mzw.vtr.maven.MavenUtils;
 import jp.mzw.vtr.maven.TestCase;
 import jp.mzw.vtr.maven.TestSuite;
+import jp.mzw.vtr.validate.RewriterUtils;
+import jp.mzw.vtr.validate.ValidationResult;
+import jp.mzw.vtr.validate.ValidatorBase;
+import jp.mzw.vtr.validate.ValidatorUtils;
 
 import org.apache.commons.io.FileUtils;
 import org.eclipse.jdt.core.dom.ASTNode;

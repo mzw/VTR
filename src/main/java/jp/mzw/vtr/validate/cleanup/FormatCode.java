@@ -1,4 +1,4 @@
-package jp.mzw.vtr.validate;
+package jp.mzw.vtr.validate.cleanup;
 
 import java.io.File;
 import java.io.IOException;
@@ -34,6 +34,8 @@ import jp.mzw.vtr.maven.AllMethodFindVisitor;
 import jp.mzw.vtr.maven.MavenUtils;
 import jp.mzw.vtr.maven.TestCase;
 import jp.mzw.vtr.maven.TestSuite;
+import jp.mzw.vtr.validate.ValidationResult;
+import jp.mzw.vtr.validate.ValidatorBase;
 
 public class FormatCode extends ValidatorBase {
 	protected static Logger LOGGER = LoggerFactory.getLogger(FormatCode.class);

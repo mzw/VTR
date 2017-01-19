@@ -1,4 +1,4 @@
-package jp.mzw.vtr.validate;
+package jp.mzw.vtr.validate.cleanup;
 
 import java.io.IOException;
 import java.text.ParseException;
@@ -12,6 +12,8 @@ import jp.mzw.vtr.git.Commit;
 import jp.mzw.vtr.maven.MavenUtils;
 import jp.mzw.vtr.maven.TestCase;
 import jp.mzw.vtr.maven.TestSuite;
+import jp.mzw.vtr.validate.ValidationResult;
+import jp.mzw.vtr.validate.ValidatorBase;
 
 import org.apache.commons.io.FileUtils;
 import org.eclipse.core.runtime.CoreException;
