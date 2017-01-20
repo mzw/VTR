@@ -28,13 +28,17 @@ abstract public class SimpleValidatorBase extends ValidatorBase {
 	@Override
 	public void onCheckout(Commit commit) {
 		try {
-			for (TestSuite ts : MavenUtils.getTestSuites(this.projectDir)) {
+			for (TestSuite ts : MavenUtils.getTestSuitesAtLevel2(this.projectDir)) {
 				for (TestCase tc : ts.getTestCases()) {
 					if (this.dupulicates.contains(tc.getFullName())) {
 						continue;
 					}
 					try {
-						if (!detect(tc).isEmpty()) {
+						List<ASTNode> detects = detect(tc);
+						if (detects == null) {
+							continue;
+						}
+						if (!detects.isEmpty()) {
 							this.dupulicates.add(tc.getFullName());
 							ValidationResult vr = new ValidationResult(this.projectId, commit, tc, tc.getStartLineNumber(), tc.getEndLineNumber(), this);
 							this.validationResultList.add(vr);

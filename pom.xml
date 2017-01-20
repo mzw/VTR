@@ -108,11 +108,71 @@
 			<artifactId>commons-csv</artifactId>
 			<version>1.2</version>
 		</dependency>
-		<dependency>
-			<groupId>de.defmacro</groupId>
-			<artifactId>eclipse-astparser</artifactId>
-			<version>8.1</version>
-		</dependency>
+		<!-- Use latest Eclipse JDT (AST parser) -->
+        <dependency>
+            <groupId>eclipse.jdt.core</groupId>
+            <artifactId>org.eclipse.jdt.core</artifactId>
+            <version>3.13.0-SNAPSHOT</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/lib/org.eclipse.jdt.core-3.13.0-SNAPSHOT.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>rt.equinox.bundles</groupId>
+            <artifactId>org.eclipse.equinox.common</artifactId>
+            <version>3.9.0-SNAPSHOT</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/lib/org.eclipse.equinox.common-3.9.0-SNAPSHOT.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>eclipse.platform.text</groupId>
+            <artifactId>org.eclipse.text</artifactId>
+            <version>3.6.100-SNAPSHOT</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/lib/org.eclipse.text-3.6.100-SNAPSHOT.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>eclipse.platform.resources</groupId>
+            <artifactId>org.eclipse.core.resources</artifactId>
+            <version>3.12.0-SNAPSHOT</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/lib/org.eclipse.core.resources-3.12.0-SNAPSHOT.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>eclipse.platform.runtime</groupId>
+            <artifactId>org.eclipse.core.jobs</artifactId>
+            <version>3.9.0-SNAPSHOT</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/lib/org.eclipse.core.jobs-3.9.0-SNAPSHOT.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>eclipse.platform.runtime</groupId>
+            <artifactId>org.eclipse.core.runtime</artifactId>
+            <version>3.13.0-SNAPSHOT</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/lib/org.eclipse.core.runtime-3.13.0-SNAPSHOT.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>rt.equinox.framework</groupId>
+            <artifactId>org.eclipse.osgi</artifactId>
+            <version>3.12.0-SNAPSHOT</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/lib/org.eclipse.osgi-3.12.0-SNAPSHOT.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>eclipse.platform.runtime</groupId>
+            <artifactId>org.eclipse.core.contenttype</artifactId>
+            <version>3.6.0-SNAPSHOT</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/lib/org.eclipse.core.contenttype-3.6.0-SNAPSHOT.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>rt.equinox.bundles</groupId>
+            <artifactId>org.eclipse.equinox.preferences</artifactId>
+            <version>3.6.100-SNAPSHOT</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/lib/org.eclipse.equinox.preferences-3.6.100-SNAPSHOT.jar</systemPath>
+        </dependency>
+        <!-- Use Eclipse JDT CleanUp functionality -->
 		<dependency>
 			<groupId>org.eclipse.jdt</groupId>
 			<artifactId>org.eclipse.jdt.ui</artifactId>

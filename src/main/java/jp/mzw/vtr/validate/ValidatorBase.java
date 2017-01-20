@@ -265,7 +265,7 @@ abstract public class ValidatorBase implements CheckoutConductor.Listener {
 		// Detect test case
 		String clazz = result.getTestCaseClassName();
 		String method = result.getTestCaseMathodName();
-		List<TestSuite> testSuites = MavenUtils.getTestSuites(project.getProjectDir());
+		List<TestSuite> testSuites = MavenUtils.getTestSuitesAtLevel2(project.getProjectDir());
 		for (TestSuite ts : testSuites) {
 			TestCase tc = ts.getTestCaseBy(clazz, method);
 			if (tc != null) {
@@ -409,5 +409,14 @@ abstract public class ValidatorBase implements CheckoutConductor.Listener {
 		IDocument document = new Document(source);
 		edit.apply(document);
 		return document.get();
+	}
+
+	public static String getPackageName(TestCase tc) {
+		String className = tc.getClassName();
+		int index = className.lastIndexOf('.');
+		if (index < 0) {
+			return className;
+		}
+		return className.substring(0, index);
 	}
 }
