@@ -1,4 +1,4 @@
-package jp.mzw.vtr.validate;
+package jp.mzw.vtr.validate.template;
 
 import java.io.File;
 import java.io.IOException;
@@ -10,6 +10,7 @@ import jp.mzw.vtr.core.Project;
 import jp.mzw.vtr.maven.AllElementsFindVisitor;
 import jp.mzw.vtr.maven.JacocoInstrumenter;
 import jp.mzw.vtr.maven.TestCase;
+import jp.mzw.vtr.validate.SimpleValidatorBase;
 
 import org.apache.maven.shared.invoker.DefaultInvocationRequest;
 import org.apache.maven.shared.invoker.DefaultInvoker;
@@ -41,6 +42,9 @@ public class AddSuppressWarningsAnnotation extends SimpleValidatorBase {
 	}
 	
 	@Override
+	/**
+	 * 注意：各コミット毎にコンパイルするので，実行時間がかかります．
+	 */
 	protected List<ASTNode> detect(TestCase tc) throws IOException, MalformedTreeException, BadLocationException {
 		final List<ASTNode> targets = new ArrayList<>();
 
