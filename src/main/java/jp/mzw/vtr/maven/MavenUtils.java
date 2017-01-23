@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.maven.shared.invoker.DefaultInvocationRequest;
 import org.apache.maven.shared.invoker.DefaultInvoker;
 import org.apache.maven.shared.invoker.InvocationOutputHandler;
@@ -72,7 +73,8 @@ public class MavenUtils {
 	 * @return
 	 * @throws MavenInvocationException
 	 */
-	public static List<String> maven(File subject, List<String> goals, File mavenHome, final boolean stdio, final boolean stderr) throws MavenInvocationException {
+	public static List<String> maven(File subject, List<String> goals, File mavenHome, final boolean stdio, final boolean stderr)
+			throws MavenInvocationException {
 		final List<String> ret = new ArrayList<>();
 		InvocationRequest request = new DefaultInvocationRequest();
 		request.setPomFile(new File(subject, JacocoInstrumenter.FILENAME_POM));
@@ -97,6 +99,39 @@ public class MavenUtils {
 		});
 		invoker.execute(request);
 		return ret;
+	}
+
+	/**
+	 * 
+	 * @param subject
+	 * @param goals
+	 * @param mavenHome
+	 * @return
+	 * @throws MavenInvocationException
+	 */
+	public static Pair<List<String>, List<String>> maven(File subject, List<String> goals, File mavenHome) throws MavenInvocationException {
+		InvocationRequest request = new DefaultInvocationRequest();
+		request.setPomFile(new File(subject, JacocoInstrumenter.FILENAME_POM));
+		request.setGoals(goals);
+		Invoker invoker = new DefaultInvoker();
+		invoker.setMavenHome(mavenHome);
+
+		final List<String> outputs = new ArrayList<>();
+		final List<String> errors = new ArrayList<>();
+		invoker.setOutputHandler(new InvocationOutputHandler() {
+			@Override
+			public void consumeLine(String line) {
+				outputs.add(line);
+			}
+		});
+		invoker.setErrorHandler(new InvocationOutputHandler() {
+			@Override
+			public void consumeLine(String line) {
+				errors.add(line);
+			}
+		});
+		invoker.execute(request);
+		return Pair.of(outputs, errors);
 	}
 
 	/**

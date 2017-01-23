@@ -2,7 +2,9 @@ package jp.mzw.vtr.validate;
 
 import java.io.IOException;
 import java.text.ParseException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.io.FileUtils;
 import org.eclipse.jdt.core.dom.ASTNode;
@@ -21,14 +23,29 @@ import jp.mzw.vtr.maven.TestSuite;
 abstract public class SimpleValidatorBase extends ValidatorBase {
 	protected Logger LOGGER = LoggerFactory.getLogger(SimpleValidatorBase.class);
 
+	protected Map<Commit, List<TestSuite>> testSuitesByCommit;
+	
 	public SimpleValidatorBase(Project project) {
 		super(project);
+		if (testSuitesByCommit == null) {
+			testSuitesByCommit = new HashMap<>();
+		}
+	}
+
+	@Override
+	public void beforeCheckout(Commit commit) {
+		// NOP
 	}
 
 	@Override
 	public void onCheckout(Commit commit) {
 		try {
-			for (TestSuite ts : MavenUtils.getTestSuitesAtLevel2(this.projectDir)) {
+			List<TestSuite> testSuites = testSuitesByCommit.get(commit);
+			if (testSuites == null) {
+				testSuites = MavenUtils.getTestSuitesAtLevel2(this.projectDir);
+				testSuitesByCommit.put(commit, testSuites);
+			}
+			for (TestSuite ts : testSuites) {
 				for (TestCase tc : ts.getTestCases()) {
 					if (this.dupulicates.contains(tc.getFullName())) {
 						continue;
@@ -52,6 +69,11 @@ abstract public class SimpleValidatorBase extends ValidatorBase {
 		} catch (IOException e) {
 			LOGGER.warn("Failed to checkout: {}", commit.getId());
 		}
+	}
+
+	@Override
+	public void afterCheckout(Commit commit) {
+		// NOP
 	}
 
 	abstract protected List<ASTNode> detect(TestCase tc) throws IOException, MalformedTreeException, BadLocationException;

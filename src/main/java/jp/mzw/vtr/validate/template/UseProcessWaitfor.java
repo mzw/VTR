@@ -6,7 +6,7 @@ import java.util.List;
 
 import jp.mzw.vtr.core.Project;
 import jp.mzw.vtr.maven.TestCase;
-import jp.mzw.vtr.validate.SimpleValidatorBase;
+import jp.mzw.vtr.validate.CompileValidatorBase;
 
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
@@ -28,7 +28,7 @@ import org.eclipse.text.edits.TextEdit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class UseProcessWaitfor extends SimpleValidatorBase {
+public class UseProcessWaitfor extends CompileValidatorBase {
 	protected static Logger LOGGER = LoggerFactory.getLogger(UseProcessWaitfor.class);
 
 	public UseProcessWaitfor(Project project) {

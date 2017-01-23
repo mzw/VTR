@@ -6,9 +6,8 @@ import java.util.List;
 
 import jp.mzw.vtr.core.Project;
 import jp.mzw.vtr.maven.TestCase;
-import jp.mzw.vtr.validate.EclipseCleanUpValidatorBase;
+import jp.mzw.vtr.validate.SimpleValidatorBase;
 
-import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.AbstractTypeDeclaration;
@@ -34,7 +33,7 @@ import org.eclipse.text.edits.TextEdit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class UseThisIfNecessary extends EclipseCleanUpValidatorBase {
+public class UseThisIfNecessary extends SimpleValidatorBase {
 	protected static Logger LOGGER = LoggerFactory.getLogger(UseThisIfNecessary.class);
 
 	public UseThisIfNecessary(Project project) {
@@ -42,35 +41,24 @@ public class UseThisIfNecessary extends EclipseCleanUpValidatorBase {
 	}
 
 	@Override
-	protected List<ASTNode> detect(TestCase tc, CompilationUnit cu) throws CoreException {
-		List<ASTNode> ret = new ArrayList<>();
-		try {
-			cu = getCompilationUnit(tc.getTestFile());
-			if (cu == null) {
-				return ret;
+	protected List<ASTNode> detect(TestCase tc) throws IOException, MalformedTreeException, BadLocationException {
+		final List<ASTNode> ret = new ArrayList<>();
+		final CompilationUnit cu = tc.getCompilationUnit();
+		ThisQualifierVisitor visitor = new ThisQualifierVisitor(cu);
+		cu.accept(visitor);
+		for (FieldAccess field : visitor.getReplacableFields()) {
+			int start = cu.getLineNumber(field.getStartPosition());
+			int end = cu.getLineNumber(field.getStartPosition() + field.getLength());
+			if (tc.getStartLineNumber() <= start && end <= tc.getEndLineNumber()) {
+				ret.add(field);
 			}
-
-			ThisQualifierVisitor visitor = new ThisQualifierVisitor(cu);
-			cu.accept(visitor);
-
-			for (FieldAccess field : visitor.getReplacableFields()) {
-				int start = cu.getLineNumber(field.getStartPosition());
-				int end = cu.getLineNumber(field.getStartPosition() + field.getLength());
-				if (tc.getStartLineNumber() <= start && end <= tc.getEndLineNumber()) {
-					ret.add(field);
-				}
+		}
+		for (Expression expression : visitor.getRemovableExpressions()) {
+			int start = cu.getLineNumber(expression.getStartPosition());
+			int end = cu.getLineNumber(expression.getStartPosition() + expression.getLength());
+			if (tc.getStartLineNumber() <= start && end <= tc.getEndLineNumber()) {
+				ret.add(expression);
 			}
-
-			for (Expression expression : visitor.getRemovableExpressions()) {
-				int start = cu.getLineNumber(expression.getStartPosition());
-				int end = cu.getLineNumber(expression.getStartPosition() + expression.getLength());
-				if (tc.getStartLineNumber() <= start && end <= tc.getEndLineNumber()) {
-					ret.add(expression);
-				}
-			}
-
-		} catch (IOException e) {
-			LOGGER.warn("Failed to get compilation unit: {}", e.getMessage());
 		}
 		return ret;
 	}
@@ -198,15 +186,10 @@ public class UseThisIfNecessary extends EclipseCleanUpValidatorBase {
 	}
 
 	@Override
-	protected String getModified(String origin, TestCase tc) throws IOException, CoreException, MalformedTreeException, BadLocationException {
-		CompilationUnit cu = getCompilationUnit(tc.getTestFile());
-		if (cu == null) {
-			return origin;
-		}
-
+	protected String getModified(String origin, TestCase tc) throws IOException, MalformedTreeException, BadLocationException {
+		CompilationUnit cu = tc.getCompilationUnit();
 		ThisQualifierVisitor visitor = new ThisQualifierVisitor(cu);
 		cu.accept(visitor);
-
 		AST ast = cu.getAST();
 		ASTRewrite rewrite = ASTRewrite.create(ast);
 		for (FieldAccess field : visitor.getReplacableFields()) {
@@ -215,7 +198,6 @@ public class UseThisIfNecessary extends EclipseCleanUpValidatorBase {
 		for (Expression expression : visitor.getRemovableExpressions()) {
 			rewrite.remove(expression, null);
 		}
-
 		Document document = new Document(origin);
 		TextEdit edit = rewrite.rewriteAST(document, null);
 		edit.apply(document);

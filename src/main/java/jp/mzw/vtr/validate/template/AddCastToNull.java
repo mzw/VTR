@@ -26,7 +26,7 @@ import org.slf4j.LoggerFactory;
 
 public class AddCastToNull extends SimpleValidatorBase {
 	protected static Logger LOGGER = LoggerFactory.getLogger(AddCastToNull.class);
-	
+
 	public AddCastToNull(Project project) {
 		super(project);
 	}
@@ -34,62 +34,91 @@ public class AddCastToNull extends SimpleValidatorBase {
 	@Override
 	protected List<ASTNode> detect(TestCase tc) throws IOException, MalformedTreeException, BadLocationException {
 		final List<ASTNode> ret = new ArrayList<>();
-		final List<MethodInvocation> targets = new ArrayList<>();
-		
 		tc.getMethodDeclaration().accept(new ASTVisitor() {
 			@Override
 			public boolean visit(MethodInvocation node) {
-				targets.add(node);
+				if (isTargetMethod(node)) {
+					ret.add(node);
+				}
 				return super.visit(node);
 			}
 		});
-		
-		for (MethodInvocation target: targets) {
-			if (isTargetMethod(target)) {
-				ret.add(target);
+		return ret;
+	}
+
+	public static boolean isNull(Object object) {
+		if (object == null) {
+			return false;
+		}
+		if (!(object instanceof ASTNode)) {
+			return false;
+		}
+		ASTNode node = (ASTNode) object;
+		if (node.getNodeType() == ASTNode.NULL_LITERAL) {
+			return true;
+		}
+		return false;
+	}
+
+	public static boolean hasNullArgument(MethodInvocation method) {
+		boolean hasNull = false;
+		for (Object argument : method.arguments()) {
+			if (isNull(argument)) {
+				hasNull = true;
+				break;
 			}
+		}
+		return hasNull;
+	}
+
+	public static boolean checkNullExpression(MethodInvocation method) {
+		if (method.getExpression() == null) {
+			return true;
+		}
+		ITypeBinding binding = method.getExpression().resolveTypeBinding();
+		if (binding == null) {
+			return true;
+		}
+		return false;
+	}
+
+	public static List<IMethodBinding> getMethodHavingSameNameAndArguments(MethodInvocation method) {
+		List<IMethodBinding> ret = new ArrayList<>();
+		ITypeBinding binding = method.getExpression().resolveTypeBinding();
+		for (IMethodBinding methodBinding : binding.getDeclaredMethods()) {
+			// Not same method name
+			if (!methodBinding.getName().toString().equals(method.getName().toString())) {
+				continue;
+			}
+			// Not same method argument length
+			if (method.arguments().size() != methodBinding.getParameterTypes().length) {
+				continue;
+			}
+			// FIXME: Need to check argument 'types'
+			ret.add(methodBinding);
 		}
 		return ret;
 	}
-	
-	private boolean isNullLiteral(Object obj) {
-		if (obj == null) {
+
+	private static boolean isTargetMethod(MethodInvocation method) {
+		if (!hasNullArgument(method)) {
 			return false;
 		}
-		if (!(obj instanceof ASTNode)) {
+		if (checkNullExpression(method)) {
 			return false;
 		}
-		ASTNode node = (ASTNode) obj;
-		return node.getNodeType() == ASTNode.NULL_LITERAL;
-	}
-	
-	private boolean isTargetMethod (MethodInvocation method) {
-		final List<ASTNode> targets = new ArrayList<>();
-		// 引数がnullかチェック
-		for (Object argument: method.arguments()) {
-			if (!isNullLiteral(argument)) {
-				return false;
-			}
-		}
-		// 引数の方がprimitiveじゃないかチェック
-		if (method.getExpression() == null) return false; // FIXME: 時々，ぬるぽが起きるのでnullチェック．
-		ITypeBinding binding = method.getExpression().resolveTypeBinding();
-		if (binding == null) return false; // FIXME: 時々，ぬるぽが起きるのでnullチェック．
-		for (IMethodBinding methodBinding: binding.getDeclaredMethods()) {
-			// メソッド名および引数の数が同じ
-			// FIXME: 引数の型は見ていない
-			if (methodBinding.getName().toString().equals(method.getName().toString())
-					&& method.arguments().size() == methodBinding.getParameterTypes().length) {
-				for (ITypeBinding argument: methodBinding.getParameterTypes()) {
-					if (!argument.isPrimitive()) {
-						return true;
-					}
+		List<IMethodBinding> methodBindings = getMethodHavingSameNameAndArguments(method);
+		for (IMethodBinding methodBinding : methodBindings) {
+			for (ITypeBinding argument : methodBinding.getParameterTypes()) {
+				if (!argument.isPrimitive()) {
+					return true;
 				}
 			}
 		}
 		return false;
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
 	protected String getModified(String origin, TestCase tc) throws IOException, MalformedTreeException, BadLocationException {
 		// prepare
@@ -97,36 +126,32 @@ public class AddCastToNull extends SimpleValidatorBase {
 		AST ast = cu.getAST();
 		ASTRewrite rewrite = ASTRewrite.create(ast);
 		// detect
-		for (ASTNode node: detect(tc)) {
+		for (ASTNode node : detect(tc)) {
 			MethodInvocation target = (MethodInvocation) node;
 			MethodInvocation replace = (MethodInvocation) ASTNode.copySubtree(ast, target);
-			// 引数を一旦すべて削除
+			// Clear arguments
 			replace.arguments().clear();
-			ITypeBinding binding = target.getExpression().resolveTypeBinding();
-			if (binding == null) break; // FIXME: 時々，ぬるぽが起きるのでnullチェック．
-			for (IMethodBinding methodBinding: binding.getDeclaredMethods()) {
-				// メソッド名および引数の数が同じ
-				// FIXME: 引数の型は見ていない
-				if (methodBinding.getName().toString().equals(target.getName().toString())
-						&& target.arguments().size() == methodBinding.getParameterTypes().length) {
-					List<Object> inputArguments = target.arguments();
-					ITypeBinding[] declaredArguments = methodBinding.getParameterTypes();
-					// 引数を設定していく
-					for (int i = 0; i < inputArguments.size(); i++) {
-						if ((isNullLiteral(inputArguments.get(i))) &&(!declaredArguments[i].isPrimitive())) {
-							CastExpression cast = ast.newCastExpression();
-							cast.setType(ast.newSimpleType(ast.newSimpleName(declaredArguments[i].getName())));
-							cast.setExpression(ast.newNullLiteral());
-							replace.arguments().add(cast);
-						} else {
-							replace.arguments().add(ASTNode.copySubtree(ast, (ASTNode) inputArguments.get(i)));
-						}
+			// Set arguments
+			List<Object> targetArguments = target.arguments();
+			for (IMethodBinding methodBinding : getMethodHavingSameNameAndArguments(target)) {
+				ITypeBinding[] declaredArguments = methodBinding.getParameterTypes();
+				for (int i = 0; i < targetArguments.size(); i++) {
+					Object targetArgument = targetArguments.get(i);
+					ITypeBinding declaredArgument = declaredArguments[i];
+					// Determine whether this argument should be casted
+					if ((isNull(targetArgument)) && (!declaredArgument.isPrimitive())) {
+						CastExpression cast = ast.newCastExpression();
+						cast.setType(ast.newSimpleType(ast.newSimpleName(declaredArgument.getName())));
+						cast.setExpression(ast.newNullLiteral());
+						replace.arguments().add(cast);
+					} else {
+						replace.arguments().add(ASTNode.copySubtree(ast, (ASTNode) targetArguments.get(i)));
 					}
 				}
 			}
 			rewrite.replace(target, replace, null);
 		}
-		//modify
+		// modify
 		Document document = new Document(origin);
 		TextEdit edit = rewrite.rewriteAST(document, null);
 		edit.apply(document);
