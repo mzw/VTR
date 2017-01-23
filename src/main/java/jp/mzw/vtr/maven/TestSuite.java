@@ -125,6 +125,10 @@ public class TestSuite {
 
 		return this;
 	}
+	
+	public static void cleanCompilationUnit() {
+		compilationUnitsBySubjectDir = null;
+	}
 
 	protected String[] getSources(File subjectDir) throws IOException {
 		List<File> files = new ArrayList<>();

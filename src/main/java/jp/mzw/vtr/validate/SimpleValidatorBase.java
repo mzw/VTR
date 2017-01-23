@@ -73,7 +73,7 @@ abstract public class SimpleValidatorBase extends ValidatorBase {
 
 	@Override
 	public void afterCheckout(Commit commit) {
-		// NOP
+		TestSuite.cleanCompilationUnit();
 	}
 
 	abstract protected List<ASTNode> detect(TestCase tc) throws IOException, MalformedTreeException, BadLocationException;
