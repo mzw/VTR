@@ -17,6 +17,6 @@ public class ValidatorBaseTest extends VtrTestBase {
 			NoSuchMethodException, SecurityException, ClassNotFoundException, IOException {
 		List<ValidatorBase> validators = ValidatorBase.getValidators(project, "test-validators_list.txt");
 		assertFalse(validators.isEmpty());
-		assertArrayEquals("jp.mzw.vtr.validate.DoNotSwallowTestErrorsSilently".toCharArray(), validators.get(0).getClass().getName().toCharArray());
+		assertArrayEquals("jp.mzw.vtr.validate.exception.DoNotSwallowTestErrorsSilently".toCharArray(), validators.get(0).getClass().getName().toCharArray());
 	}
 }
