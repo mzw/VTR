@@ -31,11 +31,7 @@ public class CheckoutConductor {
 	 *
 	 */
 	public interface Listener {
-		public void beforeCheckout(Commit commit);
-
 		public void onCheckout(Commit commit);
-
-		public void afterCheckout(Commit commit);
 	}
 
 	/** Observer listeners */
@@ -54,20 +50,6 @@ public class CheckoutConductor {
 	private void onCheckout(Commit commit) {
 		for (Listener listener : this.listenerSet) {
 			listener.onCheckout(commit);
-		}
-	}
-
-	/** Notify Observer listeners */
-	private void beforeCheckout(Commit commit) {
-		for (Listener listener : this.listenerSet) {
-			listener.beforeCheckout(commit);
-		}
-	}
-
-	/** Notify Observer listeners */
-	private void afterCheckout(Commit commit) {
-		for (Listener listener : this.listenerSet) {
-			listener.afterCheckout(commit);
 		}
 	}
 
@@ -136,16 +118,14 @@ public class CheckoutConductor {
 	 */
 	private void checkout(List<Commit> commits) throws GitAPIException, IOException, ParseException {
 		for (Commit commit : commits) {
-			beforeCheckout(commit);
 			try {
 				checkout(commit);
-				onCheckout(commit);
 			} catch (GitAPIException e) {
 				LOGGER.warn("Failed to checkout @ {}", commit.getId());
 				git.clean().call();
 				continue;
 			}
-			afterCheckout(commit);
+			onCheckout(commit);
 		}
 		// Recover initial state
 		checkout(getLatestCommit());

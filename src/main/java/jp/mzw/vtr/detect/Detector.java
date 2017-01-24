@@ -368,14 +368,4 @@ public class Detector implements CheckoutConductor.Listener {
 		}
 		return document.asXML();
 	}
-
-	@Override
-	public void beforeCheckout(Commit commit) {
-		// NOP
-	}
-
-	@Override
-	public void afterCheckout(Commit commit) {
-		// NOP
-	}
 }

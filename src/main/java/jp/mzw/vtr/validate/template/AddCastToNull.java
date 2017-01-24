@@ -11,11 +11,14 @@ import jp.mzw.vtr.validate.SimpleValidatorBase;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
+import org.eclipse.jdt.core.dom.ArrayType;
 import org.eclipse.jdt.core.dom.CastExpression;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.MethodInvocation;
+import org.eclipse.jdt.core.dom.ParameterizedType;
+import org.eclipse.jdt.core.dom.Type;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.Document;
@@ -140,10 +143,46 @@ public class AddCastToNull extends SimpleValidatorBase {
 					ITypeBinding declaredArgument = declaredArguments[i];
 					// Determine whether this argument should be casted
 					if ((isNull(targetArgument)) && (!declaredArgument.isPrimitive())) {
-						CastExpression cast = ast.newCastExpression();
-						cast.setType(ast.newSimpleType(ast.newSimpleName(declaredArgument.getName())));
-						cast.setExpression(ast.newNullLiteral());
-						replace.arguments().add(cast);
+
+						Type type = null;
+						if (declaredArgument.isArray()) {
+							ITypeBinding elementType = declaredArgument.getElementType();
+							Type simpleType = ast.newSimpleType(ast.newName(elementType.getName()));
+							ArrayType arrayType = ast.newArrayType(simpleType);
+							for (int d = 1; d < declaredArgument.getDimensions(); d++) {
+								arrayType.dimensions().add(ast.newDimension());
+							}
+							type = arrayType;
+						} else if(declaredArgument.isParameterizedType()) {
+							Type simpleType = ast.newSimpleType(ast.newName(declaredArgument.getErasure().getName()));
+							ParameterizedType parameterizedType = ast.newParameterizedType(simpleType);
+							for (ITypeBinding typeArgument : declaredArgument.getTypeArguments()) {
+								Type typeParameter = ast.newSimpleType(ast.newSimpleName(typeArgument.getErasure().getName()));
+								parameterizedType.typeArguments().add(typeParameter);
+							}
+							type = parameterizedType;
+						} else {
+							type = ast.newSimpleType(ast.newSimpleName(declaredArgument.getName()));
+						}
+						if (type != null) {
+							CastExpression cast = ast.newCastExpression();
+							cast.setType(type);
+							cast.setExpression(ast.newNullLiteral());
+							replace.arguments().add(cast);
+						} else {
+							System.out.println("Unknown cast type: " + declaredArgument.getName());
+							if(declaredArgument.isGenericType()) {
+								System.out.println("\t" + "generic");
+							} else if(declaredArgument.isWildcardType()) {
+								System.out.println("\t" + "wildcard");
+							} else if(declaredArgument.isAnonymous()) {
+								System.out.println("\t" + "anonymous");
+							} else if(declaredArgument.isRawType()) {
+								System.out.println("\t" + "raw");
+							} else {
+								System.out.println("\t" + "unknown");
+							}
+						}
 					} else {
 						replace.arguments().add(ASTNode.copySubtree(ast, (ASTNode) targetArguments.get(i)));
 					}
@@ -157,5 +196,4 @@ public class AddCastToNull extends SimpleValidatorBase {
 		edit.apply(document);
 		return document.get();
 	}
-
 }

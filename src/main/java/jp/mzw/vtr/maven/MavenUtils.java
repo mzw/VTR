@@ -8,7 +8,6 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.maven.shared.invoker.DefaultInvocationRequest;
 import org.apache.maven.shared.invoker.DefaultInvoker;
 import org.apache.maven.shared.invoker.InvocationOutputHandler;
@@ -109,7 +108,7 @@ public class MavenUtils {
 	 * @return
 	 * @throws MavenInvocationException
 	 */
-	public static Pair<List<String>, List<String>> maven(File subject, List<String> goals, File mavenHome) throws MavenInvocationException {
+	public static Results maven(File subject, List<String> goals, File mavenHome) throws MavenInvocationException {
 		InvocationRequest request = new DefaultInvocationRequest();
 		request.setPomFile(new File(subject, JacocoInstrumenter.FILENAME_POM));
 		request.setGoals(goals);
@@ -131,7 +130,25 @@ public class MavenUtils {
 			}
 		});
 		invoker.execute(request);
-		return Pair.of(outputs, errors);
+		return new Results(outputs, errors);
+	}
+
+	public static class Results {
+		private List<String> outputs;
+		private List<String> errors;
+
+		public Results(List<String> outputs, List<String> errors) {
+			this.outputs = outputs;
+			this.errors = errors;
+		}
+
+		public List<String> getOutputs() {
+			return outputs;
+		}
+
+		public List<String> getErrors() {
+			return errors;
+		}
 	}
 
 	/**

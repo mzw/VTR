@@ -2,9 +2,7 @@ package jp.mzw.vtr.validate;
 
 import java.io.IOException;
 import java.text.ParseException;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.commons.io.FileUtils;
 import org.eclipse.jdt.core.dom.ASTNode;
@@ -16,67 +14,39 @@ import org.slf4j.LoggerFactory;
 
 import jp.mzw.vtr.core.Project;
 import jp.mzw.vtr.git.Commit;
-import jp.mzw.vtr.maven.MavenUtils;
+import jp.mzw.vtr.maven.MavenUtils.Results;
 import jp.mzw.vtr.maven.TestCase;
-import jp.mzw.vtr.maven.TestSuite;
 
 abstract public class SimpleValidatorBase extends ValidatorBase {
 	protected Logger LOGGER = LoggerFactory.getLogger(SimpleValidatorBase.class);
-
-	protected Map<Commit, List<TestSuite>> testSuitesByCommit;
 	
 	public SimpleValidatorBase(Project project) {
 		super(project);
-		if (testSuitesByCommit == null) {
-			testSuitesByCommit = new HashMap<>();
+	}
+	
+	@Override
+	public void onCheckout(Commit commit, TestCase testcase, Results results) {
+		LOGGER.info("Validating {}", this.getClass());
+		if (this.dupulicates.contains(testcase.getFullName())) {
+			return;
 		}
-	}
-
-	@Override
-	public void beforeCheckout(Commit commit) {
-		// NOP
-	}
-
-	@Override
-	public void onCheckout(Commit commit) {
 		try {
-			List<TestSuite> testSuites = testSuitesByCommit.get(commit);
-			if (testSuites == null) {
-				testSuites = MavenUtils.getTestSuitesAtLevel2(this.projectDir);
-				testSuitesByCommit.put(commit, testSuites);
+			List<ASTNode> detects = detect(testcase);
+			if (detects == null) {
+				return;
 			}
-			for (TestSuite ts : testSuites) {
-				for (TestCase tc : ts.getTestCases()) {
-					if (this.dupulicates.contains(tc.getFullName())) {
-						continue;
-					}
-					try {
-						List<ASTNode> detects = detect(tc);
-						if (detects == null) {
-							continue;
-						}
-						if (!detects.isEmpty()) {
-							this.dupulicates.add(tc.getFullName());
-							ValidationResult vr = new ValidationResult(this.projectId, commit, tc, tc.getStartLineNumber(), tc.getEndLineNumber(), this);
-							this.validationResultList.add(vr);
-						}
-					} catch (IOException | MalformedTreeException | BadLocationException e) {
-						LOGGER.warn("Failed to invoke Checkstyle: {}", e.getMessage());
-					}
-
-				}
+			if (!detects.isEmpty()) {
+				LOGGER.info("Detect invalid testcase");
+				this.dupulicates.add(testcase.getFullName());
+				ValidationResult vr = new ValidationResult(this.projectId, commit, testcase, testcase.getStartLineNumber(), testcase.getEndLineNumber(), this);
+				this.validationResultList.add(vr);
 			}
-		} catch (IOException e) {
-			LOGGER.warn("Failed to checkout: {}", commit.getId());
+		} catch (IOException | MalformedTreeException | BadLocationException e) {
+			LOGGER.warn("Failed to invoke Checkstyle: {}", e.getMessage());
 		}
 	}
 
-	@Override
-	public void afterCheckout(Commit commit) {
-		TestSuite.cleanCompilationUnit();
-	}
-
-	abstract protected List<ASTNode> detect(TestCase tc) throws IOException, MalformedTreeException, BadLocationException;
+	abstract protected List<ASTNode> detect(TestCase testcase) throws IOException, MalformedTreeException, BadLocationException;
 
 	@Override
 	public void generate(ValidationResult result) {

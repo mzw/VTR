@@ -282,14 +282,4 @@ public class TestRunner implements CheckoutConductor.Listener {
 		LOGGER.info("Not modified: {}", testCase.getFullName());
 		return false;
 	}
-
-	@Override
-	public void beforeCheckout(Commit commit) {
-		// NOP
-	}
-
-	@Override
-	public void afterCheckout(Commit commit) {
-		// NOP
-	}
 }

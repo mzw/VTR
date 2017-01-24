@@ -45,7 +45,7 @@ import jp.mzw.vtr.maven.MavenUtils;
 import jp.mzw.vtr.maven.TestCase;
 import jp.mzw.vtr.maven.TestSuite;
 
-abstract public class ValidatorBase implements CheckoutConductor.Listener {
+abstract public class ValidatorBase implements Validator.Listener {
 	protected static Logger LOGGER = LoggerFactory.getLogger(ValidatorBase.class);
 
 	public static final String VALIDATOR_DIRNAME = "validate";
@@ -68,10 +68,7 @@ abstract public class ValidatorBase implements CheckoutConductor.Listener {
 		this.validationResultList = new ArrayList<>();
 		this.dupulicates = new ArrayList<>();
 	}
-
-	@Override
-	abstract public void onCheckout(Commit commit);
-
+	
 	abstract public void generate(ValidationResult result);
 
 	/**
