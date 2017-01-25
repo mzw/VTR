@@ -15,6 +15,7 @@ import jp.mzw.vtr.core.Project;
 import jp.mzw.vtr.git.CheckoutConductor;
 import jp.mzw.vtr.git.Commit;
 import jp.mzw.vtr.maven.MavenUtils;
+import jp.mzw.vtr.maven.MavenUtils.JavadocErrorMessage;
 import jp.mzw.vtr.maven.MavenUtils.Results;
 import jp.mzw.vtr.maven.TestCase;
 import jp.mzw.vtr.maven.TestSuite;
@@ -61,12 +62,14 @@ public class Validator implements CheckoutConductor.Listener {
 			Results results = MavenUtils.maven(projectDir,
 					Arrays.asList("clean", "test-compile", "-Dmaven.compiler.showDeprecation=true", "-Dmaven.compiler.showWarnings=true"), mavenHome);
 			for (TestSuite ts : testSuites) {
+				List<JavadocErrorMessage> javadocErrorMessages = MavenUtils.getJavadocErrorMessages(projectDir, mavenHome, ts.getTestFile(), ts.getPackageName());
+				results.setJavadocErrorMessages(javadocErrorMessages);
 				for (TestCase tc : ts.getTestCases()) {
 					LOGGER.info("Notify Validator.listers at {}", tc.getFullName());
 					notify(commit, tc, results);
 				}
 			}
-		} catch (IOException | MavenInvocationException e) {
+		} catch (IOException | MavenInvocationException | InterruptedException e) {
 			LOGGER.warn("Failed to checkout: {}", commit.getId());
 		}
 	}

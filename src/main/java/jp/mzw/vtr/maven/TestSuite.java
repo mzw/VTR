@@ -102,7 +102,7 @@ public class TestSuite {
 		AllMethodFindVisitor visitor = new AllMethodFindVisitor();
 		cu.accept(visitor);
 		List<MethodDeclaration> methods = visitor.getFoundMethods();
-
+		
 		for (MethodDeclaration method : methods) {
 			if (MavenUtils.isJUnitTest(method)) {
 				TestCase testcase = new TestCase(method.getName().getIdentifier(), testClassName, method, cu, this);
@@ -111,6 +111,10 @@ public class TestSuite {
 		}
 
 		return this;
+	}
+	
+	public String getPackageName() {
+		return cu.getPackage().getName().toString();
 	}
 
 	protected String[] getSources(File subjectDir) throws IOException {
