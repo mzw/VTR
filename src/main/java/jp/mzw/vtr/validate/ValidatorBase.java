@@ -339,8 +339,16 @@ abstract public class ValidatorBase implements Validator.Listener {
 				StringBuilder builder = new StringBuilder();
 				String delim = "";
 				for (int line = start; line <= end; line++) {
-					builder.append(delim).append(lines.get(line));
-					delim = "\n";
+					try {
+						builder.append(delim).append(lines.get(line));
+						delim = "\n";
+					} catch (IndexOutOfBoundsException e) {
+						if (line == lines.size()) {
+							// No new line at the end of file content
+						} else {
+							e.printStackTrace();
+						}
+					}
 				}
 				return builder.toString();
 			}
