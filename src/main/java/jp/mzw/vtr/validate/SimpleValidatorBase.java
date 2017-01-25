@@ -14,47 +14,39 @@ import org.slf4j.LoggerFactory;
 
 import jp.mzw.vtr.core.Project;
 import jp.mzw.vtr.git.Commit;
-import jp.mzw.vtr.maven.MavenUtils;
+import jp.mzw.vtr.maven.MavenUtils.Results;
 import jp.mzw.vtr.maven.TestCase;
-import jp.mzw.vtr.maven.TestSuite;
 
 abstract public class SimpleValidatorBase extends ValidatorBase {
 	protected Logger LOGGER = LoggerFactory.getLogger(SimpleValidatorBase.class);
-
+	
 	public SimpleValidatorBase(Project project) {
 		super(project);
 	}
-
+	
 	@Override
-	public void onCheckout(Commit commit) {
+	public void onCheckout(Commit commit, TestCase testcase, Results results) {
+		LOGGER.info("Validating {}", this.getClass());
+		if (this.dupulicates.contains(testcase.getFullName())) {
+			return;
+		}
 		try {
-			for (TestSuite ts : MavenUtils.getTestSuitesAtLevel2(this.projectDir)) {
-				for (TestCase tc : ts.getTestCases()) {
-					if (this.dupulicates.contains(tc.getFullName())) {
-						continue;
-					}
-					try {
-						List<ASTNode> detects = detect(tc);
-						if (detects == null) {
-							continue;
-						}
-						if (!detects.isEmpty()) {
-							this.dupulicates.add(tc.getFullName());
-							ValidationResult vr = new ValidationResult(this.projectId, commit, tc, tc.getStartLineNumber(), tc.getEndLineNumber(), this);
-							this.validationResultList.add(vr);
-						}
-					} catch (IOException | MalformedTreeException | BadLocationException e) {
-						LOGGER.warn("Failed to invoke Checkstyle: {}", e.getMessage());
-					}
-
-				}
+			List<ASTNode> detects = detect(testcase);
+			if (detects == null) {
+				return;
 			}
-		} catch (IOException e) {
-			LOGGER.warn("Failed to checkout: {}", commit.getId());
+			if (!detects.isEmpty()) {
+				LOGGER.info("Detect invalid testcase");
+				this.dupulicates.add(testcase.getFullName());
+				ValidationResult vr = new ValidationResult(this.projectId, commit, testcase, testcase.getStartLineNumber(), testcase.getEndLineNumber(), this);
+				this.validationResultList.add(vr);
+			}
+		} catch (IOException | MalformedTreeException | BadLocationException e) {
+			LOGGER.warn("Failed to invoke Checkstyle: {}", e.getMessage());
 		}
 	}
 
-	abstract protected List<ASTNode> detect(TestCase tc) throws IOException, MalformedTreeException, BadLocationException;
+	abstract protected List<ASTNode> detect(TestCase testcase) throws IOException, MalformedTreeException, BadLocationException;
 
 	@Override
 	public void generate(ValidationResult result) {

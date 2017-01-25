@@ -29,9 +29,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class UseProcessWaitfor extends SimpleValidatorBase {
-
 	protected static Logger LOGGER = LoggerFactory.getLogger(UseProcessWaitfor.class);
-	
+
 	public UseProcessWaitfor(Project project) {
 		super(project);
 	}
@@ -47,7 +46,7 @@ public class UseProcessWaitfor extends SimpleValidatorBase {
 				return super.visit(node);
 			}
 		});
-		for (WhileStatement whileStatement: whileStatements) {
+		for (WhileStatement whileStatement : whileStatements) {
 			if (isTargetNode(whileStatement)) {
 				ret.add(whileStatement);
 			}
@@ -55,7 +54,6 @@ public class UseProcessWaitfor extends SimpleValidatorBase {
 		return ret;
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
 	protected String getModified(String origin, TestCase tc) throws IOException, MalformedTreeException, BadLocationException {
 		// prepare
@@ -63,7 +61,7 @@ public class UseProcessWaitfor extends SimpleValidatorBase {
 		AST ast = cu.getAST();
 		ASTRewrite rewrite = ASTRewrite.create(ast);
 		// detect
-		for (ASTNode node: detect(tc)) {
+		for (ASTNode node : detect(tc)) {
 			WhileStatement target = (WhileStatement) node;
 			// create
 			MethodInvocation isAlive = (MethodInvocation) target.getExpression();
@@ -80,15 +78,17 @@ public class UseProcessWaitfor extends SimpleValidatorBase {
 		edit.apply(document);
 		return document.get();
 	}
-	
+
 	private boolean isTargetNode(WhileStatement whileStatement) {
 		Expression expression = whileStatement.getExpression();
 		Statement statement = whileStatement.getBody();
 		return callProcessIsAlive(expression) && callThreadSleep(statement);
 	}
-	
+
 	private boolean callProcessIsAlive(Expression expression) {
-		if (!(expression instanceof MethodInvocation)) return false;
+		if (!(expression instanceof MethodInvocation)) {
+			return false;
+		}
 		MethodInvocation mi = (MethodInvocation) expression;
 		Name methodName = mi.getName();
 		if (!"isAlive".equals(methodName.toString())) {
@@ -105,11 +105,12 @@ public class UseProcessWaitfor extends SimpleValidatorBase {
 		}
 		return false;
 	}
-	
+
 	private boolean callThreadSleep(Statement whileStatement) {
 		Block block = (Block) whileStatement;
-		for (Object statement: block.statements()) {
-			if (!(statement instanceof ExpressionStatement)) continue;
+		for (Object statement : block.statements()) {
+			if (!(statement instanceof ExpressionStatement))
+				continue;
 			ExpressionStatement expressionStatement = (ExpressionStatement) statement;
 			MethodInvocation mi = (MethodInvocation) expressionStatement.getExpression();
 			Name methodName = mi.getName();

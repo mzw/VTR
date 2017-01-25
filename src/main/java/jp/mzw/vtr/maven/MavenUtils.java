@@ -72,7 +72,8 @@ public class MavenUtils {
 	 * @return
 	 * @throws MavenInvocationException
 	 */
-	public static List<String> maven(File subject, List<String> goals, File mavenHome, final boolean stdio, final boolean stderr) throws MavenInvocationException {
+	public static List<String> maven(File subject, List<String> goals, File mavenHome, final boolean stdio, final boolean stderr)
+			throws MavenInvocationException {
 		final List<String> ret = new ArrayList<>();
 		InvocationRequest request = new DefaultInvocationRequest();
 		request.setPomFile(new File(subject, JacocoInstrumenter.FILENAME_POM));
@@ -97,6 +98,57 @@ public class MavenUtils {
 		});
 		invoker.execute(request);
 		return ret;
+	}
+
+	/**
+	 * 
+	 * @param subject
+	 * @param goals
+	 * @param mavenHome
+	 * @return
+	 * @throws MavenInvocationException
+	 */
+	public static Results maven(File subject, List<String> goals, File mavenHome) throws MavenInvocationException {
+		InvocationRequest request = new DefaultInvocationRequest();
+		request.setPomFile(new File(subject, JacocoInstrumenter.FILENAME_POM));
+		request.setGoals(goals);
+		Invoker invoker = new DefaultInvoker();
+		invoker.setMavenHome(mavenHome);
+
+		final List<String> outputs = new ArrayList<>();
+		final List<String> errors = new ArrayList<>();
+		invoker.setOutputHandler(new InvocationOutputHandler() {
+			@Override
+			public void consumeLine(String line) {
+				outputs.add(line);
+			}
+		});
+		invoker.setErrorHandler(new InvocationOutputHandler() {
+			@Override
+			public void consumeLine(String line) {
+				errors.add(line);
+			}
+		});
+		invoker.execute(request);
+		return new Results(outputs, errors);
+	}
+
+	public static class Results {
+		private List<String> outputs;
+		private List<String> errors;
+
+		public Results(List<String> outputs, List<String> errors) {
+			this.outputs = outputs;
+			this.errors = errors;
+		}
+
+		public List<String> getOutputs() {
+			return outputs;
+		}
+
+		public List<String> getErrors() {
+			return errors;
+		}
 	}
 
 	/**

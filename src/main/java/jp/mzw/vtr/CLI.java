@@ -33,6 +33,7 @@ import jp.mzw.vtr.maven.TestRunner;
 import jp.mzw.vtr.repair.Repair;
 import jp.mzw.vtr.repair.RepairEvaluator;
 import jp.mzw.vtr.validate.ValidationResult;
+import jp.mzw.vtr.validate.Validator;
 import jp.mzw.vtr.validate.ValidatorBase;
 
 public class CLI {
@@ -191,10 +192,12 @@ public class CLI {
 	private static void validate(Project project) throws IOException, ParseException, GitAPIException, InstantiationException, IllegalAccessException,
 			IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException, ClassNotFoundException {
 		CheckoutConductor cc = new CheckoutConductor(project);
+		Validator validator = new Validator(project);
 		List<ValidatorBase> validators = ValidatorBase.getValidators(project, ValidatorBase.VALIDATORS_LIST);
-		for (ValidatorBase validator : validators) {
-			cc.addListener(validator);
+		for (ValidatorBase each : validators) {
+			validator.addListener(each);
 		}
+		cc.addListener(validator);
 		cc.checkout();
 		ValidatorBase.output(project, validators);
 	}
@@ -203,10 +206,12 @@ public class CLI {
 			InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException,
 			ClassNotFoundException {
 		CheckoutConductor cc = new CheckoutConductor(project);
+		Validator validator = new Validator(project);
 		List<ValidatorBase> validators = ValidatorBase.getValidators(project, ValidatorBase.VALIDATORS_LIST);
-		for (ValidatorBase validator : validators) {
-			cc.addListener(validator);
+		for (ValidatorBase each : validators) {
+			validator.addListener(each);
 		}
+		cc.addListener(validator);
 		cc.checkout(type, commitId);
 		ValidatorBase.output(project, validators);
 	}

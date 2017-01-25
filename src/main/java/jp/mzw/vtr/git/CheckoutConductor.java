@@ -47,7 +47,7 @@ public class CheckoutConductor {
 	}
 
 	/** Notify Observer listeners */
-	private void notifyListeners(Commit commit) {
+	private void onCheckout(Commit commit) {
 		for (Listener listener : this.listenerSet) {
 			listener.onCheckout(commit);
 		}
@@ -125,7 +125,7 @@ public class CheckoutConductor {
 				git.clean().call();
 				continue;
 			}
-			notifyListeners(commit);
+			onCheckout(commit);
 		}
 		// Recover initial state
 		checkout(getLatestCommit());

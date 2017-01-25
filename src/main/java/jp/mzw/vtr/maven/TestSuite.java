@@ -76,11 +76,6 @@ public class TestSuite {
 
 		return this;
 	}
-
-	/**
-	 * for reducing computational cost to parse source codes at level 2
-	 */
-	protected static Map<File, Map<String, CompilationUnit>> compilationUnitsBySubjectDir;
 	
 	/**
 	 * Parse source codes at level 2
@@ -90,28 +85,20 @@ public class TestSuite {
 	 * @throws IOException
 	 */
 	public TestSuite parseJuitTestCaseList(File subjectDir) throws IOException {
-		if (compilationUnitsBySubjectDir == null) {
-			compilationUnitsBySubjectDir = new HashMap<>();
-		}
-		Map<String, CompilationUnit> units = compilationUnitsBySubjectDir.get(subjectDir);
-		if (units == null) {
-			ASTParser parser = ASTParser.newParser(AST.JLS8);
-			parser.setResolveBindings(true);
-			parser.setBindingsRecovery(true);
-			parser.setEnvironment(null, null, null, true);
-			final Map<String, CompilationUnit> parse = new HashMap<>();
-			FileASTRequestor requestor = new FileASTRequestor() {
-				@Override
-				public void acceptAST(String sourceFilePath, CompilationUnit ast) {
-					parse.put(sourceFilePath, ast);
-				}
-			};
-			parser.createASTs(getSources(subjectDir), null, new String[] {}, requestor, new NullProgressMonitor());
-			units = parse;
-			compilationUnitsBySubjectDir.put(subjectDir, units);
-		}
+		ASTParser parser = ASTParser.newParser(AST.JLS8);
+		parser.setResolveBindings(true);
+		parser.setBindingsRecovery(true);
+		parser.setEnvironment(null, null, null, true);
+		final Map<String, CompilationUnit> units = new HashMap<>();
+		FileASTRequestor requestor = new FileASTRequestor() {
+			@Override
+			public void acceptAST(String sourceFilePath, CompilationUnit ast) {
+				units.put(sourceFilePath, ast);
+			}
+		};
+		parser.createASTs(getSources(subjectDir), null, new String[] {}, requestor, new NullProgressMonitor());
 		this.cu = units.get(testFile.getCanonicalPath());
-
+		
 		AllMethodFindVisitor visitor = new AllMethodFindVisitor();
 		cu.accept(visitor);
 		List<MethodDeclaration> methods = visitor.getFoundMethods();
