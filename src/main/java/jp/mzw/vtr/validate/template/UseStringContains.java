@@ -12,7 +12,6 @@ import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.CompilationUnit;
-import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.InfixExpression;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
@@ -25,11 +24,11 @@ import org.slf4j.LoggerFactory;
 
 public class UseStringContains extends SimpleValidatorBase {
 	protected static Logger LOGGER = LoggerFactory.getLogger(UseStringContains.class);
-	
+
 	public UseStringContains(Project project) {
 		super(project);
 	}
-	
+
 	@Override
 	protected List<ASTNode> detect(TestCase tc) throws IOException, MalformedTreeException, BadLocationException {
 		List<ASTNode> ret = new ArrayList<>();
@@ -41,7 +40,7 @@ public class UseStringContains extends SimpleValidatorBase {
 				return super.visit(node);
 			}
 		});
-		for (MethodInvocation target: targets) {
+		for (MethodInvocation target : targets) {
 			if ("indexOf".equals(target.getName().toString())) {
 				if (target.getParent() instanceof InfixExpression) {
 					InfixExpression expression = (InfixExpression) target.getParent();
@@ -51,10 +50,9 @@ public class UseStringContains extends SimpleValidatorBase {
 				}
 			}
 		}
-		return ret; 
+		return ret;
 	}
-	
-	@SuppressWarnings("unchecked")
+
 	@Override
 	protected String getModified(String origin, TestCase tc) throws IOException, MalformedTreeException, BadLocationException {
 		// prepare
@@ -62,7 +60,7 @@ public class UseStringContains extends SimpleValidatorBase {
 		AST ast = cu.getAST();
 		ASTRewrite rewrite = ASTRewrite.create(ast);
 		// detect
-		for (ASTNode node: detect(tc)) {
+		for (ASTNode node : detect(tc)) {
 			MethodInvocation method = (MethodInvocation) node;
 			InfixExpression target = (InfixExpression) node.getParent();
 			MethodInvocation replace = ast.newMethodInvocation();

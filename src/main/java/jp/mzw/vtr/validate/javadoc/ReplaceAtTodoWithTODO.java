@@ -29,6 +29,7 @@ public class ReplaceAtTodoWithTODO extends SimpleValidatorBase {
 		super(project);
 	}
 	
+	@SuppressWarnings("unchecked")
 	@Override
 	protected List<ASTNode> detect(TestCase tc) {
 		List<ASTNode> ret = new ArrayList<>();

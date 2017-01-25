@@ -7,7 +7,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -22,7 +21,6 @@ import org.eclipse.jdt.core.ToolFactory;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTParser;
 import org.eclipse.jdt.core.dom.CompilationUnit;
-import org.eclipse.jdt.core.dom.FileASTRequestor;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.formatter.CodeFormatter;
 import org.eclipse.jdt.core.formatter.DefaultCodeFormatterConstants;
@@ -47,7 +45,7 @@ import jp.mzw.vtr.maven.MavenUtils;
 import jp.mzw.vtr.maven.TestCase;
 import jp.mzw.vtr.maven.TestSuite;
 
-abstract public class ValidatorBase implements CheckoutConductor.Listener {
+abstract public class ValidatorBase implements Validator.Listener {
 	protected static Logger LOGGER = LoggerFactory.getLogger(ValidatorBase.class);
 
 	public static final String VALIDATOR_DIRNAME = "validate";
@@ -70,10 +68,7 @@ abstract public class ValidatorBase implements CheckoutConductor.Listener {
 		this.validationResultList = new ArrayList<>();
 		this.dupulicates = new ArrayList<>();
 	}
-
-	@Override
-	abstract public void onCheckout(Commit commit);
-
+	
 	abstract public void generate(ValidationResult result);
 
 	/**
@@ -365,23 +360,6 @@ abstract public class ValidatorBase implements CheckoutConductor.Listener {
 			}
 		}
 		return ret;
-	}
-
-	protected CompilationUnit getCompilationUnit(File file) throws IOException {
-		ASTParser parser = ASTParser.newParser(AST.JLS8);
-		parser.setResolveBindings(true);
-		parser.setBindingsRecovery(true);
-		parser.setEnvironment(null, null, null, true);
-		final Map<String, CompilationUnit> units = new HashMap<>();
-		FileASTRequestor requestor = new FileASTRequestor() {
-			@Override
-			public void acceptAST(String sourceFilePath, CompilationUnit ast) {
-				units.put(sourceFilePath, ast);
-			}
-		};
-		parser.createASTs(getSources(), null, new String[] {}, requestor, new NullProgressMonitor());
-		CompilationUnit cu = units.get(file.getCanonicalPath());
-		return cu;
 	}
 
 	protected String[] getSources() throws IOException {

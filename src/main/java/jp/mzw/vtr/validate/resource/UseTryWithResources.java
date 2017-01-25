@@ -47,7 +47,7 @@ public class UseTryWithResources extends SimpleValidatorBase {
 	@Override
 	protected List<ASTNode> detect(final TestCase tc) throws IOException, MalformedTreeException, BadLocationException {
 		final List<ASTNode> ret = new ArrayList<>();
-		final CompilationUnit cu = getCompilationUnit(tc.getTestFile());
+		final CompilationUnit cu = tc.getCompilationUnit();
 		cu.accept(new ASTVisitor() {
 			@Override
 			public boolean visit(MethodDeclaration node) {

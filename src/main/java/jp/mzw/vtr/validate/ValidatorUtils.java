@@ -10,6 +10,7 @@ import jp.mzw.vtr.maven.TestCase;
 
 import org.apache.commons.io.FileUtils;
 import org.eclipse.jdt.core.dom.ASTNode;
+import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.Annotation;
 import org.eclipse.jdt.core.dom.Block;
 import org.eclipse.jdt.core.dom.Comment;
@@ -136,35 +137,28 @@ public class ValidatorUtils {
 		return String.valueOf(ret);
 	}
 
+	public static boolean hasAssertMethodInvocation(ASTNode node) {
+		final List<ASTNode> junits = new ArrayList<>();
+		node.accept(new ASTVisitor() {
+			@Override
+			public boolean visit(MethodInvocation node) {
+				String name = node.getName().toString();
+				for (String junit : ValidatorUtils.JUNIT_ASSERT_METHODS) {
+					if (name.equals(junit)) {
+						junits.add(node);
+					}
+				}
+				return super.visit(node);
+			}
+		});
+		return !junits.isEmpty();
+	}
+
 	/**
 	 * List of JUnit assert method names
 	 */
 	public static final String[] JUNIT_ASSERT_METHODS = { "assertArrayEquals", "assertEquals", "assertFalse", "assertNotNull", "assertNotSame", "assertNull",
 			"assertSame", "assertThat", "assertTrue", "fail", };
-
-	/**
-	 * Determine whether given node has JUnit assert method invocation
-	 * 
-	 * @param node
-	 * @return
-	 */
-	public static boolean hasAssertMethodInvocation(ASTNode node) {
-		if (node instanceof MethodInvocation) {
-			MethodInvocation method = (MethodInvocation) node;
-			for (String name : JUNIT_ASSERT_METHODS) {
-				if (name.equals(method.getName().toString())) {
-					return true;
-				}
-			}
-		}
-		for (Object child : MavenUtils.getChildren(node)) {
-			boolean has = hasAssertMethodInvocation((ASTNode) child);
-			if (has) {
-				return true;
-			}
-		}
-		return false;
-	}
 
 	/**
 	 * Determine whether given expression is closable

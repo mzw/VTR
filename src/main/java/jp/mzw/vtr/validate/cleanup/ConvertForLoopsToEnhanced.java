@@ -6,15 +6,15 @@ import java.util.List;
 
 import jp.mzw.vtr.core.Project;
 import jp.mzw.vtr.maven.TestCase;
-import jp.mzw.vtr.validate.EclipseCleanUpValidatorBase;
+import jp.mzw.vtr.validate.SimpleValidatorBase;
 
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.EnhancedForStatement;
 import org.eclipse.jdt.core.dom.ForStatement;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
-import org.eclipse.jdt.internal.corext.dom.GenericVisitor;
 import org.eclipse.jdt.internal.corext.fix.ConvertForLoopOperation;
 import org.eclipse.jdt.internal.corext.fix.ConvertLoopFix;
 import org.eclipse.jdt.internal.corext.fix.ConvertLoopOperation;
@@ -27,7 +27,7 @@ import org.eclipse.text.edits.TextEdit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ConvertForLoopsToEnhanced extends EclipseCleanUpValidatorBase {
+public class ConvertForLoopsToEnhanced extends SimpleValidatorBase {
 	protected static Logger LOGGER = LoggerFactory.getLogger(ConvertForLoopsToEnhanced.class);
 
 	public ConvertForLoopsToEnhanced(Project project) {
@@ -35,20 +35,17 @@ public class ConvertForLoopsToEnhanced extends EclipseCleanUpValidatorBase {
 	}
 
 	@Override
-	protected List<ASTNode> detect(TestCase tc, CompilationUnit cu) throws CoreException {
+	protected List<ASTNode> detect(TestCase tc) throws IOException, MalformedTreeException, BadLocationException {
 		List<ASTNode> ret = new ArrayList<>();
-		if (cu == null) {
-			return ret;
-		}
-		ICleanUpFix fix = ConvertLoopFix.createCleanUp(cu, true, true, true);
+		ICleanUpFix fix = ConvertLoopFix.createCleanUp(tc.getCompilationUnit(), true, true, true);
 		if (fix == null) {
 			return ret;
 		}
 		for (CompilationUnitRewriteOperation operation : ((ConvertLoopFix) fix).getOperations()) {
 			ConvertLoopOperation change = (ConvertLoopOperation) operation;
 			ForStatement node = change.getForStatement();
-			int start = cu.getLineNumber(node.getStartPosition());
-			int end = cu.getLineNumber(node.getStartPosition() + node.getLength());
+			int start = tc.getCompilationUnit().getLineNumber(node.getStartPosition());
+			int end = tc.getCompilationUnit().getLineNumber(node.getStartPosition() + node.getLength());
 			if (tc.getStartLineNumber() <= start && end <= tc.getEndLineNumber()) {
 				ret.add(node);
 			}
@@ -56,50 +53,34 @@ public class ConvertForLoopsToEnhanced extends EclipseCleanUpValidatorBase {
 		return ret;
 	}
 
-	public static class ForStatementFinder extends GenericVisitor {
-
-		private List<ForStatement> nodes;
-
-		public ForStatementFinder() {
-			super();
-			nodes = new ArrayList<>();
-		}
-
-		@Override
-		public boolean visit(ForStatement node) {
-			nodes.add(node);
-			return super.visit(node);
-		}
-
-		public List<ForStatement> getNodes() {
-			return nodes;
-		}
-	}
-
 	@Override
-	protected String getModified(String origin, TestCase tc) throws IOException, CoreException, MalformedTreeException, BadLocationException {
-		CompilationUnit cu = getCompilationUnit(tc.getTestFile());
-
-		ForStatementFinder finder = new ForStatementFinder();
-		cu.accept(finder);
-
-		ASTRewrite rewrite = ASTRewrite.create(cu.getAST());
-		for (ForStatement node : finder.getNodes()) {
+	protected String getModified(String origin, TestCase tc) throws IOException, MalformedTreeException, BadLocationException {
+		final CompilationUnit cu = tc.getCompilationUnit();
+		final AST ast = cu.getAST();
+		final ASTRewrite rewrite = ASTRewrite.create(ast);
+		// detect
+		for (ASTNode detect : detect(tc)) {
+			ForStatement node = (ForStatement) detect;
 			ConvertLoopFix fix = ConvertLoopFix.createConvertForLoopToEnhancedFix(cu, node);
-			if (fix != null) {
-				for (CompilationUnitRewriteOperation operation : fix.getOperations()) {
-					if (operation instanceof ConvertForLoopOperation) {
+			if (fix == null) {
+				continue;
+			}
+			for (CompilationUnitRewriteOperation operation : fix.getOperations()) {
+				if (operation instanceof ConvertForLoopOperation) {
+					try {
 						EnhancedForStatement statement = ((ConvertForLoopOperation) operation).convert(origin, cu);
 						if (statement != null) {
 							rewrite.replace(node, statement, null);
 						}
-					} else {
-						LOGGER.error("Unknown type operation: {}", operation.getClass());
+					} catch (CoreException e) {
+						LOGGER.warn("Failed to convert: {}", e.getMessage());
 					}
+				} else {
+					LOGGER.error("Unknown type operation: {}", operation.getClass());
 				}
 			}
 		}
-
+		// modify
 		Document document = new Document(origin);
 		TextEdit edit = rewrite.rewriteAST(document, null);
 		edit.apply(document);
