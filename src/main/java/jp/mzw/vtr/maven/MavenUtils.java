@@ -4,10 +4,13 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.maven.shared.invoker.DefaultInvocationRequest;
 import org.apache.maven.shared.invoker.DefaultInvoker;
 import org.apache.maven.shared.invoker.InvocationOutputHandler;
@@ -16,6 +19,7 @@ import org.apache.maven.shared.invoker.InvocationResult;
 import org.apache.maven.shared.invoker.Invoker;
 import org.apache.maven.shared.invoker.MavenInvocationException;
 import org.eclipse.jdt.core.dom.ASTNode;
+import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.MarkerAnnotation;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.Modifier;
@@ -130,24 +134,37 @@ public class MavenUtils {
 			}
 		});
 		invoker.execute(request);
-		return new Results(outputs, errors);
+		return Results.of(outputs, errors);
 	}
 
 	public static class Results {
-		private List<String> outputs;
-		private List<String> errors;
+		private List<String> compileOutputs;
+		private List<String> compileErrors;
+		private List<JavadocErrorMessage> javadocErrorMessages;
 
-		public Results(List<String> outputs, List<String> errors) {
-			this.outputs = outputs;
-			this.errors = errors;
+		private Results(List<String> outputs, List<String> errors) {
+			this.compileOutputs = outputs;
+			this.compileErrors = errors;
+		}
+		
+		public static Results of(List<String> outputs, List<String> errors) {
+			return new Results(outputs, errors);
 		}
 
-		public List<String> getOutputs() {
-			return outputs;
+		public List<String> getCompileOutputs() {
+			return compileOutputs;
 		}
 
-		public List<String> getErrors() {
-			return errors;
+		public List<String> getCompileErrors() {
+			return compileErrors;
+		}
+		
+		public void setJavadocErrorMessages(List<JavadocErrorMessage> javadocErrorMessages) {
+			this.javadocErrorMessages = javadocErrorMessages;
+		}
+		
+		public List<JavadocErrorMessage> getJavadocErrorMessages() {
+			return javadocErrorMessages;
 		}
 	}
 
@@ -185,8 +202,11 @@ public class MavenUtils {
 			}
 		}
 		// Return
+		Map<String, CompilationUnit> units = TestSuite.getFileUnitMap(subjectDir);
 		for (File testFile : mvnTestFileList) {
-			TestSuite testSuite = new TestSuite(testDir, testFile).parseJuitTestCaseList(subjectDir);
+			TestSuite testSuite = new TestSuite(testDir, testFile);
+			CompilationUnit cu = units.get(testFile.getCanonicalPath());
+			testSuite.setParseResults(cu);
 			testSuites.add(testSuite);
 		}
 		return testSuites;
@@ -300,4 +320,110 @@ public class MavenUtils {
 		}
 		return children;
 	}
+
+	/**
+	 * 
+	 * @param projectDir
+	 * @param mavenHome
+	 * @param testFile
+	 * @param packageName
+	 * @return
+	 * @throws IOException
+	 * @throws MavenInvocationException
+	 * @throws InterruptedException
+	 */
+	public static List<JavadocErrorMessage> getJavadocErrorMessages(File projectDir, File mavenHome, File testFile, String packageName) throws IOException, MavenInvocationException, InterruptedException {
+		final List<JavadocErrorMessage> ret = new ArrayList<>();
+		// Obtain class path of dependencies
+		String classpath = null;
+		List<String> outputs = MavenUtils.maven(projectDir, Arrays.asList("dependency:build-classpath"), mavenHome, true, false);
+		for (String output : outputs) {
+			if (!output.startsWith("[")) {
+				classpath = output;
+				break;
+			}
+		}
+		if (classpath == null) {
+			LOGGER.warn("Failed to get class-path of dependencies");
+			return ret;
+		}
+		// Run JavaDoc
+		List<String> cmd = Arrays.asList("javadoc", "-sourcepath", "src/main/java/:src/test/java/", "-classpath", classpath, packageName);
+		Pair<List<String>, List<String>> results = VtrUtils.exec(projectDir, cmd);
+		if (results == null) {
+			// No JavaDoc warnings/errors
+			return ret;
+		}
+		List<String> lines = results.getRight();
+		if (lines.size() % 3 != 0) {
+			LOGGER.warn("Javadoc results might be unexpected: {}", results.getRight());
+			return ret;
+		}
+		String target = VtrUtils.getFilePath(projectDir, testFile);
+		for (int i = 0; i < lines.size(); i += 3) {
+			String[] split = lines.get(i).split(":");
+			String filepath = split[0].trim();
+			if (!filepath.equals(target)) {
+				continue;
+			}
+			int lineno = Integer.parseInt(split[1].trim());
+			String type = split[2].trim();
+			String message = split[3].trim();
+			int pos = lines.get(i + 2).length();
+			ret.add(new JavadocErrorMessage(filepath, lineno, pos, type, message));
+		}
+		return ret;
+	}
+
+	public static class JavadocErrorMessage {
+
+		private String filepath;
+		private int lineno;
+		private int pos;
+		private String type;
+		private String message;
+		
+		private MethodDeclaration method;
+
+		public JavadocErrorMessage(String filepath, int lineno, int pos, String type, String message) {
+			this.filepath = filepath;
+			this.lineno = lineno;
+			this.pos = pos;
+			this.type = type;
+			this.message = message;
+		}
+
+		public String getFilePath() {
+			return filepath;
+		}
+
+		public int getLineno() {
+			return lineno;
+		}
+
+		public int getPos() {
+			return pos;
+		}
+
+		public String getType() {
+			return type;
+		}
+
+		public String getMessage() {
+			return message;
+		}
+		
+		public void setMethod(MethodDeclaration method) {
+			this.method = method;
+		}
+		
+		public MethodDeclaration getMethod() {
+			return method;
+		}
+
+		public String toString() {
+			return filepath + ": [" + type + "] " + message + " (" + lineno + ", " + pos + ")";
+		}
+	}
+
 }

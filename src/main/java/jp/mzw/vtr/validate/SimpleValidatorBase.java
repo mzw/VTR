@@ -20,12 +20,19 @@ import jp.mzw.vtr.maven.TestCase;
 abstract public class SimpleValidatorBase extends ValidatorBase {
 	protected Logger LOGGER = LoggerFactory.getLogger(SimpleValidatorBase.class);
 	
+	protected Commit commit;
+	protected TestCase testcase;
+	protected Results results;
+	
 	public SimpleValidatorBase(Project project) {
 		super(project);
 	}
 	
 	@Override
 	public void onCheckout(Commit commit, TestCase testcase, Results results) {
+		this.commit = commit;
+		this.testcase = testcase;
+		this.results = results;
 		LOGGER.info("Validating {}", this.getClass());
 		if (this.dupulicates.contains(testcase.getFullName())) {
 			return;
