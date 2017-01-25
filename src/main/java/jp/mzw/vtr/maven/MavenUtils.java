@@ -6,6 +6,7 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -18,6 +19,7 @@ import org.apache.maven.shared.invoker.InvocationResult;
 import org.apache.maven.shared.invoker.Invoker;
 import org.apache.maven.shared.invoker.MavenInvocationException;
 import org.eclipse.jdt.core.dom.ASTNode;
+import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.MarkerAnnotation;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.Modifier;
@@ -200,8 +202,11 @@ public class MavenUtils {
 			}
 		}
 		// Return
+		Map<String, CompilationUnit> units = TestSuite.getFileUnitMap(subjectDir);
 		for (File testFile : mvnTestFileList) {
-			TestSuite testSuite = new TestSuite(testDir, testFile).parseJuitTestCaseList(subjectDir);
+			TestSuite testSuite = new TestSuite(testDir, testFile);
+			CompilationUnit cu = units.get(testFile.getCanonicalPath());
+			testSuite.setParseResults(cu);
 			testSuites.add(testSuite);
 		}
 		return testSuites;

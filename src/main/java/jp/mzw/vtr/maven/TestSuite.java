@@ -112,12 +112,52 @@ public class TestSuite {
 
 		return this;
 	}
+
+	/**
+	 * Parse source codes at level 2
+	 * 
+	 * @param subjectDir
+	 * @return
+	 * @throws IOException
+	 */
+	public static Map<String, CompilationUnit> getFileUnitMap(File subjectDir) throws IOException {
+		ASTParser parser = ASTParser.newParser(AST.JLS8);
+		parser.setResolveBindings(true);
+		parser.setBindingsRecovery(true);
+		parser.setEnvironment(null, null, null, true);
+		final Map<String, CompilationUnit> units = new HashMap<>();
+		FileASTRequestor requestor = new FileASTRequestor() {
+			@Override
+			public void acceptAST(String sourceFilePath, CompilationUnit ast) {
+				units.put(sourceFilePath, ast);
+			}
+		};
+		parser.createASTs(getSources(subjectDir), null, new String[] {}, requestor, new NullProgressMonitor());
+		return units;
+	}
+	
+	public TestSuite setParseResults(CompilationUnit unit) {
+		this.cu = unit;
+		
+		AllMethodFindVisitor visitor = new AllMethodFindVisitor();
+		cu.accept(visitor);
+		List<MethodDeclaration> methods = visitor.getFoundMethods();
+		
+		for (MethodDeclaration method : methods) {
+			if (MavenUtils.isJUnitTest(method)) {
+				TestCase testcase = new TestCase(method.getName().getIdentifier(), testClassName, method, cu, this);
+				testCases.add(testcase);
+			}
+		}
+		
+		return this;
+	}
 	
 	public String getPackageName() {
 		return cu.getPackage().getName().toString();
 	}
 
-	protected String[] getSources(File subjectDir) throws IOException {
+	protected static String[] getSources(File subjectDir) throws IOException {
 		List<File> files = new ArrayList<>();
 		files.addAll(VtrUtils.getFiles(new File(subjectDir, "src/main/java")));
 		files.addAll(VtrUtils.getFiles(new File(subjectDir, "src/test/java")));
