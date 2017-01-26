@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 
@@ -58,14 +59,18 @@ public class Validator implements CheckoutConductor.Listener {
 				LOGGER.info("Not found test suites");
 				return;
 			}
+			// Get compile results
 			LOGGER.info("Getting compile results..."); // TODO: incremental build
 			Results results = MavenUtils.maven(projectDir,
 					Arrays.asList("clean", "test-compile", "-Dmaven.compiler.showDeprecation=true", "-Dmaven.compiler.showWarnings=true"), mavenHome);
+			// Get JavaDoc results
+			LOGGER.info("Getting javadoc results...");
+			String packageName = MavenUtils.getJavadocPackageName(projectDir);
+			Map<String, List<JavadocErrorMessage>> javadocErrorMessages = MavenUtils.getJavadocErrorMessages(projectDir, mavenHome, packageName);
+			results.setJavadocErrorMessages(javadocErrorMessages);
+			// Validate
 			for (TestSuite ts : testSuites) {
-				List<JavadocErrorMessage> javadocErrorMessages = MavenUtils.getJavadocErrorMessages(projectDir, mavenHome, ts.getTestFile(), ts.getPackageName());
-				results.setJavadocErrorMessages(javadocErrorMessages);
 				for (TestCase tc : ts.getTestCases()) {
-					LOGGER.info("Notify Validator.listers at {}", tc.getFullName());
 					notify(commit, tc, results);
 				}
 			}

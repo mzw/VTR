@@ -38,7 +38,7 @@ public class FixJavadocErrors extends SimpleValidatorBase {
 	@Override
 	protected List<ASTNode> detect(TestCase tc) throws IOException, MalformedTreeException, BadLocationException {
 		final List<ASTNode> ret = new ArrayList<>();
-		List<JavadocErrorMessage> messages = results.getJavadocErrorMessages();
+		List<JavadocErrorMessage> messages = results.getJavadocErrorMessages(projectDir, tc.getTestFile());
 		if (!messages.isEmpty()) {
 			ret.add(tc.getMethodDeclaration());
 		}
@@ -65,7 +65,7 @@ public class FixJavadocErrors extends SimpleValidatorBase {
 			}
 		});
 		// relate JavaDoc error messages to method declarations
-		final List<JavadocErrorMessage> messages = results.getJavadocErrorMessages();
+		final List<JavadocErrorMessage> messages = results.getJavadocErrorMessages(projectDir, tc.getTestFile());
 		for (MethodDeclaration method : methods) {
 			if (method.getJavadoc() == null) {
 				continue;
