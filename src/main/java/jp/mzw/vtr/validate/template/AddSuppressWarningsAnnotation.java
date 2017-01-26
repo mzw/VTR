@@ -1,6 +1,5 @@
 package jp.mzw.vtr.validate.template;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -8,15 +7,10 @@ import java.util.List;
 
 import jp.mzw.vtr.core.Project;
 import jp.mzw.vtr.maven.AllElementsFindVisitor;
-import jp.mzw.vtr.maven.JacocoInstrumenter;
+import jp.mzw.vtr.maven.MavenUtils;
 import jp.mzw.vtr.maven.TestCase;
 import jp.mzw.vtr.validate.SimpleValidatorBase;
 
-import org.apache.maven.shared.invoker.DefaultInvocationRequest;
-import org.apache.maven.shared.invoker.DefaultInvoker;
-import org.apache.maven.shared.invoker.InvocationOutputHandler;
-import org.apache.maven.shared.invoker.InvocationRequest;
-import org.apache.maven.shared.invoker.Invoker;
 import org.apache.maven.shared.invoker.MavenInvocationException;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
@@ -35,46 +29,46 @@ import org.slf4j.LoggerFactory;
 
 public class AddSuppressWarningsAnnotation extends SimpleValidatorBase {
 	protected static Logger LOGGER = LoggerFactory.getLogger(AddSuppressWarningsAnnotation.class);
-	static List<String> warnings = new ArrayList<>();
 
 	public AddSuppressWarningsAnnotation(Project project) {
 		super(project);
 	}
-	
+
 	@Override
-	/**
-	 * 注意：各コミット毎にコンパイルするので，実行時間がかかります．
-	 */
 	protected List<ASTNode> detect(TestCase tc) throws IOException, MalformedTreeException, BadLocationException {
 		final List<ASTNode> targets = new ArrayList<>();
 
-		try {
-			if (warnings.isEmpty()) {
-				warningsMessages(this.projectDir);
+		// when generate patches, nullpo exception was thrown.
+		// TODO: refactoring
+		if (results == null) {
+			try {
+				results = MavenUtils.maven(projectDir,
+						Arrays.asList("clean", "test-compile", "-Dmaven.compiler.showDeprecation=true", "-Dmaven.compiler.showWarnings=true"), mavenHome);
+			} catch (MavenInvocationException e) {
+				e.printStackTrace();
 			}
-			List<String> deprecatedMessages = deprecatedMessages();
-
-			AllElementsFindVisitor visitor = new AllElementsFindVisitor();
-			tc.getMethodDeclaration().accept(visitor);
-			List<ASTNode> nodes = visitor.getNodes();
-			List<ASTNode> deprecatedNodes = new ArrayList<>();
-			List<Integer> deprecatedNodePositions = deprecatedNodePositions(deprecatedMessages, tc);
-			for (ASTNode node: nodes) {
-				if (deprecatedNodePositions.contains(node.getStartPosition())) {
-					deprecatedNodes.add(node);
-				}
- 			}
-			for (ASTNode node: deprecatedNodes) {
-				while (node.getParent() != null) {
-					if (node instanceof MethodDeclaration) {
-						targets.add(node);
-						break;
-					}
-					node = node.getParent();
-				}
+		}
+		// get deprecated nodes' position from deprecated messages
+		List<String> deprecatedMessages = deprecatedMessages(results.getCompileOutputs());
+		List<Integer> deprecatedNodePositions = deprecatedNodePositions(deprecatedMessages, tc);
+		// find deprecated nodes using obtained positions
+		AllElementsFindVisitor visitor = new AllElementsFindVisitor();
+		tc.getMethodDeclaration().accept(visitor);
+		List<ASTNode> nodes = visitor.getNodes();
+		List<ASTNode> deprecatedNodes = new ArrayList<>();
+		for (ASTNode node: nodes) {
+			if (deprecatedNodePositions.contains(node.getStartPosition())) {
+				deprecatedNodes.add(node);
 			}
-		} catch (MavenInvocationException e) {
-			e.printStackTrace();
+		}
+		for (ASTNode node: deprecatedNodes) {
+			while (node.getParent() != null) {
+				if (node instanceof MethodDeclaration) {
+					targets.add(node);
+					break;
+				}
+				node = node.getParent();
+			}
 		}
 		return targets;
 	}
@@ -89,11 +83,10 @@ public class AddSuppressWarningsAnnotation extends SimpleValidatorBase {
 		// detect
 		for (ASTNode node: detect(tc)) {
 			MethodDeclaration target = (MethodDeclaration) node;
-			MethodDeclaration replace = ast.newMethodDeclaration();
-			replace = (MethodDeclaration) ASTNode.copySubtree(ast, target);
+			MethodDeclaration replace = (MethodDeclaration) ASTNode.copySubtree(ast, target);
 			// create new annotation
 			SingleMemberAnnotation annotation = ast.newSingleMemberAnnotation();
-			annotation.setTypeName(ast.newName("SupressWarnings"));
+			annotation.setTypeName(ast.newName("SuppressWarnings"));
 			StringLiteral value = ast.newStringLiteral();
 			value.setLiteralValue("deprecated");
 			annotation.setValue(value);
@@ -107,38 +100,19 @@ public class AddSuppressWarningsAnnotation extends SimpleValidatorBase {
 		edit.apply(document);
 		return document.get();
 	}
-	
-	private void warningsMessages(File subject) throws MavenInvocationException {
-		InvocationRequest request = new DefaultInvocationRequest();
-		request.setPomFile(new File(subject, JacocoInstrumenter.FILENAME_POM));
-		List<String> goals = Arrays.asList("clean", "test-compile", "-Dmaven.compiler.showDeprecation=true");
-		request.setGoals(goals);
-		Invoker invoker = new DefaultInvoker();
-		invoker.setMavenHome(this.mavenHome);
-		invoker.setOutputHandler(new InvocationOutputHandler() {
-			@Override
-			public void consumeLine(String line) {
-				if (line.contains("WARNING")) {
-					warnings.add(line);
-				}
-			}
-		});
-		invoker.setErrorHandler(new InvocationOutputHandler() {
-			@Override
-			public void consumeLine(String line) {
-				if (line.contains("WARNING")) {
-					warnings.add(line);
-				}
-			}
-		});
-		invoker.execute(request);
-	}
-	
-	private List<String> deprecatedMessages() {
+
+	/**
+	 * @param outputs: [WARNING] /Users/TK/workspace/VTR/subjects/commons-lang/src/main/java/org/apache/commons/lang3/tuple/Pair.java:[135,31] org.apache.commons.lang3.ObjectUtilsのequals(java.lang.Object,java.lang.Object)は非推奨になりました
+	 * @return
+	 */
+	private List<String> deprecatedMessages(List<String> outputs) {
 		List<String> ret = new ArrayList<>();
-		for (String message: warnings) {
+		for (String message: outputs) {
 			String[] messages = message.split(" ");
-			if (messages[2].contains("非推奨") || messages[2].contains("deprecated")) {
+			if (messages.length < 2) {
+				continue;
+			}
+			if ( message.contains("WARNING") && (message.contains("非推奨") || message.contains("deprecated")) ) {
 				ret.add(messages[1]);
 			}
 		}
@@ -150,7 +124,7 @@ public class AddSuppressWarningsAnnotation extends SimpleValidatorBase {
 		for (String message: deprecatedMessages) {
 			if (isTarget(message, tc)) {
 				int line  = getLinePos(message);
-				int col  = getColPos(message); 
+				int col  = getColPos(message);
 				CompilationUnit cu = tc.getCompilationUnit();
 				int pos = cu.getPosition(line, col);
 				ret.add(pos);
@@ -165,6 +139,9 @@ public class AddSuppressWarningsAnnotation extends SimpleValidatorBase {
 	 * @return
 	 */
 	private int getLinePos(String info) {
+		if (info.split(":").length < 2) {
+			return -1;
+		}
 		String positionInfo = info.split(":")[1];
 		int linePos = Integer.parseInt(positionInfo.split(",")[0].substring(1));
 		return linePos;
@@ -176,6 +153,9 @@ public class AddSuppressWarningsAnnotation extends SimpleValidatorBase {
 	 * @return
 	 */
 	private int getColPos(String info) {
+		if (info.split(":").length < 2) {
+			return -1;
+		}
 		String positionInfo = info.split(":")[1];
 		int colPos = Integer.parseInt(positionInfo.split(",")[1].substring(0, positionInfo.split(",")[1].length() - 1));
 		return colPos;
