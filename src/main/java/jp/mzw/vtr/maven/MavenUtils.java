@@ -8,6 +8,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Stack;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -339,60 +340,6 @@ public class MavenUtils {
 	 * @throws MavenInvocationException
 	 * @throws InterruptedException
 	 */
-	public static List<JavadocErrorMessage> getJavadocErrorMessages(File projectDir, File mavenHome, File testFile, String packageName) throws IOException, MavenInvocationException, InterruptedException {
-		final List<JavadocErrorMessage> ret = new ArrayList<>();
-		// Obtain class path of dependencies
-		String classpath = null;
-		List<String> outputs = MavenUtils.maven(projectDir, Arrays.asList("dependency:build-classpath"), mavenHome, true, false);
-		for (String output : outputs) {
-			if (!output.startsWith("[")) {
-				classpath = output;
-				break;
-			}
-		}
-		if (classpath == null) {
-			LOGGER.warn("Failed to get class-path of dependencies");
-			return ret;
-		}
-		// Run JavaDoc
-		List<String> cmd = Arrays.asList("javadoc", "-sourcepath", "src/main/java/:src/test/java/", "-classpath", classpath, packageName);
-		Pair<List<String>, List<String>> results = VtrUtils.exec(projectDir, cmd);
-		if (results == null) {
-			// No JavaDoc warnings/errors
-			return ret;
-		}
-		List<String> lines = results.getRight();
-		if (lines.size() % 3 != 0) {
-			LOGGER.warn("Javadoc results might be unexpected: {}", results.getRight());
-			return ret;
-		}
-		String target = VtrUtils.getFilePath(projectDir, testFile);
-		for (int i = 0; i < lines.size(); i += 3) {
-			String[] split = lines.get(i).split(":");
-			String filepath = split[0].trim();
-			if (!filepath.equals(target)) {
-				continue;
-			}
-			int lineno = Integer.parseInt(split[1].trim());
-			String type = split[2].trim();
-			String message = split[3].trim();
-			int pos = lines.get(i + 2).length();
-			ret.add(new JavadocErrorMessage(filepath, lineno, pos, type, message));
-		}
-		return ret;
-	}
-
-	/**
-	 * 
-	 * @param projectDir
-	 * @param mavenHome
-	 * @param testFile
-	 * @param packageName
-	 * @return
-	 * @throws IOException
-	 * @throws MavenInvocationException
-	 * @throws InterruptedException
-	 */
 	public static Map<String, List<JavadocErrorMessage>> getJavadocErrorMessages(File projectDir, File mavenHome, String packageName) throws IOException, MavenInvocationException, InterruptedException {
 		final Map<String, List<JavadocErrorMessage>> ret = new HashMap<>();
 		// Obtain class path of dependencies
@@ -415,24 +362,33 @@ public class MavenUtils {
 			// No JavaDoc warnings/errors
 			return ret;
 		}
-		List<String> lines = results.getRight();
-		if (lines.size() % 3 != 0) {
-			LOGGER.warn("Javadoc results might be unexpected: {}", results.getRight());
-			return ret;
-		}
-		for (int i = 0; i < lines.size(); i += 3) {
-			String[] split = lines.get(i).split(":");
-			String filepath = split[0].trim();
-			List<JavadocErrorMessage> target = ret.get(filepath);
-			if (target == null) {
-				target = new ArrayList<>();
+		// Parse error messages
+		Stack<JavadocErrorMessage> stack = new Stack<>();
+		for (String line : results.getRight()) {
+			if (line.startsWith("src/main/java") || line.startsWith("src/test/java")) {
+				String[] split = line.split(":");
+				String filepath = split[0].trim();
+				int lineno = Integer.parseInt(split[1].trim());
+				String type = split[2].trim();
+				String description = split[3].trim();
+				JavadocErrorMessage message = new JavadocErrorMessage(filepath, lineno, type, description);
+				stack.push(message);
+			} else if (line.replaceAll(" ", "").equals("^")) {
+				JavadocErrorMessage message = stack.pop();
+				int pos = line.length();
+				message.setPos(pos);
+				stack.push(message);
 			}
-			int lineno = Integer.parseInt(split[1].trim());
-			String type = split[2].trim();
-			String message = split[3].trim();
-			int pos = lines.get(i + 2).length();
-			target.add(new JavadocErrorMessage(filepath, lineno, pos, type, message));
-			ret.put(filepath, target);
+		}
+		// Arrange
+		for (JavadocErrorMessage message : stack) {
+			String filepath = message.getFilePath();
+			List<JavadocErrorMessage> list = ret.get(filepath);
+			if (list == null) {
+				list = new ArrayList<>();
+			}
+			list.add(message);
+			ret.put(filepath, list);
 		}
 		return ret;
 	}
@@ -462,18 +418,18 @@ public class MavenUtils {
 
 		private String filepath;
 		private int lineno;
-		private int pos;
 		private String type;
 		private String message;
+		private int pos;
 		
 		private MethodDeclaration method;
 
-		public JavadocErrorMessage(String filepath, int lineno, int pos, String type, String message) {
+		public JavadocErrorMessage(String filepath, int lineno, String type, String message) {
 			this.filepath = filepath;
 			this.lineno = lineno;
-			this.pos = pos;
 			this.type = type;
 			this.message = message;
+			this.pos = -1;
 		}
 
 		public String getFilePath() {
@@ -482,6 +438,10 @@ public class MavenUtils {
 
 		public int getLineno() {
 			return lineno;
+		}
+		
+		public void setPos(int pos) {
+			this.pos = pos;
 		}
 
 		public int getPos() {
