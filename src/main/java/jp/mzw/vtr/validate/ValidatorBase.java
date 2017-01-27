@@ -16,7 +16,6 @@ import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.eclipse.core.runtime.NullProgressMonitor;
-import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.ToolFactory;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTParser;
@@ -381,15 +380,9 @@ abstract public class ValidatorBase implements Validator.Listener {
 		return sources;
 	}
 
-	@SuppressWarnings("unchecked")
 	public static String format(String source) throws MalformedTreeException, BadLocationException {
 		@SuppressWarnings("rawtypes")
 		Map options = DefaultCodeFormatterConstants.getEclipseDefaultSettings();
-		options.put(JavaCore.COMPILER_COMPLIANCE, JavaCore.VERSION_1_8);
-		options.put(JavaCore.COMPILER_CODEGEN_TARGET_PLATFORM, JavaCore.VERSION_1_8);
-		options.put(JavaCore.COMPILER_SOURCE, JavaCore.VERSION_1_8);
-		options.put(DefaultCodeFormatterConstants.FORMATTER_ALIGNMENT_FOR_ENUM_CONSTANTS, DefaultCodeFormatterConstants.createAlignmentValue(true,
-				DefaultCodeFormatterConstants.WRAP_ONE_PER_LINE, DefaultCodeFormatterConstants.INDENT_ON_COLUMN));
 		final CodeFormatter codeFormatter = ToolFactory.createCodeFormatter(options);
 		final TextEdit edit = codeFormatter.format(CodeFormatter.K_COMPILATION_UNIT, source, 0, source.length(), 0, System.getProperty("line.separator"));
 		IDocument document = new Document(source);
