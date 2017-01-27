@@ -104,15 +104,16 @@ public class FixJavadocErrors extends SimpleValidatorBase {
 						break;
 					}
 				}
-				System.out.println(tag);
 				if (tag != null) {
 					Javadoc javadoc = message.getMethod().getJavadoc();
 					Javadoc copy = (Javadoc) ASTNode.copySubtree(ast, javadoc);
 					copy.tags().add(tag);
 					rewrite.replace(javadoc, copy, null);
+				} else {
+					System.out.println("TODO: " + "tag is null");
 				}
 			} else {
-				System.out.println("TODO: " + message.getMessage());
+				System.out.println("TODO: " + message.toString());
 			}
 		}
 		// modify
