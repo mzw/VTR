@@ -83,8 +83,8 @@ public class FixJavadocErrors extends SimpleValidatorBase {
 		}
 		// rewrite
 		for (JavadocErrorMessage message : messages) {
-			if (message.getMessage().startsWith("no @throws for ")) {
-				String exception = message.getMessage().replace("no @throws for ", "");
+			if (message.getDescription().startsWith("no @throws for ")) {
+				String exception = message.getDescription().replace("no @throws for ", "");
 				final List<ITypeBinding> exceptions = new ArrayList<>();
 				for (Object object : message.getMethod().thrownExceptionTypes()) {
 					if (object instanceof SimpleType) {

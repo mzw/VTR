@@ -50,7 +50,8 @@ public class JavadocUtils {
 		}
 		// Run JavaDoc
 		String packageName = getJavadocPackageName(projectDir);
-		List<String> cmd = Arrays.asList("javadoc", "-sourcepath", "src/main/java/:src/test/java/", "-classpath", classpath, "-subpackages", packageName);
+		List<String> cmd = Arrays.asList("javadoc", "-sourcepath", "src/main/java/:src/test/java/", "-classpath", classpath, "-subpackages", packageName,
+				"--allow-script-in-comments");
 		Pair<List<String>, List<String>> results = VtrUtils.exec(projectDir, cmd);
 		if (results == null) {
 			// No JavaDoc warnings/errors
@@ -66,6 +67,10 @@ public class JavadocUtils {
 				String type = split[2].trim();
 				String description = split[3].trim();
 				JavadocErrorMessage message = new JavadocErrorMessage(filepath, lineno, type, description);
+				if (5 <= split.length) {
+					String tag = split[4].trim();
+					message.setTag(tag);
+				}
 				stack.push(message);
 			} else if (line.replaceAll(" ", "").equals("^")) {
 				JavadocErrorMessage message = stack.pop();
@@ -118,16 +123,19 @@ public class JavadocUtils {
 		private String filepath;
 		private int lineno;
 		private String type;
-		private String message;
+		private String description;
+
+		private String tag;
 		private int pos;
 
 		private MethodDeclaration method;
 
-		public JavadocErrorMessage(String filepath, int lineno, String type, String message) {
+		public JavadocErrorMessage(String filepath, int lineno, String type, String description) {
 			this.filepath = filepath;
 			this.lineno = lineno;
 			this.type = type;
-			this.message = message;
+			this.description = description;
+			this.tag = null;
 			this.pos = -1;
 		}
 
@@ -151,8 +159,16 @@ public class JavadocUtils {
 			return type;
 		}
 
-		public String getMessage() {
-			return message;
+		public String getDescription() {
+			return description;
+		}
+
+		public void setTag(String tag) {
+			this.tag = tag;
+		}
+
+		public String getTag() {
+			return tag;
 		}
 
 		public void setMethod(MethodDeclaration method) {
@@ -164,20 +180,23 @@ public class JavadocUtils {
 		}
 
 		public String toString() {
-			return filepath + ": [" + type + "] " + message + " (" + lineno + ", " + pos + ")";
+			return filepath + ": [" + type + "] " + description + " (" + lineno + ", " + pos + ")";
 		}
-		
+
 		public Element toXMLElement() {
 			Element element = new Element(Tag.valueOf("Message"), "");
 			element.attr("filepath", StringEscapeUtils.escapeXml10(filepath));
 			element.attr("type", StringEscapeUtils.escapeXml10(type));
-			element.attr("message", StringEscapeUtils.escapeXml10(message));
+			element.attr("description", StringEscapeUtils.escapeXml10(description));
 			element.attr("lineno", Integer.toString(lineno));
+			if (tag != null) {
+				element.attr("tag", StringEscapeUtils.escapeXml10(tag));
+			}
 			element.attr("pos", Integer.toString(pos));
 			return element;
 		}
 	}
-	
+
 	public static Document getXMLDocument(Map<String, List<JavadocErrorMessage>> map) throws IOException {
 		InputStream is = JavadocUtils.class.getClassLoader().getResourceAsStream("javadoc_error_messages_empty.xml");
 		String content = IOUtils.toString(is);
@@ -194,7 +213,7 @@ public class JavadocUtils {
 		}
 		return document;
 	}
-	
+
 	public static Map<String, List<JavadocErrorMessage>> parse(File file) throws IOException {
 		Map<String, List<JavadocErrorMessage>> ret = new HashMap<>();
 		String javadocErrorMessagesContent = FileUtils.readFileToString(file);
@@ -205,10 +224,14 @@ public class JavadocUtils {
 			List<JavadocErrorMessage> messages = new ArrayList<>();
 			for (Element messageElement : filepathElement.getElementsByTag("Message")) {
 				String type = messageElement.attr("type");
-				String description = messageElement.attr("message");
+				String description = messageElement.attr("description");
 				int lineno = Integer.parseInt(messageElement.attr("lineno"));
 				int pos = Integer.parseInt(messageElement.attr("pos"));
 				JavadocErrorMessage message = new JavadocErrorMessage(filepath, lineno, type, description);
+				String tag = messageElement.attr("tag");
+				if (tag != null) {
+					message.setTag(tag);
+				}
 				message.setPos(pos);
 				messages.add(message);
 			}
