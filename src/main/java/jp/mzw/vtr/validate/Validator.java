@@ -63,22 +63,29 @@ public class Validator implements CheckoutConductor.Listener {
 				return;
 			}
 			// Get compile results
-			LOGGER.info("Getting compile results...");
-			Results results = MavenUtils.maven(projectDir,
-					Arrays.asList("test-compile", "-Dmaven.compiler.showDeprecation=true", "-Dmaven.compiler.showWarnings=true"), mavenHome);
-			// Get JavaDoc results
-			LOGGER.info("Getting javadoc results...");
-			Map<String, List<JavadocErrorMessage>> javadocErrorMessages = JavadocUtils.getJavadocErrorMessages(projectDir, mavenHome);
-			results.setJavadocErrorMessages(javadocErrorMessages);
+			Results results = null;
+			if (Results.is(outputDir, projectId, commit)) {
+				LOGGER.info("Parsing existing compile/javadoc results...");
+				results = Results.parse(outputDir, projectId, commit);
+			} else {
+				LOGGER.info("Getting compile results...");
+				results = MavenUtils.maven(projectDir,
+						Arrays.asList("test-compile", "-Dmaven.compiler.showDeprecation=true", "-Dmaven.compiler.showWarnings=true"), mavenHome);
+				LOGGER.info("Getting javadoc results...");
+				Map<String, List<JavadocErrorMessage>> javadocErrorMessages = JavadocUtils.getJavadocErrorMessages(projectDir, mavenHome);
+				results.setJavadocErrorMessages(javadocErrorMessages);
+			}
 			// Validate
-//			LOGGER.info("Validating...");
-//			for (TestSuite ts : testSuites) {
-//				for (TestCase tc : ts.getTestCases()) {
-//					notify(commit, tc, results);
-//				}
-//			}
+			LOGGER.info("Validating...");
+			for (TestSuite ts : testSuites) {
+				for (TestCase tc : ts.getTestCases()) {
+					notify(commit, tc, results);
+				}
+			}
 			// Output compile and JavaDoc results
-			results.output(outputDir, projectId, commit);
+			if (!Results.is(outputDir, projectId, commit)) {
+				results.output(outputDir, projectId, commit);
+			}
 		} catch (IOException | MavenInvocationException | InterruptedException e) {
 			LOGGER.warn("Failed to checkout: {}", commit.getId());
 		}

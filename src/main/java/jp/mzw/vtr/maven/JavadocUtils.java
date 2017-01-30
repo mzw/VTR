@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Stack;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -192,6 +193,28 @@ public class JavadocUtils {
 			root.appendChild(filepathElement);
 		}
 		return document;
+	}
+	
+	public static Map<String, List<JavadocErrorMessage>> parse(File file) throws IOException {
+		Map<String, List<JavadocErrorMessage>> ret = new HashMap<>();
+		String javadocErrorMessagesContent = FileUtils.readFileToString(file);
+		Document document = Jsoup.parse(javadocErrorMessagesContent, "", Parser.xmlParser());
+		Element root = document.getElementById("root");
+		for (Element filepathElement : root.getElementsByTag("Filepath")) {
+			String filepath = filepathElement.attr("filepath");
+			List<JavadocErrorMessage> messages = new ArrayList<>();
+			for (Element messageElement : filepathElement.getElementsByTag("Message")) {
+				String type = messageElement.attr("type");
+				String description = messageElement.attr("message");
+				int lineno = Integer.parseInt(messageElement.attr("lineno"));
+				int pos = Integer.parseInt(messageElement.attr("pos"));
+				JavadocErrorMessage message = new JavadocErrorMessage(filepath, lineno, type, description);
+				message.setPos(pos);
+				messages.add(message);
+			}
+			ret.put(filepath, messages);
+		}
+		return ret;
 	}
 
 }

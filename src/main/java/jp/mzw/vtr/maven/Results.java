@@ -56,11 +56,16 @@ public class Results {
 	public static final String COMPILE_ERRORS_FILENAME = "compile_errors.txt";
 	public static final String JAVADOC_ERRORS_FILENAME = "javadoc_error_messages.xml";
 	
-	public void output(File outputDir, String projectId, Commit commit) throws IOException {
+	protected static File getCommitDir(File outputDir, String projectId, Commit commit) {
 		File projectDir = new File(outputDir, projectId);
 		File validateDir = new File(projectDir, ValidatorBase.VALIDATOR_DIRNAME);
 		File resultsDir = new File(validateDir, VALIDATE_RESULTS_DIRNAME);
 		File commitDir = new File(resultsDir, commit.getId());
+		return commitDir;
+	}
+	
+	public void output(File outputDir, String projectId, Commit commit) throws IOException {
+		File commitDir = getCommitDir(outputDir, projectId, commit);
 
 		File compileOutputsFile = new File(commitDir, COMPILE_OUTPUTS_FILENAME);
 		FileUtils.writeLines(compileOutputsFile, compileOutputs);
@@ -73,4 +78,24 @@ public class Results {
 		FileUtils.write(javadocErrorMessagesFile, javadocErrorMessagesDocument.toString());
 	}
 
+	public static boolean is(File outputDir, String projectId, Commit commit) {
+		File commitDir = getCommitDir(outputDir, projectId, commit);
+		return commitDir.exists();
+	}
+	
+	public static Results parse(File outputDir, String projectId, Commit commit) throws IOException {
+		File commitDir = getCommitDir(outputDir, projectId, commit);
+		// Parse compile results
+		File compileOutputsFile = new File(commitDir, COMPILE_OUTPUTS_FILENAME);
+		List<String> compileOutputs = FileUtils.readLines(compileOutputsFile);
+		File compileErrorsFile = new File(commitDir, COMPILE_ERRORS_FILENAME);
+		List<String> compileErrors = FileUtils.readLines(compileErrorsFile);
+		Results results = Results.of(compileOutputs, compileErrors);
+		// Parse JavaDoc results
+		File javadocErrorMessagesFile = new File(commitDir, JAVADOC_ERRORS_FILENAME);
+		Map<String, List<JavadocErrorMessage>> javadocErrorMessagesMap = JavadocUtils.parse(javadocErrorMessagesFile);
+		results.setJavadocErrorMessages(javadocErrorMessagesMap);
+		// Return
+		return results;
+	}
 }
