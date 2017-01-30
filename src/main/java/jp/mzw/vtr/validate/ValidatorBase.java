@@ -91,6 +91,9 @@ abstract public class ValidatorBase implements Validator.Listener {
 		List<String> lines = IOUtils.readLines(is);
 		List<ValidatorBase> validators = new ArrayList<>();
 		for (String line : lines) {
+			if (line.isEmpty() || line.startsWith("#")) {
+				continue;
+			}
 			try {
 				Class<?> clazz = Class.forName(line);
 				ValidatorBase validator = (ValidatorBase) clazz.getConstructor(Project.class).newInstance(project);

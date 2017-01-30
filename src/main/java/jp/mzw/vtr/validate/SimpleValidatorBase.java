@@ -33,7 +33,6 @@ abstract public class SimpleValidatorBase extends ValidatorBase {
 		this.commit = commit;
 		this.testcase = testcase;
 		this.results = results;
-		LOGGER.info("Validating {}", this.getClass());
 		if (this.dupulicates.contains(testcase.getFullName())) {
 			return;
 		}
@@ -43,7 +42,6 @@ abstract public class SimpleValidatorBase extends ValidatorBase {
 				return;
 			}
 			if (!detects.isEmpty()) {
-				LOGGER.info("Detect invalid testcase");
 				this.dupulicates.add(testcase.getFullName());
 				ValidationResult vr = new ValidationResult(this.projectId, commit, testcase, testcase.getStartLineNumber(), testcase.getEndLineNumber(), this);
 				this.validationResultList.add(vr);

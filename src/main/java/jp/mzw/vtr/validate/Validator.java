@@ -31,13 +31,11 @@ public class Validator implements CheckoutConductor.Listener {
 	private Set<Listener> listeners = new CopyOnWriteArraySet<>();
 
 	public void addListener(Listener listener) {
-		LOGGER.info("Add listener: {}", listener.getClass());
 		listeners.add(listener);
 	}
 
 	private void notify(Commit commit, TestCase testcase, Results results) {
 		for (Listener listener : listeners) {
-			LOGGER.info("Notify listener: {}", listener.getClass());
 			listener.onCheckout(commit, testcase, results);
 		}
 	}
@@ -60,15 +58,16 @@ public class Validator implements CheckoutConductor.Listener {
 				return;
 			}
 			// Get compile results
-			LOGGER.info("Getting compile results..."); // TODO: incremental build
+			LOGGER.info("Getting compile results...");
 			Results results = MavenUtils.maven(projectDir,
-					Arrays.asList("clean", "test-compile", "-Dmaven.compiler.showDeprecation=true", "-Dmaven.compiler.showWarnings=true"), mavenHome);
+					Arrays.asList("test-compile", "-Dmaven.compiler.showDeprecation=true", "-Dmaven.compiler.showWarnings=true"), mavenHome);
 			// Get JavaDoc results
 			LOGGER.info("Getting javadoc results...");
 			String packageName = MavenUtils.getJavadocPackageName(projectDir);
 			Map<String, List<JavadocErrorMessage>> javadocErrorMessages = MavenUtils.getJavadocErrorMessages(projectDir, mavenHome, packageName);
 			results.setJavadocErrorMessages(javadocErrorMessages);
 			// Validate
+			LOGGER.info("Validating...");
 			for (TestSuite ts : testSuites) {
 				for (TestCase tc : ts.getTestCases()) {
 					notify(commit, tc, results);
