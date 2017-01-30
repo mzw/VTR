@@ -16,8 +16,9 @@ import jp.mzw.vtr.core.Project;
 import jp.mzw.vtr.git.CheckoutConductor;
 import jp.mzw.vtr.git.Commit;
 import jp.mzw.vtr.maven.MavenUtils;
-import jp.mzw.vtr.maven.MavenUtils.JavadocErrorMessage;
-import jp.mzw.vtr.maven.MavenUtils.Results;
+import jp.mzw.vtr.maven.JavadocUtils;
+import jp.mzw.vtr.maven.JavadocUtils.JavadocErrorMessage;
+import jp.mzw.vtr.maven.Results;
 import jp.mzw.vtr.maven.TestCase;
 import jp.mzw.vtr.maven.TestSuite;
 
@@ -41,10 +42,14 @@ public class Validator implements CheckoutConductor.Listener {
 	}
 
 	protected File projectDir;
+	protected String projectId;
+	protected File outputDir;
 	protected File mavenHome;
 
 	public Validator(Project project) {
 		this.projectDir = project.getProjectDir();
+		this.projectId = project.getProjectId();
+		this.outputDir = project.getOutputDir();
 		this.mavenHome = project.getMavenHome();
 	}
 
@@ -63,16 +68,17 @@ public class Validator implements CheckoutConductor.Listener {
 					Arrays.asList("test-compile", "-Dmaven.compiler.showDeprecation=true", "-Dmaven.compiler.showWarnings=true"), mavenHome);
 			// Get JavaDoc results
 			LOGGER.info("Getting javadoc results...");
-			String packageName = MavenUtils.getJavadocPackageName(projectDir);
-			Map<String, List<JavadocErrorMessage>> javadocErrorMessages = MavenUtils.getJavadocErrorMessages(projectDir, mavenHome, packageName);
+			Map<String, List<JavadocErrorMessage>> javadocErrorMessages = JavadocUtils.getJavadocErrorMessages(projectDir, mavenHome);
 			results.setJavadocErrorMessages(javadocErrorMessages);
 			// Validate
-			LOGGER.info("Validating...");
-			for (TestSuite ts : testSuites) {
-				for (TestCase tc : ts.getTestCases()) {
-					notify(commit, tc, results);
-				}
-			}
+//			LOGGER.info("Validating...");
+//			for (TestSuite ts : testSuites) {
+//				for (TestCase tc : ts.getTestCases()) {
+//					notify(commit, tc, results);
+//				}
+//			}
+			// Output compile and JavaDoc results
+			results.output(outputDir, projectId, commit);
 		} catch (IOException | MavenInvocationException | InterruptedException e) {
 			LOGGER.warn("Failed to checkout: {}", commit.getId());
 		}

@@ -5,14 +5,11 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Stack;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.maven.shared.invoker.DefaultInvocationRequest;
 import org.apache.maven.shared.invoker.DefaultInvoker;
 import org.apache.maven.shared.invoker.InvocationOutputHandler;
@@ -139,41 +136,21 @@ public class MavenUtils {
 		return Results.of(outputs, errors);
 	}
 
-	public static class Results {
-		private List<String> compileOutputs;
-		private List<String> compileErrors;
-		private Map<String, List<JavadocErrorMessage>> javadocErrorMessages;
-
-		private Results(List<String> outputs, List<String> errors) {
-			this.compileOutputs = outputs;
-			this.compileErrors = errors;
-		}
-		
-		public static Results of(List<String> outputs, List<String> errors) {
-			return new Results(outputs, errors);
-		}
-
-		public List<String> getCompileOutputs() {
-			return compileOutputs;
-		}
-
-		public List<String> getCompileErrors() {
-			return compileErrors;
-		}
-		
-		public void setJavadocErrorMessages(Map<String, List<JavadocErrorMessage>> javadocErrorMessages) {
-			this.javadocErrorMessages = javadocErrorMessages;
-		}
-		
-		public List<JavadocErrorMessage> getJavadocErrorMessages(File projectDir, File file) {
-			String filepath = VtrUtils.getFilePath(projectDir, file);
-			List<JavadocErrorMessage> messages = javadocErrorMessages.get(filepath);
-			if (messages == null) {
-				messages = new ArrayList<JavadocErrorMessage>();
-				javadocErrorMessages.put(filepath, messages);
+	/**
+	 * 
+	 * @param projectDir
+	 * @param mavenHome
+	 * @return
+	 * @throws MavenInvocationException
+	 */
+	public static String getBuildClassPath(File projectDir, File mavenHome) throws MavenInvocationException {
+		List<String> outputs = MavenUtils.maven(projectDir, Arrays.asList("dependency:build-classpath"), mavenHome, true, false);
+		for (String output : outputs) {
+			if (!output.startsWith("[")) {
+				return output;
 			}
-			return messages;
 		}
+		return null;
 	}
 
 	/**
@@ -328,145 +305,4 @@ public class MavenUtils {
 		}
 		return children;
 	}
-
-	/**
-	 * 
-	 * @param projectDir
-	 * @param mavenHome
-	 * @param testFile
-	 * @param packageName
-	 * @return
-	 * @throws IOException
-	 * @throws MavenInvocationException
-	 * @throws InterruptedException
-	 */
-	public static Map<String, List<JavadocErrorMessage>> getJavadocErrorMessages(File projectDir, File mavenHome, String packageName) throws IOException, MavenInvocationException, InterruptedException {
-		final Map<String, List<JavadocErrorMessage>> ret = new HashMap<>();
-		// Obtain class path of dependencies
-		String classpath = null;
-		List<String> outputs = MavenUtils.maven(projectDir, Arrays.asList("dependency:build-classpath"), mavenHome, true, false);
-		for (String output : outputs) {
-			if (!output.startsWith("[")) {
-				classpath = output;
-				break;
-			}
-		}
-		if (classpath == null) {
-			LOGGER.warn("Failed to get class-path of dependencies");
-			return ret;
-		}
-		// Run JavaDoc
-		List<String> cmd = Arrays.asList("javadoc", "-sourcepath", "src/main/java/:src/test/java/", "-classpath", classpath, "-subpackages", packageName);
-		Pair<List<String>, List<String>> results = VtrUtils.exec(projectDir, cmd);
-		if (results == null) {
-			// No JavaDoc warnings/errors
-			return ret;
-		}
-		// Parse error messages
-		Stack<JavadocErrorMessage> stack = new Stack<>();
-		for (String line : results.getRight()) {
-			if (line.startsWith("src/main/java") || line.startsWith("src/test/java")) {
-				String[] split = line.split(":");
-				String filepath = split[0].trim();
-				int lineno = Integer.parseInt(split[1].trim());
-				String type = split[2].trim();
-				String description = split[3].trim();
-				JavadocErrorMessage message = new JavadocErrorMessage(filepath, lineno, type, description);
-				stack.push(message);
-			} else if (line.replaceAll(" ", "").equals("^")) {
-				JavadocErrorMessage message = stack.pop();
-				int pos = line.length();
-				message.setPos(pos);
-				stack.push(message);
-			}
-		}
-		// Arrange
-		for (JavadocErrorMessage message : stack) {
-			String filepath = message.getFilePath();
-			List<JavadocErrorMessage> list = ret.get(filepath);
-			if (list == null) {
-				list = new ArrayList<>();
-			}
-			list.add(message);
-			ret.put(filepath, list);
-		}
-		return ret;
-	}
-	
-	public static String getJavadocPackageName(File projectDir) {
-		StringBuilder builder = new StringBuilder();
-		String delim = "";
-		File current = new File(projectDir, "src/test/java");
-		boolean only = true;
-		while (only) {
-			only = false;
-			File[] children = current.listFiles();
-			if (children.length == 1) {
-				File child = children[0];
-				if (child.isDirectory()) {
-					only = true;
-					current = child;
-					builder.append(delim).append(child.getName());
-					delim = ".";
-				}
-			}
-		}
-		return builder.toString();
-	}
-
-	public static class JavadocErrorMessage {
-
-		private String filepath;
-		private int lineno;
-		private String type;
-		private String message;
-		private int pos;
-		
-		private MethodDeclaration method;
-
-		public JavadocErrorMessage(String filepath, int lineno, String type, String message) {
-			this.filepath = filepath;
-			this.lineno = lineno;
-			this.type = type;
-			this.message = message;
-			this.pos = -1;
-		}
-
-		public String getFilePath() {
-			return filepath;
-		}
-
-		public int getLineno() {
-			return lineno;
-		}
-		
-		public void setPos(int pos) {
-			this.pos = pos;
-		}
-
-		public int getPos() {
-			return pos;
-		}
-
-		public String getType() {
-			return type;
-		}
-
-		public String getMessage() {
-			return message;
-		}
-		
-		public void setMethod(MethodDeclaration method) {
-			this.method = method;
-		}
-		
-		public MethodDeclaration getMethod() {
-			return method;
-		}
-
-		public String toString() {
-			return filepath + ": [" + type + "] " + message + " (" + lineno + ", " + pos + ")";
-		}
-	}
-
 }

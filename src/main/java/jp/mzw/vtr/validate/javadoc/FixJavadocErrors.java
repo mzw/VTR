@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jp.mzw.vtr.core.Project;
-import jp.mzw.vtr.maven.MavenUtils.JavadocErrorMessage;
+import jp.mzw.vtr.maven.JavadocUtils.JavadocErrorMessage;
 import jp.mzw.vtr.maven.TestCase;
 import jp.mzw.vtr.validate.SimpleValidatorBase;
 

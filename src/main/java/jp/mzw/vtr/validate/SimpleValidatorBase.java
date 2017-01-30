@@ -14,7 +14,7 @@ import org.slf4j.LoggerFactory;
 
 import jp.mzw.vtr.core.Project;
 import jp.mzw.vtr.git.Commit;
-import jp.mzw.vtr.maven.MavenUtils.Results;
+import jp.mzw.vtr.maven.Results;
 import jp.mzw.vtr.maven.TestCase;
 
 abstract public class SimpleValidatorBase extends ValidatorBase {
