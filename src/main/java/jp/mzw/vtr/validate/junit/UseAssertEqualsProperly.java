@@ -46,7 +46,8 @@ public class UseAssertEqualsProperly extends SimpleValidatorBase {
 						MethodInvocation method = (MethodInvocation) object;
 						if ("equals".equals(method.getName().toString())) {
 							if (method.arguments().size() != 1) {
-								LOGGER.info("Might be sepecific 'equals' method invocation: {}", method);
+								// TODO assertEquals(Arrays.equals(A, B)); -> assertArrayEquals(A, B) in a seperated validator
+								System.out.println("Might be sepecific 'equals' method invocation: " + method);
 								continue;
 							}
 							ret.add(target);
