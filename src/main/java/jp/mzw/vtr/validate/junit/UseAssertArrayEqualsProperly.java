@@ -5,7 +5,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jp.mzw.vtr.core.Project;
-import jp.mzw.vtr.maven.MavenUtils;
 import jp.mzw.vtr.maven.TestCase;
 import jp.mzw.vtr.validate.SimpleValidatorBase;
 
@@ -23,10 +22,10 @@ import org.eclipse.text.edits.TextEdit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class UseAssertEqualsProperly extends SimpleValidatorBase {
-	protected static Logger LOGGER = LoggerFactory.getLogger(UseAssertEqualsProperly.class);
+public class UseAssertArrayEqualsProperly extends SimpleValidatorBase {
+	protected static Logger LOGGER = LoggerFactory.getLogger(UseAssertArrayEqualsProperly.class);
 
-	public UseAssertEqualsProperly(Project project) {
+	public UseAssertArrayEqualsProperly(Project project) {
 		super(project);
 	}
 
@@ -47,22 +46,13 @@ public class UseAssertEqualsProperly extends SimpleValidatorBase {
 					if (object instanceof MethodInvocation) {
 						MethodInvocation method = (MethodInvocation) object;
 						if ("equals".equals(method.getName().toString())) {
-							if (method.arguments().size() != 1) {
-								Expression expression = method.getExpression();
-								if (expression != null) {
-									String qualifiedName = expression.resolveTypeBinding().getQualifiedName();
-									String packageName = MavenUtils.getPackageName(projectDir);
-									if (qualifiedName.startsWith(packageName)) {
-										// Specific 'equals' method invocation
-									} else if ("java.util.Arrays".equals(qualifiedName)) {
-										// Use assertArrayEquals properly
-									} else {
-										System.out.println("Unknown 'equals' method invocation: " + method);
-									}
+							Expression expression = method.getExpression();
+							if (expression != null) {
+								String binding = expression.resolveTypeBinding().getQualifiedName();
+								if ("java.util.Arrays".equals(binding)) {
+									ret.add(target);
 								}
-								continue;
 							}
-							ret.add(target);
 						}
 					}
 				}
@@ -82,22 +72,21 @@ public class UseAssertEqualsProperly extends SimpleValidatorBase {
 		for (ASTNode node : detect(tc)) {
 			MethodInvocation target = (MethodInvocation) node;
 			MethodInvocation equals = null;
-			for (Object object : target.arguments()) {
-				if (object instanceof MethodInvocation) {
-					equals = (MethodInvocation) object;
-					break;
-				}
+			if (target.arguments().size() == 1) {
+				equals = (MethodInvocation) target.arguments().get(0);
+			} else if (target.arguments().size() == 2) {
+				equals = (MethodInvocation) target.arguments().get(1);
+			} else {
+				System.out.println("Unexpected # of arguments at " + target);
+				return origin;
 			}
 			MethodInvocation replace = ast.newMethodInvocation();
-			replace.setName(ast.newSimpleName(target.getName().toString().replace("assertTrue", "assertEquals")));
-			for (Object object : target.arguments()) {
-				if (object.equals(equals)) {
-					replace.arguments().add(ASTNode.copySubtree(ast, equals.getExpression()));
-					replace.arguments().add(ASTNode.copySubtree(ast, (ASTNode) equals.arguments().get(0)));
-				} else {
-					replace.arguments().add(ASTNode.copySubtree(ast, (ASTNode) object));
-				}
+			replace.setName(ast.newSimpleName(target.getName().toString().replace("assertTrue", "assertArrayEquals")));
+			if (target.arguments().size() == 2) {
+				replace.arguments().add(ASTNode.copySubtree(ast, (ASTNode) target.arguments().get(0)));
 			}
+			replace.arguments().add(ASTNode.copySubtree(ast, (ASTNode) equals.arguments().get(0)));
+			replace.arguments().add(ASTNode.copySubtree(ast, (ASTNode) equals.arguments().get(1)));
 			rewrite.replace(target, replace, null);
 		}
 		// modify

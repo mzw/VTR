@@ -305,4 +305,30 @@ public class MavenUtils {
 		}
 		return children;
 	}
+
+	/**
+	 * 
+	 * @param projectDir
+	 * @return
+	 */
+	public static String getPackageName(File projectDir) {
+		StringBuilder builder = new StringBuilder();
+		String delim = "";
+		File current = new File(projectDir, "src/main/java");
+		boolean only = true;
+		while (only) {
+			only = false;
+			File[] children = current.listFiles();
+			if (children.length == 1) {
+				File child = children[0];
+				if (child.isDirectory()) {
+					only = true;
+					current = child;
+					builder.append(delim).append(child.getName());
+					delim = ".";
+				}
+			}
+		}
+		return builder.toString();
+	}
 }
