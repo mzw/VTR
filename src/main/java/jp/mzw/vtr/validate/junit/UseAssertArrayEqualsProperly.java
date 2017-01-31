@@ -13,6 +13,7 @@ import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.Expression;
+import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 import org.eclipse.jface.text.BadLocationException;
@@ -31,39 +32,43 @@ public class UseAssertArrayEqualsProperly extends SimpleValidatorBase {
 
 	@Override
 	protected List<ASTNode> detect(TestCase tc) throws IOException, MalformedTreeException, BadLocationException {
-		List<ASTNode> ret = new ArrayList<>();
-		final List<MethodInvocation> targets = new ArrayList<>();
+		final List<ASTNode> ret = new ArrayList<>();
 		tc.getMethodDeclaration().accept(new ASTVisitor() {
 			@Override
 			public boolean visit(MethodInvocation node) {
-				targets.add(node);
-				return super.visit(node);
-			}
-		});
-		for (MethodInvocation target : targets) {
-			if ("assertTrue".equals(target.getName().toString())) {
-				for (Object object : target.arguments()) {
+				if (!"assertTrue".equals(node.getName().toString())) {
+					return super.visit(node);
+				}
+				for (Object object : node.arguments()) {
 					if (object instanceof MethodInvocation) {
 						MethodInvocation method = (MethodInvocation) object;
-						if ("equals".equals(method.getName().toString())) {
-							Expression expression = method.getExpression();
-							if (expression != null) {
-								String binding = expression.resolveTypeBinding().getQualifiedName();
-								if ("java.util.Arrays".equals(binding)) {
-									ret.add(target);
-								}
-							}
+						if (!"equals".equals(method.getName().toString())) {
+							continue;
+						}
+						Expression expression = method.getExpression();
+						if (expression == null) {
+							continue;
+						}
+						ITypeBinding binding = expression.resolveTypeBinding();
+						if (binding == null) {
+							continue;
+						}
+						String qualifiedName = expression.resolveTypeBinding().getQualifiedName();
+						if ("java.util.Arrays".equals(qualifiedName)) {
+							ret.add(node);
 						}
 					}
 				}
+				return super.visit(node);
 			}
-		}
+		});
 		return ret;
 	}
 
 	@SuppressWarnings("unchecked")
 	@Override
-	protected String getModified(String origin, TestCase tc) throws IOException, MalformedTreeException, BadLocationException {
+	protected String getModified(String origin, TestCase tc)
+			throws IOException, MalformedTreeException, BadLocationException {
 		// prepare
 		CompilationUnit cu = tc.getCompilationUnit();
 		AST ast = cu.getAST();
@@ -80,8 +85,9 @@ public class UseAssertArrayEqualsProperly extends SimpleValidatorBase {
 				System.out.println("Unexpected # of arguments at " + target);
 				return origin;
 			}
-			MethodInvocation replace = ast.newMethodInvocation();
-			replace.setName(ast.newSimpleName(target.getName().toString().replace("assertTrue", "assertArrayEquals")));
+			MethodInvocation replace = (MethodInvocation) ASTNode.copySubtree(ast, target);
+			replace.setName(ast.newSimpleName("assertArrayEquals"));
+			replace.arguments().clear();
 			if (target.arguments().size() == 2) {
 				replace.arguments().add(ASTNode.copySubtree(ast, (ASTNode) target.arguments().get(0)));
 			}
