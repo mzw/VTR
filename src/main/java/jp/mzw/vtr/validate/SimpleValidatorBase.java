@@ -55,6 +55,7 @@ abstract public class SimpleValidatorBase extends ValidatorBase {
 
 	@Override
 	public void generate(ValidationResult result) {
+		this.commit = new Commit(result.getCommitId(), null);
 		try {
 			TestCase tc = getTestCase(result);
 			String origin = FileUtils.readFileToString(tc.getTestFile());
