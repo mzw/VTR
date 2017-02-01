@@ -315,6 +315,9 @@ public class MavenUtils {
 		StringBuilder builder = new StringBuilder();
 		String delim = "";
 		File current = new File(projectDir, "src/main/java");
+		if (!current.exists()) {
+			return "jp.mzw.vtr.invalid";
+		}
 		boolean only = true;
 		while (only) {
 			only = false;
