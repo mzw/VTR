@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArraySet;
 
@@ -17,7 +16,6 @@ import jp.mzw.vtr.git.CheckoutConductor;
 import jp.mzw.vtr.git.Commit;
 import jp.mzw.vtr.maven.MavenUtils;
 import jp.mzw.vtr.maven.JavadocUtils;
-import jp.mzw.vtr.maven.JavadocUtils.JavadocErrorMessage;
 import jp.mzw.vtr.maven.Results;
 import jp.mzw.vtr.maven.TestCase;
 import jp.mzw.vtr.maven.TestSuite;
@@ -62,7 +60,7 @@ public class Validator implements CheckoutConductor.Listener {
 				LOGGER.info("Not found test suites");
 				return;
 			}
-			// Get compile results
+			// Get compile and JavaDoc results
 			Results results = null;
 			if (Results.is(outputDir, projectId, commit)) {
 				LOGGER.info("Parsing existing compile/javadoc results...");
@@ -72,8 +70,8 @@ public class Validator implements CheckoutConductor.Listener {
 				results = MavenUtils.maven(projectDir,
 						Arrays.asList("test-compile", "-Dmaven.compiler.showDeprecation=true", "-Dmaven.compiler.showWarnings=true"), mavenHome);
 				LOGGER.info("Getting javadoc results...");
-				Map<String, List<JavadocErrorMessage>> javadocErrorMessages = JavadocUtils.getJavadocErrorMessages(projectDir, mavenHome);
-				results.setJavadocErrorMessages(javadocErrorMessages);
+				List<String> javadocResults = JavadocUtils.executeJavadoc(projectDir, mavenHome);
+				results.setJavadocResults(javadocResults);
 			}
 			// Validate
 			LOGGER.info("Validating...");

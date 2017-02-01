@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.io.FileUtils;
-import org.jsoup.nodes.Document;
 
 import jp.mzw.vtr.core.VtrUtils;
 import jp.mzw.vtr.git.Commit;
@@ -15,16 +14,18 @@ import jp.mzw.vtr.maven.JavadocUtils.JavadocErrorMessage;
 import jp.mzw.vtr.validate.ValidatorBase;
 
 public class Results {
-	
+
 	protected List<String> compileOutputs;
 	protected List<String> compileErrors;
+
+	protected List<String> javadocResults;
 	protected Map<String, List<JavadocErrorMessage>> javadocErrorMessages;
 
 	protected Results(List<String> outputs, List<String> errors) {
 		this.compileOutputs = outputs;
 		this.compileErrors = errors;
 	}
-	
+
 	public static Results of(List<String> outputs, List<String> errors) {
 		return new Results(outputs, errors);
 	}
@@ -36,11 +37,12 @@ public class Results {
 	public List<String> getCompileErrors() {
 		return compileErrors;
 	}
-	
-	public void setJavadocErrorMessages(Map<String, List<JavadocErrorMessage>> javadocErrorMessages) {
-		this.javadocErrorMessages = javadocErrorMessages;
+
+	public void setJavadocResults(List<String> results) {
+		this.javadocResults = results;
+		this.javadocErrorMessages = JavadocUtils.parseJavadocErrorMessages(results);
 	}
-	
+
 	public List<JavadocErrorMessage> getJavadocErrorMessages(File projectDir, File file) {
 		String filepath = VtrUtils.getFilePath(projectDir, file);
 		List<JavadocErrorMessage> messages = javadocErrorMessages.get(filepath);
@@ -54,35 +56,33 @@ public class Results {
 	public static final String VALIDATE_RESULTS_DIRNAME = "results";
 	public static final String COMPILE_OUTPUTS_FILENAME = "compile_outputs.txt";
 	public static final String COMPILE_ERRORS_FILENAME = "compile_errors.txt";
-	public static final String JAVADOC_ERRORS_FILENAME = "javadoc_error_messages.xml";
-	
-	protected static File getCommitDir(File outputDir, String projectId, Commit commit) {
+	public static final String JAVADOC_RESULTS_FILENAME = "javadoc_error_messages.txt";
+
+	public static File getCommitDir(File outputDir, String projectId, Commit commit) {
 		File projectDir = new File(outputDir, projectId);
 		File validateDir = new File(projectDir, ValidatorBase.VALIDATOR_DIRNAME);
 		File resultsDir = new File(validateDir, VALIDATE_RESULTS_DIRNAME);
 		File commitDir = new File(resultsDir, commit.getId());
 		return commitDir;
 	}
-	
+
 	public void output(File outputDir, String projectId, Commit commit) throws IOException {
 		File commitDir = getCommitDir(outputDir, projectId, commit);
-
 		File compileOutputsFile = new File(commitDir, COMPILE_OUTPUTS_FILENAME);
 		FileUtils.writeLines(compileOutputsFile, compileOutputs);
-		
+
 		File compileErrorsFile = new File(commitDir, COMPILE_ERRORS_FILENAME);
 		FileUtils.writeLines(compileErrorsFile, compileErrors);
-		
-		File javadocErrorMessagesFile = new File(commitDir, JAVADOC_ERRORS_FILENAME);
-		Document javadocErrorMessagesDocument = JavadocUtils.getXMLDocument(javadocErrorMessages);
-		FileUtils.write(javadocErrorMessagesFile, javadocErrorMessagesDocument.toString());
+
+		File javadocResultsFile = new File(commitDir, JAVADOC_RESULTS_FILENAME);
+		FileUtils.writeLines(javadocResultsFile, javadocResults);
 	}
 
 	public static boolean is(File outputDir, String projectId, Commit commit) {
 		File commitDir = getCommitDir(outputDir, projectId, commit);
 		return commitDir.exists();
 	}
-	
+
 	public static Results parse(File outputDir, String projectId, Commit commit) throws IOException {
 		File commitDir = getCommitDir(outputDir, projectId, commit);
 		// Parse compile results
@@ -92,9 +92,9 @@ public class Results {
 		List<String> compileErrors = FileUtils.readLines(compileErrorsFile);
 		Results results = Results.of(compileOutputs, compileErrors);
 		// Parse JavaDoc results
-		File javadocErrorMessagesFile = new File(commitDir, JAVADOC_ERRORS_FILENAME);
-		Map<String, List<JavadocErrorMessage>> javadocErrorMessagesMap = JavadocUtils.parse(javadocErrorMessagesFile);
-		results.setJavadocErrorMessages(javadocErrorMessagesMap);
+		File javadocResultsFile = new File(commitDir, JAVADOC_RESULTS_FILENAME);
+		List<String> javadocResults = FileUtils.readLines(javadocResultsFile);
+		results.setJavadocResults(javadocResults);
 		// Return
 		return results;
 	}
