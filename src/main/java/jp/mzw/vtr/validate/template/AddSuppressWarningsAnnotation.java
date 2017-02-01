@@ -2,16 +2,14 @@ package jp.mzw.vtr.validate.template;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import jp.mzw.vtr.core.Project;
 import jp.mzw.vtr.maven.AllElementsFindVisitor;
-import jp.mzw.vtr.maven.MavenUtils;
+import jp.mzw.vtr.maven.Results;
 import jp.mzw.vtr.maven.TestCase;
 import jp.mzw.vtr.validate.SimpleValidatorBase;
 
-import org.apache.maven.shared.invoker.MavenInvocationException;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.CompilationUnit;
@@ -38,15 +36,9 @@ public class AddSuppressWarningsAnnotation extends SimpleValidatorBase {
 	protected List<ASTNode> detect(TestCase tc) throws IOException, MalformedTreeException, BadLocationException {
 		final List<ASTNode> targets = new ArrayList<>();
 
-		// when generate patches, nullpo exception was thrown.
-		// TODO: refactoring
+		// results are null in generating patches.
 		if (results == null) {
-			try {
-				results = MavenUtils.maven(projectDir,
-						Arrays.asList("clean", "test-compile", "-Dmaven.compiler.showDeprecation=true", "-Dmaven.compiler.showWarnings=true"), mavenHome);
-			} catch (MavenInvocationException e) {
-				e.printStackTrace();
-			}
+			results = Results.parse(outputDir, projectId, commit);
 		}
 		// get deprecated nodes' position from deprecated messages
 		List<String> deprecatedMessages = deprecatedMessages(results.getCompileOutputs());
@@ -102,7 +94,7 @@ public class AddSuppressWarningsAnnotation extends SimpleValidatorBase {
 	}
 
 	/**
-	 * @param outputs: [WARNING] /Users/TK/workspace/VTR/subjects/commons-lang/src/main/java/org/apache/commons/lang3/tuple/Pair.java:[135,31] org.apache.commons.lang3.ObjectUtilsのequals(java.lang.Object,java.lang.Object)は非推奨になりました
+	 * @param outputs: [WARNING] /home/ubuntu/workspace/VTR/subjects/commons-codec/src/test/java/org/apache/commons/codec/binary/Base64Test.java:[150,81] UTF_8 in org.apache.commons.codec.Charsets has been deprecated
 	 * @return
 	 */
 	private List<String> deprecatedMessages(List<String> outputs) {
