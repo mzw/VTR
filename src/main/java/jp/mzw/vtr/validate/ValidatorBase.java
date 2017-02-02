@@ -63,11 +63,13 @@ abstract public class ValidatorBase {
 	public ValidatorBase(Project project) {
 		this.projectId = project.getProjectId();
 		this.projectDir = project.getProjectDir();
+		this.outputDir = project.getOutputDir();
 		this.mavenHome = project.getMavenHome();
 		this.validationResultList = new ArrayList<>();
 	}
 
 	abstract public void validate(Commit commit, TestCase testcase, Results results);
+	abstract public boolean hasValidationResults();
 
 	abstract public void generate(ValidationResult result);
 
@@ -105,6 +107,45 @@ abstract public class ValidatorBase {
 			}
 		}
 		return validators;
+	}
+
+	/**
+	 * Get validator list from resources
+	 * 
+	 * @param project
+	 *            Project
+	 * @return Validators
+	 * @throws IOException
+	 * @throws SecurityException
+	 * @throws NoSuchMethodException
+	 * @throws InvocationTargetException
+	 * @throws IllegalArgumentException
+	 * @throws IllegalAccessException
+	 * @throws InstantiationException
+	 * @throws ClassNotFoundException
+	 */
+	@SuppressWarnings("unchecked")
+	public static List<Class<? extends ValidatorBase>> getValidatorClasses(Project project, String filename) throws IOException, InstantiationException, IllegalAccessException,
+			IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException {
+		InputStream is = ValidatorBase.class.getClassLoader().getResourceAsStream(filename);
+		List<String> lines = IOUtils.readLines(is);
+		List<ValidatorBase> validators = new ArrayList<>();
+		List<Class<? extends ValidatorBase>> classes = new ArrayList<>();
+		for (String line : lines) {
+			if (line.isEmpty() || line.startsWith("#")) {
+				continue;
+			}
+			try {
+				Class<?> clazz = Class.forName(line);
+				ValidatorBase validator = (ValidatorBase) clazz.getConstructor(Project.class).newInstance(project);
+				validators.add(validator);
+				classes.add(((Class<? extends ValidatorBase>) clazz));
+				LOGGER.info("Register validator: {}", line);
+			} catch (ClassNotFoundException e) {
+				LOGGER.warn("Invalid validator: {}", line);
+			}
+		}
+		return classes;
 	}
 
 	/**

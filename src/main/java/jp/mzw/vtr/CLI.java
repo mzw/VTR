@@ -48,7 +48,7 @@ public class CLI {
 
 	public static void main(String[] args) throws IOException, NoHeadException, GitAPIException, ParseException, MavenInvocationException, DocumentException,
 			PatchFailedException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException,
-			SecurityException, ClassNotFoundException {
+			SecurityException, ClassNotFoundException, InterruptedException {
 
 		if (args.length < 1) { // Invalid usage
 			LOGGER.info("$ java -cp=<class-path> jp.mzw.vtr.CLI dict      <subject-id>");
@@ -200,28 +200,26 @@ public class CLI {
 	}
 
 	private static void validate(Project project) throws IOException, ParseException, GitAPIException, InstantiationException, IllegalAccessException,
-			IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException, ClassNotFoundException {
+			IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException, ClassNotFoundException, InterruptedException {
 		CheckoutConductor cc = new CheckoutConductor(project);
 		Validator validator = new Validator(project);
-		List<ValidatorBase> validators = ValidatorBase.getValidators(project, ValidatorBase.VALIDATORS_LIST);
-		for (ValidatorBase each : validators) {
-			validator.addValidator(each);
-		}
 		cc.addListener(validator);
+		validator.startup();
 		cc.checkout();
+		validator.shutdown();
+		ValidatorBase.output(project.getOutputDir(), project.getProjectId(), validator.getValidators());
 	}
 
 	private static void validate(Project project, CheckoutConductor.Type type, String commitId)
 			throws IOException, ParseException, GitAPIException, InstantiationException, IllegalAccessException, IllegalArgumentException,
-			InvocationTargetException, NoSuchMethodException, SecurityException, ClassNotFoundException {
+			InvocationTargetException, NoSuchMethodException, SecurityException, ClassNotFoundException, InterruptedException {
 		CheckoutConductor cc = new CheckoutConductor(project);
 		Validator validator = new Validator(project);
-		List<ValidatorBase> validators = ValidatorBase.getValidators(project, ValidatorBase.VALIDATORS_LIST);
-		for (ValidatorBase each : validators) {
-			validator.addValidator(each);
-		}
 		cc.addListener(validator);
+		validator.startup();
 		cc.checkout(type, commitId);
+		validator.shutdown();
+		ValidatorBase.output(project.getOutputDir(), project.getProjectId(), validator.getValidators());
 	}
 
 	private static void gen(Project project) throws IOException, ParseException, GitAPIException, InstantiationException, IllegalAccessException,

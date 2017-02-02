@@ -1,7 +1,8 @@
 package jp.mzw.vtr.validate;
 
-import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -26,38 +27,47 @@ import jp.mzw.vtr.maven.TestSuite;
 public class Validator implements CheckoutConductor.Listener {
 	protected Logger LOGGER = LoggerFactory.getLogger(Validator.class);
 
-	protected File projectDir;
-	protected String projectId;
-	protected File outputDir;
-	protected File mavenHome;
+	protected final Project project;
 
-	protected List<ValidatorBase> validators;
+	public static final int NUMBER_OF_THREADS = 500;
+	protected ExecutorService executor;
 
-	public Validator(Project project) {
-		this.projectDir = project.getProjectDir();
-		this.projectId = project.getProjectId();
-		this.outputDir = project.getOutputDir();
-		this.mavenHome = project.getMavenHome();
+	protected List<Class<? extends ValidatorBase>> validatorClasses;
+	protected final List<ValidatorBase> validators;
+
+	public Validator(Project project) throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException,
+			NoSuchMethodException, SecurityException, IOException {
+		this.project = project;
+		validators = new ArrayList<>();
+		validatorClasses = ValidatorBase.getValidatorClasses(project, ValidatorBase.VALIDATORS_LIST);
 	}
 
-	public void addValidator(ValidatorBase task) {
-		if (validators == null) {
-			validators = new ArrayList<>();
+	public void startup() {
+		executor = Executors.newFixedThreadPool(NUMBER_OF_THREADS);
+	}
+
+	public void shutdown() throws IOException, InterruptedException {
+		executor.shutdown();
+		if (!executor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS)) {
+			executor.shutdownNow();
 		}
-		validators.add(task);
+	}
+
+	public List<ValidatorBase> getValidators() {
+		return validators;
 	}
 
 	protected Results getResults(Commit commit) throws IOException, MavenInvocationException, InterruptedException {
 		Results results = null;
-		if (Results.is(outputDir, projectId, commit)) {
+		if (Results.is(project.getOutputDir(), project.getProjectId(), commit)) {
 			LOGGER.info("Parsing existing compile/javadoc results...");
-			results = Results.parse(outputDir, projectId, commit);
+			results = Results.parse(project.getOutputDir(), project.getProjectId(), commit);
 		} else {
 			LOGGER.info("Getting compile results...");
-			results = MavenUtils.maven(projectDir, Arrays.asList("test-compile", "-Dmaven.compiler.showDeprecation=true", "-Dmaven.compiler.showWarnings=true"),
-					mavenHome);
+			results = MavenUtils.maven(project.getProjectDir(),
+					Arrays.asList("test-compile", "-Dmaven.compiler.showDeprecation=true", "-Dmaven.compiler.showWarnings=true"), project.getMavenHome());
 			LOGGER.info("Getting javadoc results...");
-			List<String> javadocResults = JavadocUtils.executeJavadoc(projectDir, mavenHome);
+			List<String> javadocResults = JavadocUtils.executeJavadoc(project.getProjectDir(), project.getMavenHome());
 			results.setJavadocResults(javadocResults);
 		}
 		return results;
@@ -67,7 +77,7 @@ public class Validator implements CheckoutConductor.Listener {
 	public void onCheckout(final Commit commit) {
 		try {
 			LOGGER.info("Parsing testcases...");
-			List<TestSuite> testSuites = MavenUtils.getTestSuitesAtLevel2(projectDir);
+			List<TestSuite> testSuites = MavenUtils.getTestSuitesAtLevel2(project.getProjectDir());
 			if (testSuites.isEmpty()) {
 				LOGGER.info("Not found test suites");
 				return;
@@ -78,28 +88,27 @@ public class Validator implements CheckoutConductor.Listener {
 			LOGGER.info("Validating...");
 			for (final TestSuite ts : testSuites) {
 				for (final TestCase tc : ts.getTestCases()) {
-					ExecutorService executor = Executors.newFixedThreadPool(validators.size());
-					for (final ValidatorBase validator : validators) {
+					for (final Class<? extends ValidatorBase> clazz : validatorClasses) {
 						executor.submit(new Callable<Long>() {
 							@Override
 							public Long call() throws Exception {
-								validator.validate(commit, tc, results);
+								Constructor<?> constructor = clazz.getConstructor(Project.class);
+								ValidatorBase clone = (ValidatorBase) constructor.newInstance(project);
+								clone.validate(commit, tc, results);
+								if (clone.hasValidationResults()) {
+									validators.add(clone);
+								}
 								return System.currentTimeMillis();
 							}
 						});
+						shutdown();
+						startup();
 					}
-					executor.shutdown();
-					try {
-						executor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
-					} catch (InterruptedException e) {
-						executor.shutdownNow();
-					}
-					executor.shutdownNow();
 				}
 			}
 			// Output compile and JavaDoc results
-			if (!Results.is(outputDir, projectId, commit)) {
-				results.output(outputDir, projectId, commit);
+			if (!Results.is(project.getOutputDir(), project.getProjectId(), commit)) {
+				results.output(project.getOutputDir(), project.getProjectId(), commit);
 			}
 		} catch (IOException | MavenInvocationException | InterruptedException e) {
 			LOGGER.warn("Failed to checkout: {}", commit.getId());

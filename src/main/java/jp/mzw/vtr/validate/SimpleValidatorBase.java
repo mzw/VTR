@@ -59,6 +59,11 @@ abstract public class SimpleValidatorBase extends ValidatorBase {
 			LOGGER.warn("Failed to invoke Checkstyle: {}", e.getMessage());
 		}
 	}
+	
+	@Override
+	public boolean hasValidationResults() {
+		return !this.validationResultList.isEmpty();
+	}
 
 	abstract protected List<ASTNode> detect(TestCase testcase) throws IOException, MalformedTreeException, BadLocationException;
 
