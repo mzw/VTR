@@ -30,11 +30,11 @@ public class JacocoInstrumenterTest extends VtrTestBase {
 		File dir = new File(PATH_TO_PROJECT_DIR);
 		JacocoInstrumenter ji = new JacocoInstrumenter(dir);
 
-		String origin = FileUtils.readFileToString(new File(dir, JacocoInstrumenter.FILENAME_POM));
+		String origin = FileUtils.readFileToString(new File(dir, MavenUtils.FILENAME_POM));
 		ji.instrument();
-		String modified = FileUtils.readFileToString(new File(dir, JacocoInstrumenter.FILENAME_POM));
+		String modified = FileUtils.readFileToString(new File(dir, MavenUtils.FILENAME_POM));
 		ji.revert();
-		String reverted = FileUtils.readFileToString(new File(dir, JacocoInstrumenter.FILENAME_POM));
+		String reverted = FileUtils.readFileToString(new File(dir, MavenUtils.FILENAME_POM));
 
 		Assert.assertFalse(origin.equals(modified));
 		Assert.assertTrue(origin.equals(reverted));
