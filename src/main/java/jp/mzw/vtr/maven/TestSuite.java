@@ -204,6 +204,9 @@ public class TestSuite {
 	 * @return Found test case or null if not found
 	 */
 	public static TestCase getTestCaseWithClassMethodName(List<TestSuite> testSuites, TestCase testCase) {
+		if (testSuites == null) {
+			return null;
+		}
 		for (TestSuite ts : testSuites) {
 			for (TestCase tc : ts.getTestCases()) {
 				if (tc.getFullName().equals(testCase.getFullName())) {

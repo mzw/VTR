@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.maven.shared.invoker.DefaultInvocationRequest;
 import org.apache.maven.shared.invoker.DefaultInvoker;
 import org.apache.maven.shared.invoker.InvocationOutputHandler;
@@ -31,6 +32,16 @@ import jp.mzw.vtr.core.VtrUtils;
 public class MavenUtils {
 	static Logger LOGGER = LoggerFactory.getLogger(MavenUtils.class);
 
+	public static final String FILENAME_POM = "pom.xml";
+
+	public static String getPomContent(File projectDir) throws IOException {
+		File pom = new File(projectDir, FILENAME_POM);
+		if (!pom.exists()) {
+			return null;
+		}
+		return FileUtils.readFileToString(pom);
+	}
+
 	/**
 	 * Invoke Maven command
 	 * 
@@ -41,7 +52,7 @@ public class MavenUtils {
 	 */
 	public static int maven(File subject, List<String> goals, File mavenHome, final boolean logger) throws MavenInvocationException {
 		InvocationRequest request = new DefaultInvocationRequest();
-		request.setPomFile(new File(subject, JacocoInstrumenter.FILENAME_POM));
+		request.setPomFile(new File(subject, FILENAME_POM));
 		request.setGoals(goals);
 		Invoker invoker = new DefaultInvoker();
 		invoker.setMavenHome(mavenHome);
@@ -79,7 +90,7 @@ public class MavenUtils {
 			throws MavenInvocationException {
 		final List<String> ret = new ArrayList<>();
 		InvocationRequest request = new DefaultInvocationRequest();
-		request.setPomFile(new File(subject, JacocoInstrumenter.FILENAME_POM));
+		request.setPomFile(new File(subject, FILENAME_POM));
 		request.setGoals(goals);
 		Invoker invoker = new DefaultInvoker();
 		invoker.setMavenHome(mavenHome);
@@ -113,7 +124,7 @@ public class MavenUtils {
 	 */
 	public static Results maven(File subject, List<String> goals, File mavenHome) throws MavenInvocationException {
 		InvocationRequest request = new DefaultInvocationRequest();
-		request.setPomFile(new File(subject, JacocoInstrumenter.FILENAME_POM));
+		request.setPomFile(new File(subject, FILENAME_POM));
 		request.setGoals(goals);
 		Invoker invoker = new DefaultInvoker();
 		invoker.setMavenHome(mavenHome);
