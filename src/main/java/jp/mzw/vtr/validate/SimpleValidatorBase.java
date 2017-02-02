@@ -3,10 +3,7 @@ package jp.mzw.vtr.validate;
 import java.io.File;
 import java.io.IOException;
 import java.text.ParseException;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.commons.io.FileUtils;
 import org.eclipse.jdt.core.dom.ASTNode;
@@ -26,28 +23,19 @@ import jp.mzw.vtr.maven.TestSuite;
 
 abstract public class SimpleValidatorBase extends ValidatorBase {
 	protected Logger LOGGER = LoggerFactory.getLogger(SimpleValidatorBase.class);
-
-	protected static final Map<Class<? extends SimpleValidatorBase>, List<String>> duplicateMap = new HashMap<>();
 	
 	public SimpleValidatorBase(Project project) {
 		super(project);
-		duplicateMap.put(getClass(), new ArrayList<String>());
 	}
 
 	@Override
 	public ValidationResult validate(Commit commit, TestCase testcase, Results results) {
-		List<String> duplicates = duplicateMap.get(getClass());
-		if (duplicates.contains(testcase.getFullName())) {
-			return null;
-		}
 		try {
 			List<ASTNode> detects = detect(commit, testcase, results);
 			if (detects == null) {
 				return null;
 			}
 			if (!detects.isEmpty()) {
-				duplicates.add(testcase.getFullName());
-				duplicateMap.put(getClass(), duplicates);
 				return new ValidationResult(this.projectId, commit, testcase, testcase.getStartLineNumber(), testcase.getEndLineNumber(), this);
 			}
 		} catch (IOException | MalformedTreeException | BadLocationException e) {

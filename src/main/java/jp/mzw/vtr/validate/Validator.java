@@ -5,7 +5,9 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -29,17 +31,23 @@ public class Validator implements CheckoutConductor.Listener {
 
 	protected final Project project;
 
-	public static final int NUMBER_OF_THREADS = 500;
+	public static final int NUMBER_OF_THREADS = 8;
 	protected ExecutorService executor;
 
 	protected List<Class<? extends ValidatorBase>> validatorClasses;
 	protected final List<ValidationResult> validationResults;
+
+	protected final Map<String, List<String>> duplicateMap;
 
 	public Validator(Project project) throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException,
 			NoSuchMethodException, SecurityException, IOException {
 		this.project = project;
 		validatorClasses = ValidatorBase.getValidatorClasses(project, ValidatorBase.VALIDATORS_LIST);
 		validationResults = new ArrayList<>();
+		duplicateMap = new HashMap<>();
+		for (Class<? extends ValidatorBase> clazz : validatorClasses) {
+			duplicateMap.put(clazz.getName(), new ArrayList<String>());
+		}
 	}
 
 	public void startup() {
@@ -52,7 +60,7 @@ public class Validator implements CheckoutConductor.Listener {
 			executor.shutdownNow();
 		}
 	}
-	
+
 	public List<ValidationResult> getValidationResults() {
 		return validationResults;
 	}
@@ -90,6 +98,10 @@ public class Validator implements CheckoutConductor.Listener {
 			for (final TestSuite ts : testSuites) {
 				for (final TestCase tc : ts.getTestCases()) {
 					for (final Class<? extends ValidatorBase> clazz : validatorClasses) {
+						final List<String> duplicates = duplicateMap.get(clazz.getName());
+						if (duplicates.contains(tc.getFullName())) {
+							continue;
+						}
 						executor.submit(new Callable<Long>() {
 							@Override
 							public Long call() throws Exception {
@@ -98,6 +110,8 @@ public class Validator implements CheckoutConductor.Listener {
 								ValidationResult result = clone.validate(commit, tc, results);
 								if (result != null) {
 									validationResults.add(result);
+									duplicates.add(tc.getFullName());
+									duplicateMap.put(clazz.getName(), duplicates);
 								}
 								return System.currentTimeMillis();
 							}
