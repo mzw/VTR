@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jp.mzw.vtr.core.Project;
+import jp.mzw.vtr.git.Commit;
+import jp.mzw.vtr.maven.Results;
 import jp.mzw.vtr.maven.TestCase;
 import jp.mzw.vtr.validate.SimpleValidatorBase;
 
@@ -36,7 +38,7 @@ public class UseProcessWaitfor extends SimpleValidatorBase {
 	}
 
 	@Override
-	protected List<ASTNode> detect(TestCase tc) throws IOException, MalformedTreeException, BadLocationException {
+	protected List<ASTNode> detect(Commit commit, TestCase tc, Results results) throws IOException, MalformedTreeException, BadLocationException {
 		final List<ASTNode> ret = new ArrayList<>();
 		final List<WhileStatement> whileStatements = new ArrayList<>();
 		tc.getMethodDeclaration().accept(new ASTVisitor() {
@@ -55,13 +57,13 @@ public class UseProcessWaitfor extends SimpleValidatorBase {
 	}
 
 	@Override
-	protected String getModified(String origin, TestCase tc) throws IOException, MalformedTreeException, BadLocationException {
+	protected String getModified(String origin, Commit commit, TestCase tc, Results results) throws IOException, MalformedTreeException, BadLocationException {
 		// prepare
 		CompilationUnit cu = tc.getCompilationUnit();
 		AST ast = cu.getAST();
 		ASTRewrite rewrite = ASTRewrite.create(ast);
 		// detect
-		for (ASTNode node : detect(tc)) {
+		for (ASTNode node : detect(commit, tc, results)) {
 			WhileStatement target = (WhileStatement) node;
 			// create
 			MethodInvocation isAlive = (MethodInvocation) target.getExpression();

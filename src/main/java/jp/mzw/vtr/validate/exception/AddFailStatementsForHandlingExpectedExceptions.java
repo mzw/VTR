@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jp.mzw.vtr.core.Project;
+import jp.mzw.vtr.git.Commit;
+import jp.mzw.vtr.maven.Results;
 import jp.mzw.vtr.maven.TestCase;
 import jp.mzw.vtr.validate.SimpleValidatorBase;
 import jp.mzw.vtr.validate.ValidatorUtils;
@@ -36,7 +38,7 @@ public class AddFailStatementsForHandlingExpectedExceptions extends SimpleValida
 	}
 
 	@Override
-	protected List<ASTNode> detect(TestCase tc) throws IOException, MalformedTreeException, BadLocationException {
+	protected List<ASTNode> detect(final Commit commit, final TestCase tc, final Results results) throws IOException, MalformedTreeException, BadLocationException {
 		final List<ASTNode> ret = new ArrayList<>();
 		tc.getMethodDeclaration().accept(new ASTVisitor() {
 			@Override
@@ -121,13 +123,13 @@ public class AddFailStatementsForHandlingExpectedExceptions extends SimpleValida
 
 	@SuppressWarnings("unchecked")
 	@Override
-	protected String getModified(String origin, TestCase tc) throws IOException, MalformedTreeException, BadLocationException {
+	protected String getModified(String origin, final Commit commit, final TestCase tc, final Results results) throws IOException, MalformedTreeException, BadLocationException {
 		// prepare
 		CompilationUnit cu = tc.getCompilationUnit();
 		AST ast = cu.getAST();
 		ASTRewrite rewrite = ASTRewrite.create(ast);
 		// detect
-		for (ASTNode node : detect(tc)) {
+		for (ASTNode node : detect(commit, tc, results)) {
 			TryStatement target = (TryStatement) node;
 			// create
 			MethodInvocation method = ast.newMethodInvocation();

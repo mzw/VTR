@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jp.mzw.vtr.core.Project;
+import jp.mzw.vtr.git.Commit;
+import jp.mzw.vtr.maven.Results;
 import jp.mzw.vtr.maven.TestCase;
 import jp.mzw.vtr.validate.SimpleValidatorBase;
 
@@ -30,7 +32,7 @@ public class UseCodeAnnotationsAtJavaDoc extends SimpleValidatorBase {
 	}
 
 	@Override
-	protected List<ASTNode> detect(final TestCase tc) throws IOException, MalformedTreeException, BadLocationException {
+	protected List<ASTNode> detect(final Commit commit, final TestCase tc, final Results results) throws IOException, MalformedTreeException, BadLocationException {
 		final List<ASTNode> ret = new ArrayList<>();
 		for (Object comment : tc.getCompilationUnit().getCommentList()) {
 			if (comment instanceof Javadoc) {
@@ -57,8 +59,8 @@ public class UseCodeAnnotationsAtJavaDoc extends SimpleValidatorBase {
 	}
 	
 	@Override
-	protected String getModified(String origin, TestCase tc) throws IOException, MalformedTreeException, BadLocationException {
-		List<ASTNode> detects = detect(tc);
+	protected String getModified(String origin, final Commit commit, final TestCase tc, final Results results) throws IOException, MalformedTreeException, BadLocationException {
+		List<ASTNode> detects = detect(commit, tc, results);
 		if (detects.isEmpty()) {
 			return origin;
 		}

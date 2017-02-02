@@ -204,10 +204,8 @@ public class CLI {
 		CheckoutConductor cc = new CheckoutConductor(project);
 		Validator validator = new Validator(project);
 		cc.addListener(validator);
-		validator.startup();
 		cc.checkout();
-		validator.shutdown();
-		ValidatorBase.output(project.getOutputDir(), project.getProjectId(), validator.getValidators());
+		ValidatorBase.output(project.getOutputDir(), project.getProjectId(), validator.getValidationResults());
 	}
 
 	private static void validate(Project project, CheckoutConductor.Type type, String commitId)
@@ -216,10 +214,8 @@ public class CLI {
 		CheckoutConductor cc = new CheckoutConductor(project);
 		Validator validator = new Validator(project);
 		cc.addListener(validator);
-		validator.startup();
 		cc.checkout(type, commitId);
-		validator.shutdown();
-		ValidatorBase.output(project.getOutputDir(), project.getProjectId(), validator.getValidators());
+		ValidatorBase.output(project.getOutputDir(), project.getProjectId(), validator.getValidationResults());
 	}
 
 	private static void gen(Project project) throws IOException, ParseException, GitAPIException, InstantiationException, IllegalAccessException,

@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jp.mzw.vtr.core.Project;
+import jp.mzw.vtr.git.Commit;
+import jp.mzw.vtr.maven.Results;
 import jp.mzw.vtr.maven.TestCase;
 import jp.mzw.vtr.validate.SimpleValidatorBase;
 
@@ -35,7 +37,7 @@ public class ConvertForLoopsToEnhanced extends SimpleValidatorBase {
 	}
 
 	@Override
-	protected List<ASTNode> detect(TestCase tc) throws IOException, MalformedTreeException, BadLocationException {
+	protected List<ASTNode> detect(final Commit commit, final TestCase tc, final Results results) throws IOException, MalformedTreeException, BadLocationException {
 		List<ASTNode> ret = new ArrayList<>();
 		ICleanUpFix fix = ConvertLoopFix.createCleanUp(tc.getCompilationUnit(), true, true, true);
 		if (fix == null) {
@@ -54,12 +56,12 @@ public class ConvertForLoopsToEnhanced extends SimpleValidatorBase {
 	}
 
 	@Override
-	protected String getModified(String origin, TestCase tc) throws IOException, MalformedTreeException, BadLocationException {
+	protected String getModified(String origin, final Commit commit, final TestCase tc, final Results results) throws IOException, MalformedTreeException, BadLocationException {
 		final CompilationUnit cu = tc.getCompilationUnit();
 		final AST ast = cu.getAST();
 		final ASTRewrite rewrite = ASTRewrite.create(ast);
 		// detect
-		for (ASTNode detect : detect(tc)) {
+		for (ASTNode detect : detect(commit, tc, results)) {
 			ForStatement node = (ForStatement) detect;
 			ConvertLoopFix fix = ConvertLoopFix.createConvertForLoopToEnhancedFix(cu, node);
 			if (fix == null) {

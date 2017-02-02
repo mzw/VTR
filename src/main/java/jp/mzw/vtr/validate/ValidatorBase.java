@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
-import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -26,7 +25,6 @@ import org.eclipse.jdt.core.formatter.DefaultCodeFormatterConstants;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.Document;
 import org.eclipse.jface.text.IDocument;
-import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.text.edits.MalformedTreeException;
 import org.eclipse.text.edits.TextEdit;
 import org.slf4j.Logger;
@@ -34,16 +32,12 @@ import org.slf4j.LoggerFactory;
 
 import difflib.DiffUtils;
 import difflib.Patch;
-import jp.mzw.vtr.CLI;
 import jp.mzw.vtr.core.Project;
 import jp.mzw.vtr.core.VtrUtils;
-import jp.mzw.vtr.git.CheckoutConductor;
 import jp.mzw.vtr.git.Commit;
 import jp.mzw.vtr.maven.AllMethodFindVisitor;
-import jp.mzw.vtr.maven.MavenUtils;
 import jp.mzw.vtr.maven.Results;
 import jp.mzw.vtr.maven.TestCase;
-import jp.mzw.vtr.maven.TestSuite;
 
 abstract public class ValidatorBase {
 	protected static Logger LOGGER = LoggerFactory.getLogger(ValidatorBase.class);
@@ -68,8 +62,7 @@ abstract public class ValidatorBase {
 		this.validationResultList = new ArrayList<>();
 	}
 
-	abstract public void validate(Commit commit, TestCase testcase, Results results);
-	abstract public boolean hasValidationResults();
+	abstract public ValidationResult validate(Commit commit, TestCase testcase, Results results);
 
 	abstract public void generate(ValidationResult result);
 
@@ -155,18 +148,15 @@ abstract public class ValidatorBase {
 	public List<ValidationResult> getValidationResultList() {
 		return this.validationResultList;
 	}
-
+	
 	/**
-	 * Output validation results in CSV file
 	 * 
-	 * @param project
-	 *            Project
-	 * @param validators
-	 *            Validator
+	 * @param outputDir
+	 * @param projectId
+	 * @param results
 	 * @throws IOException
-	 *             When fail to write CSV file
 	 */
-	public static void output(File outputDir, String projectId, List<ValidatorBase> validators) throws IOException {
+	public static void output(File outputDir, String projectId, List<ValidationResult> results) throws IOException {
 		// Destination
 		File projectDir = new File(outputDir, projectId);
 		File validateDir = new File(projectDir, VALIDATOR_DIRNAME);
@@ -177,29 +167,25 @@ abstract public class ValidatorBase {
 		// Update
 		if (file.exists()) {
 			List<ValidationResult> prevVRList = parse(file);
-			for (ValidatorBase validator : validators) {
-				for (ValidationResult vr : validator.getValidationResultList()) {
-					ValidationResult contains = null;
-					for (ValidationResult prev : prevVRList) {
-						if (vr.equals(prev)) {
-							contains = prev;
-							break;
-						}
+			for (ValidationResult vr : results) {
+				ValidationResult contains = null;
+				for (ValidationResult prev : prevVRList) {
+					if (vr.equals(prev)) {
+						contains = prev;
+						break;
 					}
-					if (contains != null) {
-						builder.append(contains.toCsv());
-					} else {
-						builder.append(vr.toCsv());
-					}
+				}
+				if (contains != null) {
+					builder.append(contains.toCsv());
+				} else {
+					builder.append(vr.toCsv());
 				}
 			}
 		}
 		// New
 		else {
-			for (ValidatorBase validator : validators) {
-				for (ValidationResult vr : validator.getValidationResultList()) {
-					builder.append(vr.toCsv());
-				}
+			for (ValidationResult vr : results) {
+				builder.append(vr.toCsv());
 			}
 		}
 		// Write
@@ -289,29 +275,6 @@ abstract public class ValidatorBase {
 		}
 		// Return
 		return ret;
-	}
-
-	protected TestCase getTestCase(ValidationResult result) throws IOException, ParseException, GitAPIException {
-		this.projectId = result.getProjectId();
-		Project project = new Project(projectId).setConfig(CLI.CONFIG_FILENAME);
-		this.projectDir = project.getProjectDir();
-		this.outputDir = project.getOutputDir();
-		CheckoutConductor cc = new CheckoutConductor(project);
-		// Commit
-		String commitId = result.getCommitId();
-		Commit commit = new Commit(commitId, null);
-		cc.checkout(commit);
-		// Detect test case
-		String clazz = result.getTestCaseClassName();
-		String method = result.getTestCaseMathodName();
-		List<TestSuite> testSuites = MavenUtils.getTestSuitesAtLevel2(project.getProjectDir());
-		for (TestSuite ts : testSuites) {
-			TestCase tc = ts.getTestCaseBy(clazz, method);
-			if (tc != null) {
-				return tc;
-			}
-		}
-		return null;
 	}
 
 	protected File getPomFile() {

@@ -60,6 +60,11 @@ public class CheckoutConductor {
 		this.git = GitUtils.getGit(project.getProjectDir());
 		this.dict = new Dictionary(project.getOutputDir(), project.getProjectId()).parse();
 	}
+	
+	public CheckoutConductor(String projectId, File projectDir, File outputDir) throws IOException, ParseException {
+		this.git = GitUtils.getGit(projectDir);
+		this.dict = new Dictionary(outputDir, projectId).parse();
+	}
 
 	/**
 	 * API for conducting checkout

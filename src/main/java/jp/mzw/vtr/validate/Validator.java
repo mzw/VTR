@@ -33,13 +33,13 @@ public class Validator implements CheckoutConductor.Listener {
 	protected ExecutorService executor;
 
 	protected List<Class<? extends ValidatorBase>> validatorClasses;
-	protected final List<ValidatorBase> validators;
+	protected final List<ValidationResult> validationResults;
 
 	public Validator(Project project) throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException,
 			NoSuchMethodException, SecurityException, IOException {
 		this.project = project;
-		validators = new ArrayList<>();
 		validatorClasses = ValidatorBase.getValidatorClasses(project, ValidatorBase.VALIDATORS_LIST);
+		validationResults = new ArrayList<>();
 	}
 
 	public void startup() {
@@ -52,9 +52,9 @@ public class Validator implements CheckoutConductor.Listener {
 			executor.shutdownNow();
 		}
 	}
-
-	public List<ValidatorBase> getValidators() {
-		return validators;
+	
+	public List<ValidationResult> getValidationResults() {
+		return validationResults;
 	}
 
 	protected Results getResults(Commit commit) throws IOException, MavenInvocationException, InterruptedException {
@@ -86,6 +86,7 @@ public class Validator implements CheckoutConductor.Listener {
 			final Results results = getResults(commit);
 			// Validate
 			LOGGER.info("Validating...");
+			startup();
 			for (final TestSuite ts : testSuites) {
 				for (final TestCase tc : ts.getTestCases()) {
 					for (final Class<? extends ValidatorBase> clazz : validatorClasses) {
@@ -94,18 +95,17 @@ public class Validator implements CheckoutConductor.Listener {
 							public Long call() throws Exception {
 								Constructor<?> constructor = clazz.getConstructor(Project.class);
 								ValidatorBase clone = (ValidatorBase) constructor.newInstance(project);
-								clone.validate(commit, tc, results);
-								if (clone.hasValidationResults()) {
-									validators.add(clone);
+								ValidationResult result = clone.validate(commit, tc, results);
+								if (result != null) {
+									validationResults.add(result);
 								}
 								return System.currentTimeMillis();
 							}
 						});
-						shutdown();
-						startup();
 					}
 				}
 			}
+			shutdown();
 			// Output compile and JavaDoc results
 			if (!Results.is(project.getOutputDir(), project.getProjectId(), commit)) {
 				results.output(project.getOutputDir(), project.getProjectId(), commit);

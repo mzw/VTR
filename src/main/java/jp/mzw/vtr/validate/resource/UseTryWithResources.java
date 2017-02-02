@@ -2,11 +2,12 @@ package jp.mzw.vtr.validate.resource;
 
 import java.io.IOException;
 import java.lang.reflect.Modifier;
-import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
 
 import jp.mzw.vtr.core.Project;
+import jp.mzw.vtr.git.Commit;
+import jp.mzw.vtr.maven.Results;
 import jp.mzw.vtr.maven.TestCase;
 import jp.mzw.vtr.validate.SimpleValidatorBase;
 import jp.mzw.vtr.validate.ValidationResult;
@@ -31,7 +32,6 @@ import org.eclipse.jdt.core.dom.VariableDeclarationStatement;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.Document;
-import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.text.edits.MalformedTreeException;
 import org.eclipse.text.edits.TextEdit;
 import org.slf4j.Logger;
@@ -45,7 +45,7 @@ public class UseTryWithResources extends SimpleValidatorBase {
 	}
 
 	@Override
-	protected List<ASTNode> detect(final TestCase tc) throws IOException, MalformedTreeException, BadLocationException {
+	protected List<ASTNode> detect(final Commit commit, final TestCase tc, final Results results) throws IOException, MalformedTreeException, BadLocationException {
 		final List<ASTNode> ret = new ArrayList<>();
 		final CompilationUnit cu = tc.getCompilationUnit();
 		cu.accept(new ASTVisitor() {
@@ -148,8 +148,8 @@ public class UseTryWithResources extends SimpleValidatorBase {
 
 	@SuppressWarnings("unchecked")
 	@Override
-	protected String getModified(String origin, TestCase tc) throws IOException, MalformedTreeException, BadLocationException {
-		List<ASTNode> detects = detect(tc);
+	protected String getModified(final String origin, final Commit commit, final TestCase tc, final Results results) throws IOException, MalformedTreeException, BadLocationException {
+		List<ASTNode> detects = detect(commit, tc, results);
 		if (detects.isEmpty()) {
 			return origin;
 		}
@@ -231,12 +231,12 @@ public class UseTryWithResources extends SimpleValidatorBase {
 	@Override
 	public void generate(ValidationResult result) {
 		try {
-			TestCase tc = getTestCase(result);
+			TestCase tc = getTestCase(result, projectDir);
 			String origin = FileUtils.readFileToString(tc.getTestFile());
-			String modified = getModified(origin.toString(), tc);
+			String modified = getModified(origin.toString(), null, tc, null);
 			List<String> patch = genPatch(origin, modified, tc);
 			output(result, tc, patch);
-		} catch (IOException | ParseException | GitAPIException | MalformedTreeException | BadLocationException e) {
+		} catch (IOException | MalformedTreeException | BadLocationException e) {
 			LOGGER.warn("Failed to generate patch: {}", e.getMessage());
 		}
 	}
