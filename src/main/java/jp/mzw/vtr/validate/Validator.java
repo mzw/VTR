@@ -30,23 +30,23 @@ public class Validator implements CheckoutConductor.Listener {
 	protected String projectId;
 	protected File outputDir;
 	protected File mavenHome;
-	
+
 	protected List<ValidatorBase> validators;
-	
+
 	public Validator(Project project) {
 		this.projectDir = project.getProjectDir();
 		this.projectId = project.getProjectId();
 		this.outputDir = project.getOutputDir();
 		this.mavenHome = project.getMavenHome();
 	}
-	
+
 	public void addValidator(ValidatorBase task) {
 		if (validators == null) {
 			validators = new ArrayList<>();
 		}
 		validators.add(task);
 	}
-	
+
 	protected Results getResults(Commit commit) throws IOException, MavenInvocationException, InterruptedException {
 		Results results = null;
 		if (Results.is(outputDir, projectId, commit)) {
@@ -54,8 +54,8 @@ public class Validator implements CheckoutConductor.Listener {
 			results = Results.parse(outputDir, projectId, commit);
 		} else {
 			LOGGER.info("Getting compile results...");
-			results = MavenUtils.maven(projectDir,
-					Arrays.asList("test-compile", "-Dmaven.compiler.showDeprecation=true", "-Dmaven.compiler.showWarnings=true"), mavenHome);
+			results = MavenUtils.maven(projectDir, Arrays.asList("test-compile", "-Dmaven.compiler.showDeprecation=true", "-Dmaven.compiler.showWarnings=true"),
+					mavenHome);
 			LOGGER.info("Getting javadoc results...");
 			List<String> javadocResults = JavadocUtils.executeJavadoc(projectDir, mavenHome);
 			results.setJavadocResults(javadocResults);

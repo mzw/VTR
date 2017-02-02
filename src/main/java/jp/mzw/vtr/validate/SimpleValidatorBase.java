@@ -22,24 +22,24 @@ import jp.mzw.vtr.maven.TestCase;
 
 abstract public class SimpleValidatorBase extends ValidatorBase {
 	protected Logger LOGGER = LoggerFactory.getLogger(SimpleValidatorBase.class);
-	
+
 	protected static final Map<Class<? extends SimpleValidatorBase>, List<String>> duplicateMap = new HashMap<>();
-	
+
 	protected Commit commit;
 	protected TestCase testcase;
 	protected Results results;
-	
+
 	public SimpleValidatorBase(Project project) {
 		super(project);
 		duplicateMap.put(getClass(), new ArrayList<String>());
 	}
-	
+
 	@Override
 	public void validate(Commit commit, TestCase testcase, Results results) {
 		this.commit = commit;
 		this.testcase = testcase;
 		this.results = results;
-		
+
 		List<String> duplicates = duplicateMap.get(getClass());
 		if (duplicates.contains(testcase.getFullName())) {
 			return;

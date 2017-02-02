@@ -47,7 +47,7 @@ import jp.mzw.vtr.maven.TestSuite;
 
 abstract public class ValidatorBase {
 	protected static Logger LOGGER = LoggerFactory.getLogger(ValidatorBase.class);
-	
+
 	public static final String VALIDATOR_DIRNAME = "validate";
 	public static final String VALIDATOR_FILENAME = "results.csv";
 
@@ -59,15 +59,16 @@ abstract public class ValidatorBase {
 	protected File mavenHome;
 
 	protected List<ValidationResult> validationResultList;
-	
+
 	public ValidatorBase(Project project) {
 		this.projectId = project.getProjectId();
 		this.projectDir = project.getProjectDir();
 		this.mavenHome = project.getMavenHome();
 		this.validationResultList = new ArrayList<>();
 	}
-	
+
 	abstract public void validate(Commit commit, TestCase testcase, Results results);
+
 	abstract public void generate(ValidationResult result);
 
 	/**
@@ -321,8 +322,8 @@ abstract public class ValidatorBase {
 	}
 
 	public static List<String> genPatch(String origin, String modified, TestCase tc) {
-		return genPatch(getTestCaseSource(origin, tc.getName()), getTestCaseSource(modified, tc.getName()), tc.getTestFile(),
-				tc.getTestFile(), (tc.getStartLineNumber() - 1) * -1);
+		return genPatch(getTestCaseSource(origin, tc.getName()), getTestCaseSource(modified, tc.getName()), tc.getTestFile(), tc.getTestFile(),
+				(tc.getStartLineNumber() - 1) * -1);
 	}
 
 	public static String getTestCaseSource(String content, String methodName) {
