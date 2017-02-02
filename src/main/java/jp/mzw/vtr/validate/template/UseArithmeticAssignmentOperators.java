@@ -7,6 +7,8 @@ import java.util.List;
 import java.util.Map;
 
 import jp.mzw.vtr.core.Project;
+import jp.mzw.vtr.git.Commit;
+import jp.mzw.vtr.maven.Results;
 import jp.mzw.vtr.maven.TestCase;
 import jp.mzw.vtr.validate.SimpleValidatorBase;
 
@@ -34,7 +36,7 @@ public class UseArithmeticAssignmentOperators extends SimpleValidatorBase {
 	}
 
 	@Override
-	protected List<ASTNode> detect(TestCase tc) throws IOException, MalformedTreeException, BadLocationException {
+	protected List<ASTNode> detect(Commit commit, TestCase tc, Results results) throws IOException, MalformedTreeException, BadLocationException {
 		final List<ASTNode> ret = new ArrayList<>();
 		CompilationUnit cu = tc.getCompilationUnit();
 		final List<MethodDeclaration> methods = new ArrayList<>();
@@ -124,7 +126,7 @@ public class UseArithmeticAssignmentOperators extends SimpleValidatorBase {
 	}
 
 	@Override
-	protected String getModified(String origin, TestCase tc) throws IOException, MalformedTreeException, BadLocationException {
+	protected String getModified(String origin, Commit commit, TestCase tc, Results results) throws IOException, MalformedTreeException, BadLocationException {
 		// prepare
 		CompilationUnit cu = tc.getCompilationUnit();
 		final List<MethodDeclaration> methods = new ArrayList<>();

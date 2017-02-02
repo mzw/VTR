@@ -1,13 +1,24 @@
 package jp.mzw.vtr.validate;
 
-import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
-import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.maven.shared.invoker.MavenInvocationException;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.parser.Parser;
+import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,69 +34,207 @@ import jp.mzw.vtr.maven.TestSuite;
 public class Validator implements CheckoutConductor.Listener {
 	protected Logger LOGGER = LoggerFactory.getLogger(Validator.class);
 
-	public interface Listener {
-		public void onCheckout(Commit commit, TestCase testcase, Results results);
-	}
+	protected final Project project;
 
-	private Set<Listener> listeners = new CopyOnWriteArraySet<>();
+	public static final int NUMBER_OF_THREADS = 4;
+	protected ExecutorService executor;
 
-	public void addListener(Listener listener) {
-		listeners.add(listener);
-	}
+	protected List<Class<? extends ValidatorBase>> validatorClasses;
+	protected final List<ValidationResult> validationResults;
 
-	private void notify(Commit commit, TestCase testcase, Results results) {
-		for (Listener listener : listeners) {
-			listener.onCheckout(commit, testcase, results);
+	protected List<TestSuite> prvTestSuites;
+	protected List<TestSuite> curTestSuites;
+	protected String prvPomContent;
+	protected String curPomContent;
+	protected final Map<String, List<String>> duplicateMap;
+
+	public Validator(Project project) throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException,
+			NoSuchMethodException, SecurityException, IOException {
+		this.project = project;
+		validatorClasses = ValidatorBase.getValidatorClasses(project, ValidatorBase.VALIDATORS_LIST);
+		validationResults = new ArrayList<>();
+		prvTestSuites = null;
+		curTestSuites = null;
+		prvPomContent = null;
+		curPomContent = null;
+		duplicateMap = new HashMap<>();
+		for (Class<? extends ValidatorBase> clazz : validatorClasses) {
+			duplicateMap.put(clazz.getName(), new ArrayList<String>());
 		}
 	}
 
-	protected File projectDir;
-	protected String projectId;
-	protected File outputDir;
-	protected File mavenHome;
+	public void startup() {
+		executor = Executors.newFixedThreadPool(NUMBER_OF_THREADS);
+	}
 
-	public Validator(Project project) {
-		this.projectDir = project.getProjectDir();
-		this.projectId = project.getProjectId();
-		this.outputDir = project.getOutputDir();
-		this.mavenHome = project.getMavenHome();
+	public void shutdown() throws IOException, InterruptedException {
+		executor.shutdown();
+		if (!executor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS)) {
+			executor.shutdownNow();
+		}
+	}
+
+	public List<ValidationResult> getValidationResults() {
+		return validationResults;
+	}
+
+	protected Results getResults(Commit commit) throws IOException, MavenInvocationException, InterruptedException {
+		Results results = null;
+		if (Results.is(project.getOutputDir(), project.getProjectId(), commit)) {
+			LOGGER.info("Parsing existing compile/javadoc results...");
+			results = Results.parse(project.getOutputDir(), project.getProjectId(), commit);
+		} else {
+			LOGGER.info("Getting compile results...");
+			results = MavenUtils.maven(project.getProjectDir(),
+					Arrays.asList("test-compile", "-Dmaven.compiler.showDeprecation=true", "-Dmaven.compiler.showWarnings=true"), project.getMavenHome());
+			LOGGER.info("Getting javadoc results...");
+			List<String> javadocResults = JavadocUtils.executeJavadoc(project.getProjectDir(), project.getMavenHome());
+			results.setJavadocResults(javadocResults);
+		}
+		return results;
 	}
 
 	@Override
-	public void onCheckout(Commit commit) {
+	public void onCheckout(final Commit commit) {
 		try {
 			LOGGER.info("Parsing testcases...");
-			List<TestSuite> testSuites = MavenUtils.getTestSuitesAtLevel2(projectDir);
-			if (testSuites.isEmpty()) {
+			curTestSuites = MavenUtils.getTestSuitesAtLevel2(project.getProjectDir());
+			if (curTestSuites.isEmpty()) {
 				LOGGER.info("Not found test suites");
 				return;
 			}
+			curPomContent = MavenUtils.getPomContent(project.getProjectDir());
+			// determine whether POM content is updated
+			boolean updatePomContent = changePomContent(prvPomContent, curPomContent);
 			// Get compile and JavaDoc results
-			Results results = null;
-			if (Results.is(outputDir, projectId, commit)) {
-				LOGGER.info("Parsing existing compile/javadoc results...");
-				results = Results.parse(outputDir, projectId, commit);
-			} else {
-				LOGGER.info("Getting compile results...");
-				results = MavenUtils.maven(projectDir,
-						Arrays.asList("test-compile", "-Dmaven.compiler.showDeprecation=true", "-Dmaven.compiler.showWarnings=true"), mavenHome);
-				LOGGER.info("Getting javadoc results...");
-				List<String> javadocResults = JavadocUtils.executeJavadoc(projectDir, mavenHome);
-				results.setJavadocResults(javadocResults);
-			}
+			final Results results = getResults(commit);
 			// Validate
 			LOGGER.info("Validating...");
-			for (TestSuite ts : testSuites) {
-				for (TestCase tc : ts.getTestCases()) {
-					notify(commit, tc, results);
+			startup();
+			for (final TestSuite ts : curTestSuites) {
+				for (final TestCase tc : ts.getTestCases()) {
+					// determine whether this test case is changed
+					boolean changeTestCase = tc.changed(TestSuite.getTestCaseWithClassMethodName(prvTestSuites, tc));
+					// skip or not
+					if (!updatePomContent && !changeTestCase) {
+						continue;
+					}
+					// validate
+					for (final Class<? extends ValidatorBase> clazz : validatorClasses) {
+						final List<String> duplicates = duplicateMap.get(clazz.getName());
+						if (duplicates.contains(tc.getFullName())) {
+							continue;
+						}
+						executor.submit(new Callable<Long>() {
+							@Override
+							public Long call() throws Exception {
+								Constructor<?> constructor = clazz.getConstructor(Project.class);
+								ValidatorBase clone = (ValidatorBase) constructor.newInstance(project);
+								ValidationResult result = clone.validate(commit, tc, results);
+								if (result != null) {
+									validationResults.add(result);
+									duplicates.add(tc.getFullName());
+									duplicateMap.put(clazz.getName(), duplicates);
+								}
+								return System.currentTimeMillis();
+							}
+						});
+					}
 				}
 			}
+			shutdown();
 			// Output compile and JavaDoc results
-			if (!Results.is(outputDir, projectId, commit)) {
-				results.output(outputDir, projectId, commit);
+			if (!Results.is(project.getOutputDir(), project.getProjectId(), commit)) {
+				results.output(project.getOutputDir(), project.getProjectId(), commit);
 			}
+			prvTestSuites = curTestSuites;
+			prvPomContent = curPomContent;
 		} catch (IOException | MavenInvocationException | InterruptedException e) {
 			LOGGER.warn("Failed to checkout: {}", commit.getId());
 		}
+	}
+
+	public static boolean changePomContent(String prv, String cur) {
+		if (prv == null || cur == null) {
+			return true;
+		}
+		// parse
+		Document prvDocument = Jsoup.parse(prv, "", Parser.xmlParser());
+		Document curDocument = Jsoup.parse(cur, "", Parser.xmlParser());
+		if (prvDocument == null || curDocument == null) {
+			return true;
+		}
+		// junit
+		String prvJunitVersion = getJunitVersion(prvDocument);
+		String curJunitVersion = getJunitVersion(curDocument);
+		if (prvJunitVersion == null || curJunitVersion == null) {
+			return true;
+		}
+		// java
+		String prvJavaVersion = getJavaVersion(prvDocument);
+		String curJavaVersion = getJavaVersion(curDocument);
+		if (prvJavaVersion == null || curJavaVersion == null) {
+			return true;
+		}
+		// compare
+		if (prvJunitVersion.equals(curJunitVersion) && prvJavaVersion.equals(curJavaVersion)) {
+			return false;
+		} else {
+			return true;
+		}
+	}
+
+	public static String getJunitVersion(Document document) {
+		for (Element dependency : document.select("dependencies dependency")) {
+			boolean junit = false;
+			String version = null;
+			for (Element child : dependency.children()) {
+				if ("artifactId".equalsIgnoreCase(child.tagName()) && "junit".equalsIgnoreCase(child.text())) {
+					junit = true;
+				} else if ("version".equalsIgnoreCase(child.tagName())) {
+					version = child.text();
+				}
+			}
+			if (junit) {
+				return version;
+			}
+		}
+		return null;
+	}
+
+	public static String getJavaVersion(Document document) {
+		{
+			Elements elements = document.getElementsByTag("maven.compile.target");
+			if (elements != null) {
+				if (!elements.isEmpty()) {
+					return elements.get(0).text();
+				}
+			}
+		}
+		{
+			Elements elements = document.getElementsByTag("maven.compiler.target");
+			if (elements != null) {
+				if (!elements.isEmpty()) {
+					return elements.get(0).text();
+				}
+			}
+		}
+		{
+			for (Element plugin : document.select("plugins plugin")) {
+				boolean compiler = false;
+				String version = null;
+				for (Element child : plugin.children()) {
+					if ("artifactId".equalsIgnoreCase(child.tagName()) && "maven-compiler-plugin".equalsIgnoreCase(child.text())) {
+						compiler = true;
+					} else if ("version".equalsIgnoreCase(child.tagName())) {
+						version = child.text();
+					}
+				}
+				if (compiler) {
+					return version;
+				}
+			}
+		}
+		return null;
 	}
 }

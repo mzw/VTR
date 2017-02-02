@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
-import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -26,7 +25,6 @@ import org.eclipse.jdt.core.formatter.DefaultCodeFormatterConstants;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.Document;
 import org.eclipse.jface.text.IDocument;
-import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.text.edits.MalformedTreeException;
 import org.eclipse.text.edits.TextEdit;
 import org.slf4j.Logger;
@@ -34,17 +32,14 @@ import org.slf4j.LoggerFactory;
 
 import difflib.DiffUtils;
 import difflib.Patch;
-import jp.mzw.vtr.CLI;
 import jp.mzw.vtr.core.Project;
 import jp.mzw.vtr.core.VtrUtils;
-import jp.mzw.vtr.git.CheckoutConductor;
 import jp.mzw.vtr.git.Commit;
 import jp.mzw.vtr.maven.AllMethodFindVisitor;
-import jp.mzw.vtr.maven.MavenUtils;
+import jp.mzw.vtr.maven.Results;
 import jp.mzw.vtr.maven.TestCase;
-import jp.mzw.vtr.maven.TestSuite;
 
-abstract public class ValidatorBase implements Validator.Listener {
+abstract public class ValidatorBase {
 	protected static Logger LOGGER = LoggerFactory.getLogger(ValidatorBase.class);
 
 	public static final String VALIDATOR_DIRNAME = "validate";
@@ -58,16 +53,17 @@ abstract public class ValidatorBase implements Validator.Listener {
 	protected File mavenHome;
 
 	protected List<ValidationResult> validationResultList;
-	protected List<String> dupulicates;
 
 	public ValidatorBase(Project project) {
 		this.projectId = project.getProjectId();
 		this.projectDir = project.getProjectDir();
+		this.outputDir = project.getOutputDir();
 		this.mavenHome = project.getMavenHome();
 		this.validationResultList = new ArrayList<>();
-		this.dupulicates = new ArrayList<>();
 	}
-	
+
+	abstract public ValidationResult validate(Commit commit, TestCase testcase, Results results);
+
 	abstract public void generate(ValidationResult result);
 
 	/**
@@ -107,26 +103,62 @@ abstract public class ValidatorBase implements Validator.Listener {
 	}
 
 	/**
+	 * Get validator list from resources
+	 * 
+	 * @param project
+	 *            Project
+	 * @return Validators
+	 * @throws IOException
+	 * @throws SecurityException
+	 * @throws NoSuchMethodException
+	 * @throws InvocationTargetException
+	 * @throws IllegalArgumentException
+	 * @throws IllegalAccessException
+	 * @throws InstantiationException
+	 * @throws ClassNotFoundException
+	 */
+	@SuppressWarnings("unchecked")
+	public static List<Class<? extends ValidatorBase>> getValidatorClasses(Project project, String filename) throws IOException, InstantiationException, IllegalAccessException,
+			IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException {
+		InputStream is = ValidatorBase.class.getClassLoader().getResourceAsStream(filename);
+		List<String> lines = IOUtils.readLines(is);
+		List<ValidatorBase> validators = new ArrayList<>();
+		List<Class<? extends ValidatorBase>> classes = new ArrayList<>();
+		for (String line : lines) {
+			if (line.isEmpty() || line.startsWith("#")) {
+				continue;
+			}
+			try {
+				Class<?> clazz = Class.forName(line);
+				ValidatorBase validator = (ValidatorBase) clazz.getConstructor(Project.class).newInstance(project);
+				validators.add(validator);
+				classes.add(((Class<? extends ValidatorBase>) clazz));
+				LOGGER.info("Register validator: {}", line);
+			} catch (ClassNotFoundException e) {
+				LOGGER.warn("Invalid validator: {}", line);
+			}
+		}
+		return classes;
+	}
+
+	/**
 	 * 
 	 * @return
 	 */
 	public List<ValidationResult> getValidationResultList() {
 		return this.validationResultList;
 	}
-
+	
 	/**
-	 * Output validation results in CSV file
 	 * 
-	 * @param project
-	 *            Project
-	 * @param validators
-	 *            Validator
+	 * @param outputDir
+	 * @param projectId
+	 * @param results
 	 * @throws IOException
-	 *             When fail to write CSV file
 	 */
-	public static void output(Project project, List<ValidatorBase> validators) throws IOException {
+	public static void output(File outputDir, String projectId, List<ValidationResult> results) throws IOException {
 		// Destination
-		File projectDir = new File(project.getOutputDir(), project.getProjectId());
+		File projectDir = new File(outputDir, projectId);
 		File validateDir = new File(projectDir, VALIDATOR_DIRNAME);
 		File file = new File(validateDir, VALIDATOR_FILENAME);
 		// Container
@@ -135,29 +167,25 @@ abstract public class ValidatorBase implements Validator.Listener {
 		// Update
 		if (file.exists()) {
 			List<ValidationResult> prevVRList = parse(file);
-			for (ValidatorBase validator : validators) {
-				for (ValidationResult vr : validator.getValidationResultList()) {
-					ValidationResult contains = null;
-					for (ValidationResult prev : prevVRList) {
-						if (vr.equals(prev)) {
-							contains = prev;
-							break;
-						}
+			for (ValidationResult vr : results) {
+				ValidationResult contains = null;
+				for (ValidationResult prev : prevVRList) {
+					if (vr.equals(prev)) {
+						contains = prev;
+						break;
 					}
-					if (contains != null) {
-						builder.append(contains.toCsv());
-					} else {
-						builder.append(vr.toCsv());
-					}
+				}
+				if (contains != null) {
+					builder.append(contains.toCsv());
+				} else {
+					builder.append(vr.toCsv());
 				}
 			}
 		}
 		// New
 		else {
-			for (ValidatorBase validator : validators) {
-				for (ValidationResult vr : validator.getValidationResultList()) {
-					builder.append(vr.toCsv());
-				}
+			for (ValidationResult vr : results) {
+				builder.append(vr.toCsv());
 			}
 		}
 		// Write
@@ -249,29 +277,6 @@ abstract public class ValidatorBase implements Validator.Listener {
 		return ret;
 	}
 
-	protected TestCase getTestCase(ValidationResult result) throws IOException, ParseException, GitAPIException {
-		this.projectId = result.getProjectId();
-		Project project = new Project(projectId).setConfig(CLI.CONFIG_FILENAME);
-		this.projectDir = project.getProjectDir();
-		this.outputDir = project.getOutputDir();
-		CheckoutConductor cc = new CheckoutConductor(project);
-		// Commit
-		String commitId = result.getCommitId();
-		Commit commit = new Commit(commitId, null);
-		cc.checkout(commit);
-		// Detect test case
-		String clazz = result.getTestCaseClassName();
-		String method = result.getTestCaseMathodName();
-		List<TestSuite> testSuites = MavenUtils.getTestSuitesAtLevel2(project.getProjectDir());
-		for (TestSuite ts : testSuites) {
-			TestCase tc = ts.getTestCaseBy(clazz, method);
-			if (tc != null) {
-				return tc;
-			}
-		}
-		return null;
-	}
-
 	protected File getPomFile() {
 		return new File(this.projectDir, "pom.xml");
 	}
@@ -321,8 +326,8 @@ abstract public class ValidatorBase implements Validator.Listener {
 	}
 
 	public static List<String> genPatch(String origin, String modified, TestCase tc) {
-		return genPatch(getTestCaseSource(origin, tc.getName()), getTestCaseSource(modified, tc.getName()), tc.getTestFile(),
-				tc.getTestFile(), (tc.getStartLineNumber() - 1) * -1);
+		return genPatch(getTestCaseSource(origin, tc.getName()), getTestCaseSource(modified, tc.getName()), tc.getTestFile(), tc.getTestFile(),
+				(tc.getStartLineNumber() - 1) * -1);
 	}
 
 	public static String getTestCaseSource(String content, String methodName) {

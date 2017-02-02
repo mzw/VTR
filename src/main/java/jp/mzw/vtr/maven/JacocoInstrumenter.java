@@ -25,13 +25,11 @@ import org.slf4j.LoggerFactory;
 public class JacocoInstrumenter {
 	static Logger LOGGER = LoggerFactory.getLogger(JacocoInstrumenter.class);
 
-	public static final String FILENAME_POM = "pom.xml";
-
 	protected File pom;
 	protected String originalPomContent;
 
 	public JacocoInstrumenter(File dir) throws IOException {
-		this.pom = new File(dir, FILENAME_POM);
+		this.pom = new File(dir, MavenUtils.FILENAME_POM);
 		if (!this.pom.exists()) {
 			throw new FileNotFoundException("pom.xml not found");
 		}

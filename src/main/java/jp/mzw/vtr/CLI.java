@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.text.ParseException;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -28,8 +29,12 @@ import jp.mzw.vtr.detect.Detector;
 import jp.mzw.vtr.detect.TestCaseModification;
 import jp.mzw.vtr.dict.DictionaryMaker;
 import jp.mzw.vtr.git.CheckoutConductor;
+import jp.mzw.vtr.git.CheckoutListener;
+import jp.mzw.vtr.git.Commit;
 import jp.mzw.vtr.git.GitUtils;
+import jp.mzw.vtr.maven.MavenUtils;
 import jp.mzw.vtr.maven.TestRunner;
+import jp.mzw.vtr.maven.TestSuite;
 import jp.mzw.vtr.repair.Repair;
 import jp.mzw.vtr.repair.RepairEvaluator;
 import jp.mzw.vtr.validate.ValidationResult;
@@ -43,7 +48,7 @@ public class CLI {
 
 	public static void main(String[] args) throws IOException, NoHeadException, GitAPIException, ParseException, MavenInvocationException, DocumentException,
 			PatchFailedException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException,
-			SecurityException, ClassNotFoundException {
+			SecurityException, ClassNotFoundException, InterruptedException {
 
 		if (args.length < 1) { // Invalid usage
 			LOGGER.info("$ java -cp=<class-path> jp.mzw.vtr.CLI dict      <subject-id>");
@@ -137,6 +142,11 @@ public class CLI {
 			Project project = new Project(projectId).setConfig(CONFIG_FILENAME);
 			repair(project, sut);
 		}
+		// For us
+		else if ("eval".equals(command)) {
+			String type = args[1];
+			eval(type, Arrays.copyOfRange(args, 2, args.length));
+		}
 
 		LOGGER.info("Finished: {}", command);
 	}
@@ -176,8 +186,8 @@ public class CLI {
 		cc.checkout(type, commitId);
 	}
 
-	private static void cluster(Project project, String analyzer, String strategy, double threshold) throws IOException, ParseException, NoHeadException,
-			GitAPIException {
+	private static void cluster(Project project, String analyzer, String strategy, double threshold)
+			throws IOException, ParseException, NoHeadException, GitAPIException {
 		// Similarity
 		DistAnalyzer distAnalyzer = DistAnalyzer.analyzerFactory(project.getOutputDir(), analyzer);
 		List<TestCaseModification> tcmList = distAnalyzer.parseTestCaseModifications();
@@ -190,30 +200,22 @@ public class CLI {
 	}
 
 	private static void validate(Project project) throws IOException, ParseException, GitAPIException, InstantiationException, IllegalAccessException,
-			IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException, ClassNotFoundException {
+			IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException, ClassNotFoundException, InterruptedException {
 		CheckoutConductor cc = new CheckoutConductor(project);
 		Validator validator = new Validator(project);
-		List<ValidatorBase> validators = ValidatorBase.getValidators(project, ValidatorBase.VALIDATORS_LIST);
-		for (ValidatorBase each : validators) {
-			validator.addListener(each);
-		}
 		cc.addListener(validator);
 		cc.checkout();
-		ValidatorBase.output(project, validators);
+		ValidatorBase.output(project.getOutputDir(), project.getProjectId(), validator.getValidationResults());
 	}
 
-	private static void validate(Project project, CheckoutConductor.Type type, String commitId) throws IOException, ParseException, GitAPIException,
-			InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException,
-			ClassNotFoundException {
+	private static void validate(Project project, CheckoutConductor.Type type, String commitId)
+			throws IOException, ParseException, GitAPIException, InstantiationException, IllegalAccessException, IllegalArgumentException,
+			InvocationTargetException, NoSuchMethodException, SecurityException, ClassNotFoundException, InterruptedException {
 		CheckoutConductor cc = new CheckoutConductor(project);
 		Validator validator = new Validator(project);
-		List<ValidatorBase> validators = ValidatorBase.getValidators(project, ValidatorBase.VALIDATORS_LIST);
-		for (ValidatorBase each : validators) {
-			validator.addListener(each);
-		}
 		cc.addListener(validator);
 		cc.checkout(type, commitId);
-		ValidatorBase.output(project, validators);
+		ValidatorBase.output(project.getOutputDir(), project.getProjectId(), validator.getValidationResults());
 	}
 
 	private static void gen(Project project) throws IOException, ParseException, GitAPIException, InstantiationException, IllegalAccessException,
@@ -239,8 +241,8 @@ public class CLI {
 		}
 	}
 
-	private static void repair(Project project, String sut) throws IOException, ParseException, GitAPIException, MavenInvocationException, DocumentException,
-			PatchFailedException {
+	private static void repair(Project project, String sut)
+			throws IOException, ParseException, GitAPIException, MavenInvocationException, DocumentException, PatchFailedException {
 		RepairEvaluator repairEvaluator = new RepairEvaluator(project, sut).parse();
 		CheckoutConductor cc = new CheckoutConductor(project);
 		for (Repair repair : repairEvaluator.getRepairs()) {
@@ -248,4 +250,26 @@ public class CLI {
 		}
 	}
 
+	private static void eval(String type, String... args) throws IOException, ParseException, GitAPIException {
+		if ("Nt".equals(type)) {
+			String projectId = args[0];
+			Project project = new Project(projectId).setConfig(CONFIG_FILENAME);
+			CheckoutConductor cc = new CheckoutConductor(project);
+			cc.addListener(new CheckoutListener(project) {
+				@Override
+				public void onCheckout(Commit commit) {
+					try {
+						int num = 0;
+						for (TestSuite ts : MavenUtils.getTestSuitesAtLevel2(this.getProject().getProjectDir())) {
+							num += ts.getTestCases().size();
+						}
+						System.out.println(num);
+					} catch (IOException e) {
+						// NOP
+					}
+				}
+			});
+			cc.checkout(CheckoutConductor.Type.At, cc.getLatestCommit().getId());
+		}
+	}
 }

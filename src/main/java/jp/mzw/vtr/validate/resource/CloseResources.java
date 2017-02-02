@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jp.mzw.vtr.core.Project;
+import jp.mzw.vtr.git.Commit;
+import jp.mzw.vtr.maven.Results;
 import jp.mzw.vtr.maven.TestCase;
 import jp.mzw.vtr.validate.SimpleValidatorBase;
 import jp.mzw.vtr.validate.ValidatorUtils;
@@ -36,7 +38,7 @@ public class CloseResources extends SimpleValidatorBase {
 	}
 
 	@Override
-	protected List<ASTNode> detect(final TestCase tc) throws IOException, MalformedTreeException, BadLocationException {
+	protected List<ASTNode> detect(Commit commit, TestCase tc, Results results) throws IOException, MalformedTreeException, BadLocationException {
 		final List<ASTNode> ret = new ArrayList<>();
 		// Closable
 		final List<SimpleName> closables = new ArrayList<>();
@@ -93,8 +95,8 @@ public class CloseResources extends SimpleValidatorBase {
 	}
 
 	@Override
-	protected String getModified(String origin, TestCase tc) throws IOException, MalformedTreeException, BadLocationException {
-		List<ASTNode> detects = detect(tc);
+	protected String getModified(String origin, Commit commit, TestCase tc, Results results) throws IOException, MalformedTreeException, BadLocationException {
+		List<ASTNode> detects = detect(commit, tc, results);
 		if (detects.isEmpty()) {
 			return origin;
 		}

@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.eclipse.jdt.core.dom.ASTNode;
+import org.eclipse.jdt.core.dom.Comment;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.slf4j.Logger;
@@ -120,5 +121,37 @@ public class TestCase {
 
 	public String getFullName() {
 		return this.className + "#" + this.name;
+	}
+	
+	public List<Comment> getComments() {
+		List<Comment> ret = new ArrayList<>();
+		for (Object object : cu.getCommentList()) {
+			Comment comment = (Comment) object;
+			if (method.getStartPosition() <= comment.getStartPosition() &&
+					comment.getStartPosition() + comment.getLength() <= method.getStartPosition() + method.getLength()) {
+				ret.add(comment);
+			}
+		}
+		return ret;
+	}
+	
+	public boolean changed(TestCase compare) {
+		if (compare == null) {
+			return true;
+		}
+		if (!method.toString().equals(compare.getMethodDeclaration().toString())) {
+			return true;
+		}
+		List<Comment> comments = getComments();
+		List<Comment> commentsUnderCompare = compare.getComments();
+		if (comments.size() != commentsUnderCompare.size()) {
+			return true;
+		}
+		for (int i = 0; i < getComments().size(); i++) {
+			if (!comments.get(i).toString().equals(commentsUnderCompare.get(i).toString())) {
+				return true;
+			}
+		}
+		return false;
 	}
 }

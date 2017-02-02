@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import jp.mzw.vtr.core.Project;
+import jp.mzw.vtr.git.Commit;
+import jp.mzw.vtr.maven.Results;
 import jp.mzw.vtr.maven.TestCase;
 import jp.mzw.vtr.validate.SimpleValidatorBase;
 
@@ -34,7 +36,7 @@ public class UseModifierFinalWherePossible extends SimpleValidatorBase {
 	}
 
 	@Override
-	protected List<ASTNode> detect(TestCase tc) throws IOException, MalformedTreeException, BadLocationException {
+	protected List<ASTNode> detect(final Commit commit, final TestCase tc, final Results results) throws IOException, MalformedTreeException, BadLocationException {
 		List<ASTNode> ret = new ArrayList<>();
 		VariableDeclarationFix fix = (VariableDeclarationFix) VariableDeclarationFix.createCleanUp(tc.getCompilationUnit(), true, true, true);
 		if (fix == null) {
@@ -55,13 +57,13 @@ public class UseModifierFinalWherePossible extends SimpleValidatorBase {
 	}
 
 	@Override
-	protected String getModified(String origin, TestCase tc) throws IOException, MalformedTreeException, BadLocationException {
+	protected String getModified(String origin, final Commit commit, final TestCase tc, final Results results) throws IOException, MalformedTreeException, BadLocationException {
 		// prepare
 		CompilationUnit cu = tc.getCompilationUnit();
 		AST ast = cu.getAST();
 		ASTRewrite rewrite = ASTRewrite.create(ast);
 		// Rewrite
-		List<ASTNode> declarations = detect(tc);
+		List<ASTNode> declarations = detect(commit, tc, results);
 		for (ASTNode declaration : declarations) {
 			if (declaration instanceof VariableDeclarationStatement) {
 				VariableDeclarationStatement target = (VariableDeclarationStatement) declaration;
