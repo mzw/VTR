@@ -2,10 +2,13 @@ package jp.mzw.vtr.validate;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Set;
-import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.maven.shared.invoker.MavenInvocationException;
 import org.slf4j.Logger;
@@ -23,36 +26,45 @@ import jp.mzw.vtr.maven.TestSuite;
 public class Validator implements CheckoutConductor.Listener {
 	protected Logger LOGGER = LoggerFactory.getLogger(Validator.class);
 
-	public interface Listener {
-		public void onCheckout(Commit commit, TestCase testcase, Results results);
-	}
-
-	private Set<Listener> listeners = new CopyOnWriteArraySet<>();
-
-	public void addListener(Listener listener) {
-		listeners.add(listener);
-	}
-
-	private void notify(Commit commit, TestCase testcase, Results results) {
-		for (Listener listener : listeners) {
-			listener.onCheckout(commit, testcase, results);
-		}
-	}
-
 	protected File projectDir;
 	protected String projectId;
 	protected File outputDir;
 	protected File mavenHome;
-
+	
+	protected List<ValidatorBase> validators;
+	
 	public Validator(Project project) {
 		this.projectDir = project.getProjectDir();
 		this.projectId = project.getProjectId();
 		this.outputDir = project.getOutputDir();
 		this.mavenHome = project.getMavenHome();
 	}
+	
+	public void addValidator(ValidatorBase task) {
+		if (validators == null) {
+			validators = new ArrayList<>();
+		}
+		validators.add(task);
+	}
+	
+	protected Results getResults(Commit commit) throws IOException, MavenInvocationException, InterruptedException {
+		Results results = null;
+		if (Results.is(outputDir, projectId, commit)) {
+			LOGGER.info("Parsing existing compile/javadoc results...");
+			results = Results.parse(outputDir, projectId, commit);
+		} else {
+			LOGGER.info("Getting compile results...");
+			results = MavenUtils.maven(projectDir,
+					Arrays.asList("test-compile", "-Dmaven.compiler.showDeprecation=true", "-Dmaven.compiler.showWarnings=true"), mavenHome);
+			LOGGER.info("Getting javadoc results...");
+			List<String> javadocResults = JavadocUtils.executeJavadoc(projectDir, mavenHome);
+			results.setJavadocResults(javadocResults);
+		}
+		return results;
+	}
 
 	@Override
-	public void onCheckout(Commit commit) {
+	public void onCheckout(final Commit commit) {
 		try {
 			LOGGER.info("Parsing testcases...");
 			List<TestSuite> testSuites = MavenUtils.getTestSuitesAtLevel2(projectDir);
@@ -61,23 +73,28 @@ public class Validator implements CheckoutConductor.Listener {
 				return;
 			}
 			// Get compile and JavaDoc results
-			Results results = null;
-			if (Results.is(outputDir, projectId, commit)) {
-				LOGGER.info("Parsing existing compile/javadoc results...");
-				results = Results.parse(outputDir, projectId, commit);
-			} else {
-				LOGGER.info("Getting compile results...");
-				results = MavenUtils.maven(projectDir,
-						Arrays.asList("test-compile", "-Dmaven.compiler.showDeprecation=true", "-Dmaven.compiler.showWarnings=true"), mavenHome);
-				LOGGER.info("Getting javadoc results...");
-				List<String> javadocResults = JavadocUtils.executeJavadoc(projectDir, mavenHome);
-				results.setJavadocResults(javadocResults);
-			}
+			final Results results = getResults(commit);
 			// Validate
 			LOGGER.info("Validating...");
-			for (TestSuite ts : testSuites) {
-				for (TestCase tc : ts.getTestCases()) {
-					notify(commit, tc, results);
+			for (final TestSuite ts : testSuites) {
+				for (final TestCase tc : ts.getTestCases()) {
+					ExecutorService executor = Executors.newFixedThreadPool(validators.size());
+					for (final ValidatorBase validator : validators) {
+						executor.submit(new Callable<Long>() {
+							@Override
+							public Long call() throws Exception {
+								validator.validate(commit, tc, results);
+								return System.currentTimeMillis();
+							}
+						});
+					}
+					executor.shutdown();
+					try {
+						executor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+					} catch (InterruptedException e) {
+						executor.shutdownNow();
+					}
+					executor.shutdownNow();
 				}
 			}
 			// Output compile and JavaDoc results

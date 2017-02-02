@@ -2,7 +2,10 @@ package jp.mzw.vtr.validate;
 
 import java.io.IOException;
 import java.text.ParseException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.io.FileUtils;
 import org.eclipse.jdt.core.dom.ASTNode;
@@ -20,20 +23,25 @@ import jp.mzw.vtr.maven.TestCase;
 abstract public class SimpleValidatorBase extends ValidatorBase {
 	protected Logger LOGGER = LoggerFactory.getLogger(SimpleValidatorBase.class);
 	
+	protected static final Map<Class<? extends SimpleValidatorBase>, List<String>> duplicateMap = new HashMap<>();
+	
 	protected Commit commit;
 	protected TestCase testcase;
 	protected Results results;
 	
 	public SimpleValidatorBase(Project project) {
 		super(project);
+		duplicateMap.put(getClass(), new ArrayList<String>());
 	}
 	
 	@Override
-	public void onCheckout(Commit commit, TestCase testcase, Results results) {
+	public void validate(Commit commit, TestCase testcase, Results results) {
 		this.commit = commit;
 		this.testcase = testcase;
 		this.results = results;
-		if (this.dupulicates.contains(testcase.getFullName())) {
+		
+		List<String> duplicates = duplicateMap.get(getClass());
+		if (duplicates.contains(testcase.getFullName())) {
 			return;
 		}
 		try {
@@ -42,7 +50,8 @@ abstract public class SimpleValidatorBase extends ValidatorBase {
 				return;
 			}
 			if (!detects.isEmpty()) {
-				this.dupulicates.add(testcase.getFullName());
+				duplicates.add(testcase.getFullName());
+				duplicateMap.put(getClass(), duplicates);
 				ValidationResult vr = new ValidationResult(this.projectId, commit, testcase, testcase.getStartLineNumber(), testcase.getEndLineNumber(), this);
 				this.validationResultList.add(vr);
 			}

@@ -41,12 +41,13 @@ import jp.mzw.vtr.git.CheckoutConductor;
 import jp.mzw.vtr.git.Commit;
 import jp.mzw.vtr.maven.AllMethodFindVisitor;
 import jp.mzw.vtr.maven.MavenUtils;
+import jp.mzw.vtr.maven.Results;
 import jp.mzw.vtr.maven.TestCase;
 import jp.mzw.vtr.maven.TestSuite;
 
-abstract public class ValidatorBase implements Validator.Listener {
+abstract public class ValidatorBase {
 	protected static Logger LOGGER = LoggerFactory.getLogger(ValidatorBase.class);
-
+	
 	public static final String VALIDATOR_DIRNAME = "validate";
 	public static final String VALIDATOR_FILENAME = "results.csv";
 
@@ -58,16 +59,15 @@ abstract public class ValidatorBase implements Validator.Listener {
 	protected File mavenHome;
 
 	protected List<ValidationResult> validationResultList;
-	protected List<String> dupulicates;
-
+	
 	public ValidatorBase(Project project) {
 		this.projectId = project.getProjectId();
 		this.projectDir = project.getProjectDir();
 		this.mavenHome = project.getMavenHome();
 		this.validationResultList = new ArrayList<>();
-		this.dupulicates = new ArrayList<>();
 	}
 	
+	abstract public void validate(Commit commit, TestCase testcase, Results results);
 	abstract public void generate(ValidationResult result);
 
 	/**
@@ -124,9 +124,9 @@ abstract public class ValidatorBase implements Validator.Listener {
 	 * @throws IOException
 	 *             When fail to write CSV file
 	 */
-	public static void output(Project project, List<ValidatorBase> validators) throws IOException {
+	public static void output(File outputDir, String projectId, List<ValidatorBase> validators) throws IOException {
 		// Destination
-		File projectDir = new File(project.getOutputDir(), project.getProjectId());
+		File projectDir = new File(outputDir, projectId);
 		File validateDir = new File(projectDir, VALIDATOR_DIRNAME);
 		File file = new File(validateDir, VALIDATOR_FILENAME);
 		// Container
