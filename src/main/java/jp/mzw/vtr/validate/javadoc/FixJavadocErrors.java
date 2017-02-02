@@ -43,7 +43,16 @@ public class FixJavadocErrors extends SimpleValidatorBase {
 			return ret;
 		}
 		if (!messages.isEmpty()) {
-			ret.add(tc.getMethodDeclaration());
+			boolean detect = false;
+			for (JavadocErrorMessage message : messages) {
+				if (tc.getStartLineNumber() <= message.getLineno() && message.getLineno() <= tc.getEndLineNumber()) {
+					detect = true;
+					break;
+				}
+			}
+			if (detect) {
+				ret.add(tc.getMethodDeclaration());
+			}
 		}
 		return ret;
 	}
