@@ -208,6 +208,13 @@
 			<scope>system</scope>
 			<systemPath>${project.basedir}/lib/org.eclipse.swt.cocoa.macosx.x86_64-3.106.0-SNAPSHOT.jar</systemPath>
 		</dependency>
+        <dependency>
+            <groupId>eclipse.platform.ui</groupId>
+            <artifactId>org.eclipse.jface</artifactId>
+            <version>3.13.0-SNAPSHOT</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/lib/org.eclipse.jface-3.13.0-SNAPSHOT.jar</systemPath>
+        </dependency>
 		<dependency>
 			<groupId>com.ibm.icu</groupId>
 			<artifactId>icu4j</artifactId>

@@ -4,8 +4,10 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.text.ParseException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -33,6 +35,7 @@ import jp.mzw.vtr.git.CheckoutListener;
 import jp.mzw.vtr.git.Commit;
 import jp.mzw.vtr.git.GitUtils;
 import jp.mzw.vtr.maven.MavenUtils;
+import jp.mzw.vtr.maven.TestCase;
 import jp.mzw.vtr.maven.TestRunner;
 import jp.mzw.vtr.maven.TestSuite;
 import jp.mzw.vtr.repair.Repair;
@@ -261,21 +264,23 @@ public class CLI {
 			String projectId = args[0];
 			Project project = new Project(projectId).setConfig(CONFIG_FILENAME);
 			CheckoutConductor cc = new CheckoutConductor(project);
+			final Map<Commit, List<TestCase>> map = new HashMap<>();
 			cc.addListener(new CheckoutListener(project) {
 				@Override
 				public void onCheckout(Commit commit) {
 					try {
-						int num = 0;
+						List<TestCase> testcases = new ArrayList<>();
 						for (TestSuite ts : MavenUtils.getTestSuitesAtLevel2(this.getProject().getProjectDir())) {
-							num += ts.getTestCases().size();
+							testcases.addAll(ts.getTestCases());
 						}
-						System.out.println(num);
+						map.put(commit, testcases);
 					} catch (IOException e) {
 						// NOP
 					}
 				}
 			});
-			cc.checkout(CheckoutConductor.Type.At, cc.getLatestCommit().getId());
+			cc.checkout();
+			
 		}
 	}
 }
