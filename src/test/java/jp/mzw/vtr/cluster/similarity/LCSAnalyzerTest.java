@@ -15,6 +15,7 @@ import jp.mzw.vtr.detect.TestCaseModification;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.api.errors.NoHeadException;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 public class LCSAnalyzerTest extends VtrTestBase {
@@ -35,6 +36,7 @@ public class LCSAnalyzerTest extends VtrTestBase {
 		assertEquals(37, tcmList.size());
 	}
 	
+	@Ignore
 	@Test
 	public void testMeasureLcs() throws IOException, ParseException, NoHeadException, GitAPIException {
 		LcsAnalyzer analyzer = new LcsAnalyzer(this.project.getOutputDir());
