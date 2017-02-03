@@ -45,8 +45,12 @@ public class DoNotSwallowTestErrorsSilently extends SimpleValidatorBase {
 		tc.getMethodDeclaration().accept(new ASTVisitor() {
 			@Override
 			public boolean visit(TryStatement node) {
+				List<?> catchClauses = node.catchClauses();
+				if (catchClauses.isEmpty()) {
+					return super.visit(node);
+				}
 				boolean has = false;
-				for (Object object : node.catchClauses()) {
+				for (Object object : catchClauses) {
 					if (object instanceof CatchClause) {
 						CatchClause catchClause = (CatchClause) object;
 						if (ValidatorUtils.hasAssertMethodInvocation(catchClause.getBody())) {
