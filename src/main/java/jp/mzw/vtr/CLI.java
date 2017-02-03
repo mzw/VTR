@@ -221,6 +221,7 @@ public class CLI {
 	private static void gen(Project project) throws IOException, ParseException, GitAPIException, InstantiationException, IllegalAccessException,
 			IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException, ClassNotFoundException {
 		List<ValidatorBase> validators = ValidatorBase.getValidators(project, ValidatorBase.VALIDATORS_LIST);
+		String curCommitId = null;
 		for (ValidatorBase validator : validators) {
 			List<ValidationResult> results = ValidatorBase.parse(project);
 			for (ValidationResult result : results) {
@@ -235,6 +236,11 @@ public class CLI {
 					LOGGER.info("Check whether true-positive or not: {}#{} @ {} by {}", result.getTestCaseClassName(), result.getTestCaseMathodName(),
 							result.getCommitId(), result.getValidatorName());
 					continue;
+				}
+				String commitId = result.getCommitId();
+				if (!commitId.equals(curCommitId)) {
+					new CheckoutConductor(project).checkout(new Commit(commitId, null));
+					curCommitId = commitId;
 				}
 				validator.generate(result);
 			}

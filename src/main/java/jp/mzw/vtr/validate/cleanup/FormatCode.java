@@ -26,7 +26,8 @@ public class FormatCode extends SimpleValidatorBase {
 	}
 
 	@Override
-	protected List<ASTNode> detect(final Commit commit, final TestCase tc, final Results results) throws IOException, MalformedTreeException, BadLocationException {
+	protected List<ASTNode> detect(final Commit commit, final TestCase tc, final Results results)
+			throws IOException, MalformedTreeException, BadLocationException {
 		final List<ASTNode> ret = new ArrayList<>();
 		String origin = FileUtils.readFileToString(tc.getTestFile());
 		String modified = format(origin);
@@ -53,7 +54,8 @@ public class FormatCode extends SimpleValidatorBase {
 	}
 
 	@Override
-	protected String getModified(String origin, final Commit commit, final TestCase tc, final Results results) throws IOException, MalformedTreeException, BadLocationException {
+	protected String getModified(String origin, final Commit commit, final TestCase tc, final Results results)
+			throws IOException, MalformedTreeException, BadLocationException {
 		return format(origin);
 	}
 

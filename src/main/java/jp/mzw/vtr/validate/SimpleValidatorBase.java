@@ -2,19 +2,16 @@ package jp.mzw.vtr.validate;
 
 import java.io.File;
 import java.io.IOException;
-import java.text.ParseException;
 import java.util.List;
 
 import org.apache.commons.io.FileUtils;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jface.text.BadLocationException;
-import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.text.edits.MalformedTreeException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import jp.mzw.vtr.core.Project;
-import jp.mzw.vtr.git.CheckoutConductor;
 import jp.mzw.vtr.git.Commit;
 import jp.mzw.vtr.maven.MavenUtils;
 import jp.mzw.vtr.maven.Results;
@@ -51,7 +48,6 @@ abstract public class SimpleValidatorBase extends ValidatorBase {
 		try {
 			// Read
 			Commit commit = new Commit(result.getCommitId(), null);
-			new CheckoutConductor(projectId, projectDir, outputDir).checkout(commit);
 			TestCase testcase = getTestCase(result, projectDir);
 			Results results = Results.parse(outputDir, projectId, commit);
 			// Generate
@@ -59,7 +55,7 @@ abstract public class SimpleValidatorBase extends ValidatorBase {
 			String modified = getModified(origin.toString(), commit, testcase, results);
 			List<String> patch = genPatch(origin, modified, testcase.getTestFile(), testcase.getTestFile());
 			output(result, testcase, patch);
-		} catch (IOException | ParseException | GitAPIException | MalformedTreeException | BadLocationException e) {
+		} catch (IOException | MalformedTreeException | BadLocationException e) {
 			LOGGER.warn("Failed to generate patch: {}", e.getMessage());
 		}
 	}

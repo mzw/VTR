@@ -291,7 +291,6 @@ abstract public class ValidatorBase {
 		}
 		File patchFile = new File(patternDir, tc.getFullName() + ".patch");
 		FileUtils.writeLines(patchFile, patch);
-		LOGGER.info("Succeeded to generate patch: {}", tc.getTestFile().getPath());
 	}
 
 	/**
