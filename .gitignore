@@ -4,10 +4,12 @@ log/
 *.log
 config.properties
 output/
+sh/all_run.sh
 sh/ba.sh
 sh/slack.php
 docker/
 validators_list.txt
+my/
 
 # Maven
 target/
