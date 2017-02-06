@@ -15,6 +15,7 @@ import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.apache.maven.shared.invoker.MavenInvocationException;
 import org.dom4j.DocumentException;
 import org.eclipse.jgit.api.Git;
@@ -284,6 +285,25 @@ public class CLI {
 				}
 			});
 			cc.checkout();
+			DescriptiveStatistics stats = new DescriptiveStatistics();
+			for (Commit commit : map.keySet()) {
+				List<TestCase> testcases = map.get(commit);
+				if (!testcases.isEmpty()) {
+					stats.addValue(testcases.size());
+				}
+			}
+			File dir = new File(project.getOutputDir(), "Nt");
+			if (!dir.exists()) {
+				dir.mkdirs();
+			}
+			File file = new File(dir, project.getProjectId() + ".txt");
+			StringBuilder builder = new StringBuilder();
+			builder.append("N: ").append(stats.getN()).append("\n");
+			builder.append("Max: ").append(stats.getMax()).append("\n");
+			builder.append("Min: ").append(stats.getMin()).append("\n");
+			builder.append("Mean: ").append(stats.getMean()).append("\n");
+			builder.append("Std-dev: ").append(stats.getStandardDeviation()).append("\n");
+			FileUtils.write(file, builder);
 		} else if ("detect".equals(type)) {
 			// Parse
 			String path_to_file = args[0];
