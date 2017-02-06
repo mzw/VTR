@@ -167,6 +167,11 @@ abstract public class ValidatorBase {
 		// Update
 		if (file.exists()) {
 			List<ValidationResult> prevVRList = parse(file);
+			// possess previous results
+			for (ValidationResult prev : prevVRList) {
+				builder.append(prev.toCsv());
+			}
+			// new
 			for (ValidationResult vr : results) {
 				ValidationResult contains = null;
 				for (ValidationResult prev : prevVRList) {
@@ -175,9 +180,7 @@ abstract public class ValidatorBase {
 						break;
 					}
 				}
-				if (contains != null) {
-					builder.append(contains.toCsv());
-				} else {
+				if (contains == null) {
 					builder.append(vr.toCsv());
 				}
 			}
