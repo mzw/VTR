@@ -15,7 +15,6 @@ import org.eclipse.text.edits.TextEdit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.swing.plaf.nimbus.State;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -37,9 +36,6 @@ public class AddExplicitBlocks extends SimpleValidatorBase {
         tc.getMethodDeclaration().accept(visitor);
         List<ASTNode> targets = visitor.getNodes();
         for (ASTNode node: targets) {
-            if (node instanceof Statement) {
-                System.out.println((Statement) node);
-            }
             if (targetIfStatement(node)) {
                 ret.add((IfStatement) node);
             } else if (targetForStatement(node)) {
@@ -63,20 +59,7 @@ public class AddExplicitBlocks extends SimpleValidatorBase {
         for (ASTNode node: detect(commit, tc, results)) {
             if (node instanceof IfStatement) {
                 IfStatement target = (IfStatement) node;
-                IfStatement replace = (IfStatement) ASTNode.copySubtree(ast, target);
-                Statement thenStatement = replace.getThenStatement();
-                if (!(thenStatement instanceof Block)) {
-                    Block thenBlock = ast.newBlock();
-                    thenBlock.statements().add(ASTNode.copySubtree(ast, thenStatement));
-                    replace.setThenStatement(thenBlock);
-                }
-                Statement elseStatement = replace.getElseStatement();
-                if ((elseStatement != null) &&
-                        !(elseStatement instanceof Block) && !(elseStatement instanceof IfStatement)) {
-                    Block elseBlock = ast.newBlock();
-                    elseBlock.statements().add(ASTNode.copySubtree(ast, elseStatement));
-                    replace.setElseStatement(elseBlock);
-                }
+                IfStatement replace = addExplicitBlocksToIfStatement(ast, target);
                 rewrite.replace(target, replace, null);
             } else if (node instanceof ForStatement) {
                 ForStatement target = (ForStatement) node;
@@ -126,5 +109,30 @@ public class AddExplicitBlocks extends SimpleValidatorBase {
         }
         WhileStatement whileStatement = (WhileStatement) node;
         return !(whileStatement.getBody() instanceof Block);
+    }
+
+    private IfStatement addExplicitBlocksToIfStatement(AST ast, IfStatement target) {
+        IfStatement replace = (IfStatement) ASTNode.copySubtree(ast, target);
+        // add blocks to then statement
+        Statement thenStatement = replace.getThenStatement();
+        if (!(thenStatement instanceof Block)) {
+            Block thenBlock = ast.newBlock();
+            thenBlock.statements().add((Statement) ASTNode.copySubtree(ast, thenStatement));
+            replace.setThenStatement(thenBlock);
+        }
+        // add blocks to else statement
+        Statement elseStatement = replace.getElseStatement();
+        if ((elseStatement != null) && !(elseStatement instanceof Block)) {
+            if (elseStatement instanceof IfStatement) {
+                // else-if statement
+                replace.setElseStatement(addExplicitBlocksToIfStatement(ast, (IfStatement) elseStatement));
+            } else {
+                // else statement
+                Block elseBlock = ast.newBlock();
+                elseBlock.statements().add((Statement) ASTNode.copySubtree(ast, elseStatement));
+                replace.setElseStatement(elseBlock);
+            }
+        }
+        return replace;
     }
 }
