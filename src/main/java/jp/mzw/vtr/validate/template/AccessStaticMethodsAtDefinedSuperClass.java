@@ -14,7 +14,6 @@ import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.CompilationUnit;
-import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.Modifier;
@@ -27,11 +26,11 @@ import org.eclipse.text.edits.TextEdit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class UseStaticMethodsDirectlyFromSuperClass extends SimpleValidatorBase {
+public class AccessStaticMethodsAtDefinedSuperClass extends SimpleValidatorBase {
 	
-	protected static Logger LOGGER = LoggerFactory.getLogger(UseStaticMethodsDirectlyFromSuperClass.class);
+	protected static Logger LOGGER = LoggerFactory.getLogger(AccessStaticMethodsAtDefinedSuperClass.class);
 
-	public UseStaticMethodsDirectlyFromSuperClass(Project project) {
+	public AccessStaticMethodsAtDefinedSuperClass(Project project) {
 		super(project);
 	}
 
