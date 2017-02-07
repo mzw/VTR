@@ -175,16 +175,18 @@ abstract public class ValidatorBase {
 				builder.append(prev.toCsv());
 			}
 			// new
-			for (ValidationResult vr : results) {
-				ValidationResult contains = null;
-				for (ValidationResult prev : prevVRList) {
-					if (vr.equals(prev)) {
-						contains = prev;
-						break;
+			if (!results.isEmpty()) {
+				for (ValidationResult vr : results) {
+					ValidationResult contains = null;
+					for (ValidationResult prev : prevVRList) {
+						if (vr.equals(prev)) {
+							contains = prev;
+							break;
+						}
 					}
-				}
-				if (contains == null) {
-					builder.append(vr.toCsv());
+					if (contains == null) {
+						builder.append(vr.toCsv());
+					}
 				}
 			}
 		}
