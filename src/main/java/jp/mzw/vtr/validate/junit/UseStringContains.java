@@ -1,4 +1,4 @@
-package jp.mzw.vtr.validate.template;
+package jp.mzw.vtr.validate.junit;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -13,10 +13,9 @@ import jp.mzw.vtr.validate.SimpleValidatorBase;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ASTVisitor;
-import org.eclipse.jdt.core.dom.IMethodBinding;
-import org.eclipse.jdt.core.dom.ITypeBinding;
+import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.core.dom.InfixExpression;
 import org.eclipse.jdt.core.dom.MethodInvocation;
-import org.eclipse.jdt.core.dom.SimpleType;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.Document;
@@ -25,46 +24,32 @@ import org.eclipse.text.edits.TextEdit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class RemoveUnusedExceptions extends SimpleValidatorBase {
-	protected static Logger LOGGER = LoggerFactory.getLogger(RemoveUnusedExceptions.class);
+public class UseStringContains extends SimpleValidatorBase {
+	protected static Logger LOGGER = LoggerFactory.getLogger(UseStringContains.class);
 
-	public RemoveUnusedExceptions(Project project) {
+	public UseStringContains(Project project) {
 		super(project);
 	}
 
 	@Override
 	protected List<ASTNode> detect(Commit commit, TestCase tc, Results results) throws IOException, MalformedTreeException, BadLocationException {
-		final List<ASTNode> ret = new ArrayList<>();
-		// Collect throwable exceptions
-		final List<ITypeBinding> exceptions = new ArrayList<>();
+		List<ASTNode> ret = new ArrayList<>();
+		final List<MethodInvocation> targets = new ArrayList<>();
 		tc.getMethodDeclaration().accept(new ASTVisitor() {
 			@Override
 			public boolean visit(MethodInvocation node) {
-				IMethodBinding binding = node.resolveMethodBinding();
-				if (binding == null) {
-					return super.visit(node);
-				}
-				for (ITypeBinding exception : binding.getExceptionTypes()) {
-					if (!exceptions.contains(exception)) {
-						exceptions.add(exception);
-					}
-				}
+				targets.add(node);
 				return super.visit(node);
 			}
 		});
-		// Determine whether thrown exceptions are used
-		for (Object object : tc.getMethodDeclaration().thrownExceptionTypes()) {
-			SimpleType thrown = (SimpleType) object;
-			ITypeBinding type = thrown.resolveBinding();
-			boolean used = false;
-			for (ITypeBinding exception : exceptions) {
-				if (exception.equals(type)) {
-					used = true;
-					break;
+		for (MethodInvocation target : targets) {
+			if ("indexOf".equals(target.getName().toString())) {
+				if (target.getParent() instanceof InfixExpression) {
+					InfixExpression expression = (InfixExpression) target.getParent();
+					if ("!=".equals(expression.getOperator().toString()) && "-1".equals(expression.getRightOperand().toString())) {
+						ret.add(target);
+					}
 				}
-			}
-			if (!used) {
-				ret.add(thrown);
 			}
 		}
 		return ret;
@@ -72,14 +57,18 @@ public class RemoveUnusedExceptions extends SimpleValidatorBase {
 
 	@Override
 	protected String getModified(String origin, Commit commit, TestCase tc, Results results) throws IOException, MalformedTreeException, BadLocationException {
-		List<ASTNode> detects = detect(commit, tc, results);
-		if (detects.isEmpty()) {
-			return origin;
-		}
-		AST ast = detects.get(0).getAST();
+		// prepare
+		CompilationUnit cu = tc.getCompilationUnit();
+		AST ast = cu.getAST();
 		ASTRewrite rewrite = ASTRewrite.create(ast);
-		for (ASTNode detect : detects) {
-			rewrite.remove(detect, null);
+		// detect
+		for (ASTNode node : detect(commit, tc, results)) {
+			MethodInvocation method = (MethodInvocation) node;
+			InfixExpression target = (InfixExpression) node.getParent();
+			MethodInvocation replace = ast.newMethodInvocation();
+			replace = (MethodInvocation) ASTNode.copySubtree(ast, method);
+			replace.setName(ast.newSimpleName(method.getName().toString().replace("indexOf", "contains")));
+			rewrite.replace(target, replace, null);
 		}
 		// modify
 		Document document = new Document(origin);

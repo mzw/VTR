@@ -1,4 +1,4 @@
-package jp.mzw.vtr.validate.template;
+package jp.mzw.vtr.validate.code_style;
 
 import jp.mzw.vtr.core.Project;
 import jp.mzw.vtr.git.Commit;
