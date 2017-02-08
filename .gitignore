@@ -1,15 +1,15 @@
 # Ours
-subjects/
-log/
+./subjects/
+./output/
 *.log
+
 config.properties
-output/
+validators_list.txt
+
+my/
 sh/all_run.sh
 sh/ba.sh
 sh/slack.php
-docker/
-validators_list.txt
-my/
 
 # Maven
 target/

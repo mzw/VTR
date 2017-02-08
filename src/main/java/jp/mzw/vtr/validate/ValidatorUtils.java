@@ -162,6 +162,7 @@ public class ValidatorUtils {
 
 	/**
 	 * Determine whether given expression is closable
+	 * 
 	 * @param expression
 	 * @return
 	 */
@@ -180,7 +181,28 @@ public class ValidatorUtils {
 		}
 		return false;
 	}
-	
+
+	/**
+	 * Determine whether serializable
+	 * 
+	 * @param binding
+	 * @return
+	 */
+	public static boolean isSerializable(ITypeBinding binding) {
+		if (binding == null) {
+			return false;
+		}
+		while (binding != null) {
+			for (ITypeBinding interfaze : binding.getInterfaces()) {
+				if ("java.io.Serializable".equals(interfaze.getQualifiedName())) {
+					return true;
+				}
+			}
+			binding = binding.getSuperclass();
+		}
+		return false;
+	}
+
 	public static Block getNearestParentBlock(ASTNode node) {
 		ASTNode parent = node;
 		while (parent != null) {
