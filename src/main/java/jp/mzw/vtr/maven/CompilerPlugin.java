@@ -26,13 +26,14 @@ public class CompilerPlugin extends JacocoInstrumenter {
 
         if (this.originalPomContent.compareTo(modified) != 0) { // modified
             FileUtils.writeStringToFile(this.pom, modified);
+            System.out.println(modified);
             return true;
         }
         return false;
     }
 
     protected String modifyCompilerArguments(String content) throws IOException {
-        // Read compiler options snippet
+        // Read compiler-plugins snippet
         InputStream is = this.getClass().getClassLoader().getResourceAsStream("compiler-plugin.pom.txt");
         String compilerPlugin = IOUtils.toString(is);
         // modify
@@ -59,7 +60,7 @@ public class CompilerPlugin extends JacocoInstrumenter {
             LOGGER.info("Add Compiler plugin");
             String _build = content.substring(content.indexOf("<build>"));
             String _plugins = _build.substring(0, _build.indexOf("</plugins>") + "</plugins>".length());
-            String _modified = _plugins.replace("</pluins>", compilerPlugin + "</plugins>");
+            String _modified = _plugins.replace("</plugins>", compilerPlugin + "</plugins>");
             content = content.replace(_plugins, _modified);
         }
         return content;
