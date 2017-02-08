@@ -1,4 +1,4 @@
-package jp.mzw.vtr.validate.resource;
+package jp.mzw.vtr.validate.resources;
 
 import java.io.IOException;
 import java.util.ArrayList;

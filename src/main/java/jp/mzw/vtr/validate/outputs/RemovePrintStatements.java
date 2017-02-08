@@ -1,4 +1,4 @@
-package jp.mzw.vtr.validate.output;
+package jp.mzw.vtr.validate.outputs;
 
 import java.io.IOException;
 import java.util.ArrayList;

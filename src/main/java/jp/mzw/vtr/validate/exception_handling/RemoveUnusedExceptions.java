@@ -1,4 +1,4 @@
-package jp.mzw.vtr.validate.exception;
+package jp.mzw.vtr.validate.exception_handling;
 
 import java.io.IOException;
 import java.util.ArrayList;

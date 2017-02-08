@@ -1,4 +1,4 @@
-package jp.mzw.vtr.validate.output;
+package jp.mzw.vtr.validate.outputs;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -99,7 +99,7 @@ public class DeleteUnnecessaryAssignmenedVariables extends SimpleValidatorBase {
 	private Set<String> usedVariables(ASTNode node) {
 		final List<SimpleName> nodes = new ArrayList<>();
 		final Set<String> usedVariables = new HashSet<>();
-		Block block = jp.mzw.vtr.validate.resource.UseTryWithResources.getScopalBlock(node);
+		Block block = jp.mzw.vtr.validate.resources.UseTryWithResources.getScopalBlock(node);
 		block.accept(new ASTVisitor() {
 			@Override
 			public boolean visit(SimpleName node) {

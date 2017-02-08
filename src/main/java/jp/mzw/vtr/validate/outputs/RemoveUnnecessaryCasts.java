@@ -1,4 +1,4 @@
-package jp.mzw.vtr.validate.output;
+package jp.mzw.vtr.validate.outputs;
 
 import jp.mzw.vtr.core.Project;
 import jp.mzw.vtr.git.Commit;

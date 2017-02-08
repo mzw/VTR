@@ -1,4 +1,4 @@
-package jp.mzw.vtr.validate.exception;
+package jp.mzw.vtr.validate.exception_handling;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -9,6 +9,7 @@ import jp.mzw.vtr.git.Commit;
 import jp.mzw.vtr.maven.Results;
 import jp.mzw.vtr.maven.TestCase;
 import jp.mzw.vtr.validate.SimpleValidatorBase;
+import jp.mzw.vtr.validate.ValidatorBase;
 import jp.mzw.vtr.validate.ValidatorUtils;
 
 import org.eclipse.jdt.core.dom.AST;
@@ -41,6 +42,9 @@ public class HandleExpectedExecptionsProperly extends SimpleValidatorBase {
 	@Override
 	protected List<ASTNode> detect(final Commit commit, final TestCase tc, final Results results) throws IOException, MalformedTreeException, BadLocationException {
 		final List<ASTNode> ret = new ArrayList<>();
+		if (ValidatorBase.getJunitVersion(projectDir) < 4.0) {
+			return ret;
+		}
 		final CompilationUnit cu = tc.getCompilationUnit();
 		tc.getMethodDeclaration().accept(new ASTVisitor() {
 			@Override
