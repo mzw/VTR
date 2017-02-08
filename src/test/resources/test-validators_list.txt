@@ -1,1 +1,1 @@
-jp.mzw.vtr.validate.exception.DoNotSwallowTestErrorsSilently
+jp.mzw.vtr.validate.exception_handling.DoNotSwallowTestErrorsSilently
