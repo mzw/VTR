@@ -1,4 +1,4 @@
-package jp.mzw.vtr.validate.template;
+package jp.mzw.vtr.validate.code_style;
 
 import jp.mzw.vtr.core.Project;
 import jp.mzw.vtr.git.Commit;
@@ -111,13 +111,14 @@ public class AddExplicitBlocks extends SimpleValidatorBase {
         return !(whileStatement.getBody() instanceof Block);
     }
 
-    private IfStatement addExplicitBlocksToIfStatement(AST ast, IfStatement target) {
+    @SuppressWarnings("unchecked")
+	private IfStatement addExplicitBlocksToIfStatement(AST ast, IfStatement target) {
         IfStatement replace = (IfStatement) ASTNode.copySubtree(ast, target);
         // add blocks to then statement
         Statement thenStatement = replace.getThenStatement();
         if (!(thenStatement instanceof Block)) {
             Block thenBlock = ast.newBlock();
-            thenBlock.statements().add((Statement) ASTNode.copySubtree(ast, thenStatement));
+			thenBlock.statements().add((Statement) ASTNode.copySubtree(ast, thenStatement));
             replace.setThenStatement(thenBlock);
         }
         // add blocks to else statement

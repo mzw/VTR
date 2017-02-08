@@ -1,4 +1,4 @@
-package jp.mzw.vtr.validate.template;
+package jp.mzw.vtr.validate.code_style;
 
 import jp.mzw.vtr.core.Project;
 import jp.mzw.vtr.git.Commit;
@@ -15,7 +15,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.List;
 
 /**
  * Created by TK on 2017/02/02.
@@ -27,9 +26,9 @@ abstract public class AddOverrideAnnotationsBase extends SimpleValidatorBase {
 		super(project);
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
-	public String getModified(String origin, final Commit commit, final TestCase tc, final Results results) throws IOException, MalformedTreeException, BadLocationException {
+	public String getModified(String origin, final Commit commit, final TestCase tc, final Results results)
+			throws IOException, MalformedTreeException, BadLocationException {
 		// prepare
 		CompilationUnit cu = tc.getCompilationUnit();
 		AST ast = cu.getAST();
@@ -46,7 +45,6 @@ abstract public class AddOverrideAnnotationsBase extends SimpleValidatorBase {
 		edit.apply(document);
 		return document.get();
 	}
-
 
 	public static boolean overrideMethod(MethodDeclaration method) {
 		IMethodBinding binding = method.resolveBinding();
@@ -75,6 +73,7 @@ abstract public class AddOverrideAnnotationsBase extends SimpleValidatorBase {
 		return false;
 	}
 
+	@SuppressWarnings("unchecked")
 	public static MethodDeclaration addOverrideAnnotation(AST ast, MethodDeclaration target) {
 		MethodDeclaration replace = (MethodDeclaration) ASTNode.copySubtree(ast, target);
 		// create new annotation
