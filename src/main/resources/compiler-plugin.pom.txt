@@ -1,0 +1,12 @@
+<plugin>
+  <groupId>org.apache.maven.plugins</groupId>
+  <artifactId>maven-compiler-plugin</artifactId>
+  <version>3.3</version>
+  <configuration>
+    <compilerArgs>
+      <arg>-Xlint:unchecked,deprecation</arg>
+    </compilerArgs>
+    <showDeprecation>true</showDeprecation>
+    <showWarnings>true</showWarnings>
+  </configuration>
+</plugin>
