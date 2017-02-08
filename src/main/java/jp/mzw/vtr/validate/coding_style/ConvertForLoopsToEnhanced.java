@@ -1,4 +1,4 @@
-package jp.mzw.vtr.validate.code_style;
+package jp.mzw.vtr.validate.coding_style;
 
 import java.io.IOException;
 import java.util.ArrayList;

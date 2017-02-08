@@ -1,4 +1,4 @@
-package jp.mzw.vtr.validate.resource;
+package jp.mzw.vtr.validate.resources;
 
 import java.io.IOException;
 import java.lang.reflect.Modifier;
@@ -11,6 +11,7 @@ import jp.mzw.vtr.maven.Results;
 import jp.mzw.vtr.maven.TestCase;
 import jp.mzw.vtr.validate.SimpleValidatorBase;
 import jp.mzw.vtr.validate.ValidationResult;
+import jp.mzw.vtr.validate.ValidatorBase;
 import jp.mzw.vtr.validate.ValidatorUtils;
 
 import org.apache.commons.io.FileUtils;
@@ -47,6 +48,9 @@ public class UseTryWithResources extends SimpleValidatorBase {
 	@Override
 	protected List<ASTNode> detect(final Commit commit, final TestCase tc, final Results results) throws IOException, MalformedTreeException, BadLocationException {
 		final List<ASTNode> ret = new ArrayList<>();
+		if (ValidatorBase.getJavaVersion(projectDir) < 1.7) {
+			return ret;
+		}
 		final CompilationUnit cu = tc.getCompilationUnit();
 		cu.accept(new ASTVisitor() {
 			@Override
