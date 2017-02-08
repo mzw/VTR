@@ -13,6 +13,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import jp.mzw.vtr.maven.*;
 import org.apache.maven.shared.invoker.MavenInvocationException;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -25,11 +26,6 @@ import org.slf4j.LoggerFactory;
 import jp.mzw.vtr.core.Project;
 import jp.mzw.vtr.git.CheckoutConductor;
 import jp.mzw.vtr.git.Commit;
-import jp.mzw.vtr.maven.MavenUtils;
-import jp.mzw.vtr.maven.JavadocUtils;
-import jp.mzw.vtr.maven.Results;
-import jp.mzw.vtr.maven.TestCase;
-import jp.mzw.vtr.maven.TestSuite;
 
 public class Validator implements CheckoutConductor.Listener {
 	protected Logger LOGGER = LoggerFactory.getLogger(Validator.class);
@@ -47,6 +43,8 @@ public class Validator implements CheckoutConductor.Listener {
 	protected String prvPomContent;
 	protected String curPomContent;
 	protected final Map<String, List<String>> duplicateMap;
+
+	private CompilerPlugin cp;
 
 	public Validator(Project project) throws InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException,
 			NoSuchMethodException, SecurityException, IOException {
@@ -85,11 +83,22 @@ public class Validator implements CheckoutConductor.Listener {
 			results = Results.parse(project.getOutputDir(), project.getProjectId(), commit);
 		} else {
 			LOGGER.info("Getting compile results...");
-			results = MavenUtils.maven(project.getProjectDir(),
-					Arrays.asList("test-compile", "-Dmaven.compiler.showDeprecation=true", "-Dmaven.compiler.showWarnings=true"), project.getMavenHome());
-			LOGGER.info("Getting javadoc results...");
-			List<String> javadocResults = JavadocUtils.executeJavadoc(project.getProjectDir(), project.getMavenHome());
-			results.setJavadocResults(javadocResults);
+			cp = new CompilerPlugin(project.getProjectDir());
+			boolean modified = false;
+			try {
+				modified = cp.instrument();
+				results = MavenUtils.maven(project.getProjectDir(),
+						Arrays.asList("test-compile"), project.getMavenHome());
+				LOGGER.info("Getting javadoc results...");
+				List<String> javadocResults = JavadocUtils.executeJavadoc(project.getProjectDir(), project.getMavenHome());
+				results.setJavadocResults(javadocResults);
+				// Revert
+				if (modified) {
+					cp.revert();
+				}
+			} catch (IOException | org.dom4j.DocumentException e) {
+				LOGGER.warn("Failed to modify compiler-plugin: {}", commit.getId());
+			}
 		}
 		return results;
 	}

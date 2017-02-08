@@ -26,7 +26,6 @@ public class CompilerPlugin extends JacocoInstrumenter {
 
         if (this.originalPomContent.compareTo(modified) != 0) { // modified
             FileUtils.writeStringToFile(this.pom, modified);
-            System.out.println(modified);
             return true;
         }
         return false;
