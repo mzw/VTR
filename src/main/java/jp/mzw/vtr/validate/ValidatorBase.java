@@ -36,6 +36,7 @@ import jp.mzw.vtr.core.Project;
 import jp.mzw.vtr.core.VtrUtils;
 import jp.mzw.vtr.git.Commit;
 import jp.mzw.vtr.maven.AllMethodFindVisitor;
+import jp.mzw.vtr.maven.MavenUtils;
 import jp.mzw.vtr.maven.Results;
 import jp.mzw.vtr.maven.TestCase;
 
@@ -81,8 +82,9 @@ abstract public class ValidatorBase {
 	 * @throws InstantiationException
 	 * @throws ClassNotFoundException
 	 */
-	public static List<ValidatorBase> getValidators(Project project, String filename) throws IOException, InstantiationException, IllegalAccessException,
-			IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException {
+	public static List<ValidatorBase> getValidators(Project project, String filename)
+			throws IOException, InstantiationException, IllegalAccessException, IllegalArgumentException,
+			InvocationTargetException, NoSuchMethodException, SecurityException {
 		InputStream is = ValidatorBase.class.getClassLoader().getResourceAsStream(filename);
 		List<String> lines = IOUtils.readLines(is);
 		List<ValidatorBase> validators = new ArrayList<>();
@@ -118,8 +120,9 @@ abstract public class ValidatorBase {
 	 * @throws ClassNotFoundException
 	 */
 	@SuppressWarnings("unchecked")
-	public static List<Class<? extends ValidatorBase>> getValidatorClasses(Project project, String filename) throws IOException, InstantiationException, IllegalAccessException,
-			IllegalArgumentException, InvocationTargetException, NoSuchMethodException, SecurityException {
+	public static List<Class<? extends ValidatorBase>> getValidatorClasses(Project project, String filename)
+			throws IOException, InstantiationException, IllegalAccessException, IllegalArgumentException,
+			InvocationTargetException, NoSuchMethodException, SecurityException {
 		InputStream is = ValidatorBase.class.getClassLoader().getResourceAsStream(filename);
 		List<String> lines = IOUtils.readLines(is);
 		List<ValidatorBase> validators = new ArrayList<>();
@@ -148,7 +151,7 @@ abstract public class ValidatorBase {
 	public List<ValidationResult> getValidationResultList() {
 		return this.validationResultList;
 	}
-	
+
 	/**
 	 * 
 	 * @param outputDir
@@ -172,16 +175,18 @@ abstract public class ValidatorBase {
 				builder.append(prev.toCsv());
 			}
 			// new
-			for (ValidationResult vr : results) {
-				ValidationResult contains = null;
-				for (ValidationResult prev : prevVRList) {
-					if (vr.equals(prev)) {
-						contains = prev;
-						break;
+			if (!results.isEmpty()) {
+				for (ValidationResult vr : results) {
+					ValidationResult contains = null;
+					for (ValidationResult prev : prevVRList) {
+						if (vr.equals(prev)) {
+							contains = prev;
+							break;
+						}
 					}
-				}
-				if (contains == null) {
-					builder.append(vr.toCsv());
+					if (contains == null) {
+						builder.append(vr.toCsv());
+					}
 				}
 			}
 		}
@@ -272,8 +277,8 @@ abstract public class ValidatorBase {
 			Boolean truePositive = record.get(7).equals("") ? null : Boolean.parseBoolean(record.get(7));
 			Boolean actuallyModified = record.get(8).equals("") ? null : Boolean.parseBoolean(record.get(8));
 			Boolean properlyModified = record.get(9).equals("") ? null : Boolean.parseBoolean(record.get(9));
-			ValidationResult vr = new ValidationResult(projectId, commitId, testCaseClassName, testCaseMethodName, startLineNumber, endLineNumber,
-					validatorName, truePositive, actuallyModified, properlyModified);
+			ValidationResult vr = new ValidationResult(projectId, commitId, testCaseClassName, testCaseMethodName,
+					startLineNumber, endLineNumber, validatorName, truePositive, actuallyModified, properlyModified);
 			ret.add(vr);
 		}
 		// Return
@@ -324,12 +329,13 @@ abstract public class ValidatorBase {
 		List<String> originList = Arrays.asList(origin.split("\n"));
 		List<String> modifyList = Arrays.asList(modified.split("\n"));
 		Patch<String> patch = DiffUtils.diff(originList, modifyList);
-		return DiffUtils.generateUnifiedDiff(org.getAbsolutePath(), mod.getAbsolutePath(), originList, patch, contextSize);
+		return DiffUtils.generateUnifiedDiff(org.getAbsolutePath(), mod.getAbsolutePath(), originList, patch,
+				contextSize);
 	}
 
 	public static List<String> genPatch(String origin, String modified, TestCase tc) {
-		return genPatch(getTestCaseSource(origin, tc.getName()), getTestCaseSource(modified, tc.getName()), tc.getTestFile(), tc.getTestFile(),
-				(tc.getStartLineNumber() - 1) * -1);
+		return genPatch(getTestCaseSource(origin, tc.getName()), getTestCaseSource(modified, tc.getName()),
+				tc.getTestFile(), tc.getTestFile(), (tc.getStartLineNumber() - 1) * -1);
 	}
 
 	public static String getTestCaseSource(String content, String methodName) {
@@ -394,7 +400,8 @@ abstract public class ValidatorBase {
 		@SuppressWarnings("rawtypes")
 		Map options = DefaultCodeFormatterConstants.getEclipseDefaultSettings();
 		final CodeFormatter codeFormatter = ToolFactory.createCodeFormatter(options);
-		final TextEdit edit = codeFormatter.format(CodeFormatter.K_COMPILATION_UNIT, source, 0, source.length(), 0, System.getProperty("line.separator"));
+		final TextEdit edit = codeFormatter.format(CodeFormatter.K_COMPILATION_UNIT, source, 0, source.length(), 0,
+				System.getProperty("line.separator"));
 		IDocument document = new Document(source);
 		edit.apply(document);
 		return document.get();
@@ -407,5 +414,76 @@ abstract public class ValidatorBase {
 			return className;
 		}
 		return className.substring(0, index);
+	}
+
+	public static double getJavaVersion(File projectDir) throws IOException {
+		String pom = MavenUtils.getPomContent(projectDir);
+		if (pom == null) {
+			return -1;
+		}
+		org.jsoup.nodes.Document document = org.jsoup.Jsoup.parse(pom, "", org.jsoup.parser.Parser.xmlParser());
+		if (document == null) {
+			return -1;
+		}
+		{
+			org.jsoup.select.Elements elements = document.getElementsByTag("maven.compile.target");
+			if (elements != null) {
+				if (!elements.isEmpty()) {
+					return new Double(elements.get(0).text());
+				}
+			}
+		}
+		{
+			org.jsoup.select.Elements elements = document.getElementsByTag("maven.compiler.target");
+			if (elements != null) {
+				if (!elements.isEmpty()) {
+					return new Double(elements.get(0).text());
+				}
+			}
+		}
+		{
+			for (org.jsoup.nodes.Element plugin : document.select("plugins plugin")) {
+				boolean compiler = false;
+				String version = null;
+				for (org.jsoup.nodes.Element child : plugin.children()) {
+					if ("artifactId".equalsIgnoreCase(child.tagName())
+							&& "maven-compiler-plugin".equalsIgnoreCase(child.text())) {
+						compiler = true;
+					} else if ("version".equalsIgnoreCase(child.tagName())) {
+						version = child.text();
+					}
+				}
+				if (compiler) {
+					return new Double(version);
+				}
+			}
+		}
+		return -1;
+	}
+
+	public static double getJunitVersion(File projectDir) throws IOException {
+		String pom = MavenUtils.getPomContent(projectDir);
+		if (pom == null) {
+			return -1;
+		}
+		org.jsoup.nodes.Document document = org.jsoup.Jsoup.parse(pom, "", org.jsoup.parser.Parser.xmlParser());
+		if (document == null) {
+			return -1;
+		}
+		for (org.jsoup.nodes.Element dependency : document.select("dependencies dependency")) {
+			boolean junit = false;
+			String version = null;
+			for (org.jsoup.nodes.Element child : dependency.children()) {
+				if ("artifactId".equalsIgnoreCase(child.tagName()) && "junit".equalsIgnoreCase(child.text())) {
+					junit = true;
+				} else if ("version".equalsIgnoreCase(child.tagName())) {
+					version = child.text();
+				}
+			}
+			if (junit) {
+				return new Double(version);
+			}
+		}
+		return -1;
 	}
 }

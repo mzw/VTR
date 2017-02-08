@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.text.ParseException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -40,7 +39,6 @@ import jp.mzw.vtr.git.CheckoutListener;
 import jp.mzw.vtr.git.Commit;
 import jp.mzw.vtr.git.GitUtils;
 import jp.mzw.vtr.maven.MavenUtils;
-import jp.mzw.vtr.maven.TestCase;
 import jp.mzw.vtr.maven.TestRunner;
 import jp.mzw.vtr.maven.TestSuite;
 import jp.mzw.vtr.repair.Repair;
@@ -269,16 +267,18 @@ public class CLI {
 			String projectId = args[0];
 			Project project = new Project(projectId).setConfig(CONFIG_FILENAME);
 			CheckoutConductor cc = new CheckoutConductor(project);
-			final Map<Commit, List<TestCase>> map = new HashMap<>();
+			final Map<Commit, Integer> map = new HashMap<>();
 			cc.addListener(new CheckoutListener(project) {
 				@Override
 				public void onCheckout(Commit commit) {
 					try {
-						List<TestCase> testcases = new ArrayList<>();
-						for (TestSuite ts : MavenUtils.getTestSuitesAtLevel2(this.getProject().getProjectDir())) {
-							testcases.addAll(ts.getTestCases());
+						int num = 0;
+						for (TestSuite ts : MavenUtils.getTestSuites(this.getProject().getProjectDir())) {
+							num += ts.getTestCases().size();
 						}
-						map.put(commit, testcases);
+						if (0 < num) {
+							map.put(commit, new Integer(num));
+						}
 					} catch (IOException e) {
 						// NOP
 					}
@@ -287,9 +287,9 @@ public class CLI {
 			cc.checkout();
 			DescriptiveStatistics stats = new DescriptiveStatistics();
 			for (Commit commit : map.keySet()) {
-				List<TestCase> testcases = map.get(commit);
-				if (!testcases.isEmpty()) {
-					stats.addValue(testcases.size());
+				Integer number = map.get(commit);
+				if (0 < number) {
+					stats.addValue(number);
 				}
 			}
 			File dir = new File(project.getOutputDir(), "Nt");
