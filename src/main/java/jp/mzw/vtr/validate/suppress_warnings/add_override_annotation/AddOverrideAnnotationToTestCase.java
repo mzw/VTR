@@ -1,4 +1,4 @@
-package jp.mzw.vtr.validate.coding_style;
+package jp.mzw.vtr.validate.suppress_warnings.add_override_annotation;
 
 import jp.mzw.vtr.core.Project;
 import jp.mzw.vtr.git.Commit;
@@ -17,10 +17,10 @@ import java.util.List;
 /**
  * Created by TK on 2017/02/02.
  */
-public class AddOverrideAnnotationsToTestCase extends AddOverrideAnnotationsBase {
-	protected static Logger LOGGER = LoggerFactory.getLogger(AddOverrideAnnotationsToTestCase.class);
+public class AddOverrideAnnotationToTestCase extends AddOverrideAnnotationBase {
+	protected static Logger LOGGER = LoggerFactory.getLogger(AddOverrideAnnotationToTestCase.class);
 
-	public AddOverrideAnnotationsToTestCase(Project project) {
+	public AddOverrideAnnotationToTestCase(Project project) {
 		super(project);
 	}
 

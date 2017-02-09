@@ -1,4 +1,4 @@
-package jp.mzw.vtr.validate.outputs;
+package jp.mzw.vtr.validate.suppress_warnings.add_suppress_warnings_annotation;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -20,10 +20,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 
-abstract public class AddSuppressWarningsAnnotations extends SimpleValidatorBase {
-	protected static Logger LOGGER = LoggerFactory.getLogger(AddSuppressWarningsAnnotations.class);
+abstract public class AddSuppressWarningsAnnotationBase extends SimpleValidatorBase {
+	protected static Logger LOGGER = LoggerFactory.getLogger(AddSuppressWarningsAnnotationBase.class);
 
-	public AddSuppressWarningsAnnotations(Project project) {
+	public AddSuppressWarningsAnnotationBase(Project project) {
 		super(project);
 	}
 

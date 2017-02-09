@@ -1,4 +1,4 @@
-package jp.mzw.vtr.validate.outputs;
+package jp.mzw.vtr.validate.suppress_warnings.add_suppress_warnings_annotation;
 
 import jp.mzw.vtr.core.Project;
 import org.slf4j.Logger;
@@ -7,10 +7,10 @@ import org.slf4j.LoggerFactory;
 /**
  * Created by TK on 2017/02/09.
  */
-public class AddSuppressWarningsRawtypesAnnotations extends AddSuppressWarningsAnnotations {
-    protected static Logger LOGGER = LoggerFactory.getLogger(AddSuppressWarningsRawtypesAnnotations.class);
+public class AddSuppressWarningsRawtypesAnnotation extends AddSuppressWarningsAnnotationBase {
+    protected static Logger LOGGER = LoggerFactory.getLogger(AddSuppressWarningsRawtypesAnnotation.class);
 
-    public AddSuppressWarningsRawtypesAnnotations(Project project) {
+    public AddSuppressWarningsRawtypesAnnotation(Project project) {
         super(project);
     }
 

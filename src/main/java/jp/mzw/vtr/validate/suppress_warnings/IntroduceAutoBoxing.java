@@ -1,4 +1,4 @@
-package jp.mzw.vtr.validate.outputs;
+package jp.mzw.vtr.validate.suppress_warnings;
 
 import jp.mzw.vtr.core.Project;
 import jp.mzw.vtr.git.Commit;
