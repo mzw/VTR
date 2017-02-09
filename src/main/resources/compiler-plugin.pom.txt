@@ -4,7 +4,7 @@
   <version>3.3</version>
   <configuration>
     <compilerArgs>
-      <arg>-Xlint:unchecked,deprecation</arg>
+      <arg>-Xlint:all</arg>
     </compilerArgs>
     <showDeprecation>true</showDeprecation>
     <showWarnings>true</showWarnings>
