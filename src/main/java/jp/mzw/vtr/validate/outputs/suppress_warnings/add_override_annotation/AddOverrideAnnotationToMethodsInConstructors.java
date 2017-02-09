@@ -1,4 +1,4 @@
-package jp.mzw.vtr.validate.suppress_warnings.add_override_annotation;
+package jp.mzw.vtr.validate.outputs.suppress_warnings.add_override_annotation;
 
 import jp.mzw.vtr.core.Project;
 import jp.mzw.vtr.git.Commit;

@@ -1,4 +1,4 @@
-package jp.mzw.vtr.validate.suppress_warnings.add_suppress_warnings_annotation;
+package jp.mzw.vtr.validate.outputs.suppress_warnings.add_suppress_warnings_annotation;
 
 import java.io.IOException;
 import java.util.ArrayList;
