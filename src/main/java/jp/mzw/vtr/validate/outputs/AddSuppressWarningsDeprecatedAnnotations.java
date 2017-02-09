@@ -16,7 +16,7 @@ public class AddSuppressWarningsDeprecatedAnnotations extends AddSuppressWarning
 
     @Override
     public String SuppressWarning() {
-        return "deprecated";
+        return "deprecation";
     }
 
     @Override

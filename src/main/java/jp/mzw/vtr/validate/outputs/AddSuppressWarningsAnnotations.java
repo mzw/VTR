@@ -6,17 +6,11 @@ import java.util.List;
 
 import jp.mzw.vtr.core.Project;
 import jp.mzw.vtr.git.Commit;
-import jp.mzw.vtr.maven.AllElementsFindVisitor;
 import jp.mzw.vtr.maven.Results;
 import jp.mzw.vtr.maven.TestCase;
 import jp.mzw.vtr.validate.SimpleValidatorBase;
 
-import org.eclipse.jdt.core.dom.AST;
-import org.eclipse.jdt.core.dom.ASTNode;
-import org.eclipse.jdt.core.dom.CompilationUnit;
-import org.eclipse.jdt.core.dom.MethodDeclaration;
-import org.eclipse.jdt.core.dom.SingleMemberAnnotation;
-import org.eclipse.jdt.core.dom.StringLiteral;
+import org.eclipse.jdt.core.dom.*;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.Document;
@@ -35,9 +29,9 @@ abstract public class AddSuppressWarningsAnnotations extends SimpleValidatorBase
 
 	@Override
 	protected List<ASTNode> detect(Commit commit, TestCase tc, Results results) throws IOException, MalformedTreeException, BadLocationException {
-		final List<ASTNode> ret = new ArrayList<>();
+	    final List<ASTNode> ret = new ArrayList<>();
 		final List<String> targetMessages = new ArrayList<>();
-		// get deprecated nodes' position from deprecated messages
+		// get target nodes' position from warning messages
 		for (String message : results.getCompileOutputs()) {
 			if (targetMessage(message)) {
 				if (messageInfo(message) != null) {
@@ -46,26 +40,16 @@ abstract public class AddSuppressWarningsAnnotations extends SimpleValidatorBase
 			}
 		}
 		List<Integer> targetNodePositions = targetNodePositions(targetMessages, tc);
-		// find deprecated nodes using obtained positions
-		AllElementsFindVisitor visitor = new AllElementsFindVisitor();
-		tc.getMethodDeclaration().accept(visitor);
-		List<ASTNode> nodes = visitor.getNodes();
-		List<ASTNode> targets = new ArrayList<>();
-		for (ASTNode node: nodes) {
-			if (targetNodePositions.contains(node.getStartPosition())) {
-				targets.add(node);
+		// check whether test case contains obtained positions
+		int tcStartPosition = tc.getMethodDeclaration().getStartPosition();
+		int tcEndPosition   = tcStartPosition + tc.getMethodDeclaration().getLength();
+		for (int position : targetNodePositions) {
+			if (tcStartPosition <= position && position <= tcEndPosition) {
+				ret.add(tc.getMethodDeclaration());
+				return ret;
 			}
 		}
-		for (ASTNode node: targets) {
-			while (node.getParent() != null) {
-				if (node instanceof MethodDeclaration) {
-					targets.add(node);
-					break;
-				}
-				node = node.getParent();
-			}
-		}
-		return targets;
+		return ret;
 	}
 
 	@SuppressWarnings("unchecked")
@@ -102,7 +86,7 @@ abstract public class AddSuppressWarningsAnnotations extends SimpleValidatorBase
 	abstract public boolean targetMessage(String message);
 
 	public static boolean WarningMessage(String message) {
-		return message.contains("WARNING");
+		return message.contains("WARNING") && message.contains("test");
 	}
 
 	/**
@@ -125,6 +109,7 @@ abstract public class AddSuppressWarningsAnnotations extends SimpleValidatorBase
 				int col  = getColPos(message);
 				CompilationUnit cu = tc.getCompilationUnit();
 				int pos = cu.getPosition(line, col);
+				System.out.println(pos);
 				ret.add(pos);
 			}
 		}
