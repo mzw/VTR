@@ -192,7 +192,6 @@ abstract public class ValidatorBase {
 		}
 		// New
 		else {
-			// new
 			if (!results.isEmpty()) {
 				for (ValidationResult vr : results) {
 					builder.append(vr.toCsv());
