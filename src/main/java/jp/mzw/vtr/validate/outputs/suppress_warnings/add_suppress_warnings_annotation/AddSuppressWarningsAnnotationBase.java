@@ -1,4 +1,4 @@
-package jp.mzw.vtr.validate.outputs;
+package jp.mzw.vtr.validate.outputs.suppress_warnings.add_suppress_warnings_annotation;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -6,17 +6,11 @@ import java.util.List;
 
 import jp.mzw.vtr.core.Project;
 import jp.mzw.vtr.git.Commit;
-import jp.mzw.vtr.maven.AllElementsFindVisitor;
 import jp.mzw.vtr.maven.Results;
 import jp.mzw.vtr.maven.TestCase;
 import jp.mzw.vtr.validate.SimpleValidatorBase;
 
-import org.eclipse.jdt.core.dom.AST;
-import org.eclipse.jdt.core.dom.ASTNode;
-import org.eclipse.jdt.core.dom.CompilationUnit;
-import org.eclipse.jdt.core.dom.MethodDeclaration;
-import org.eclipse.jdt.core.dom.SingleMemberAnnotation;
-import org.eclipse.jdt.core.dom.StringLiteral;
+import org.eclipse.jdt.core.dom.*;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.Document;
@@ -26,44 +20,36 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 
-public class AddSuppressWarningsAnnotations extends SimpleValidatorBase {
-	protected static Logger LOGGER = LoggerFactory.getLogger(AddSuppressWarningsAnnotations.class);
+abstract public class AddSuppressWarningsAnnotationBase extends SimpleValidatorBase {
+	protected static Logger LOGGER = LoggerFactory.getLogger(AddSuppressWarningsAnnotationBase.class);
 
-	public AddSuppressWarningsAnnotations(Project project) {
+	public AddSuppressWarningsAnnotationBase(Project project) {
 		super(project);
 	}
 
 	@Override
 	protected List<ASTNode> detect(Commit commit, TestCase tc, Results results) throws IOException, MalformedTreeException, BadLocationException {
-		final List<ASTNode> targets = new ArrayList<>();
-
-		// results are null in generating patches.
-		if (results == null) {
-			results = Results.parse(outputDir, projectId, commit);
-		}
-		// get deprecated nodes' position from deprecated messages
-		List<String> deprecatedMessages = deprecatedMessages(results.getCompileOutputs());
-		List<Integer> deprecatedNodePositions = deprecatedNodePositions(deprecatedMessages, tc);
-		// find deprecated nodes using obtained positions
-		AllElementsFindVisitor visitor = new AllElementsFindVisitor();
-		tc.getMethodDeclaration().accept(visitor);
-		List<ASTNode> nodes = visitor.getNodes();
-		List<ASTNode> deprecatedNodes = new ArrayList<>();
-		for (ASTNode node: nodes) {
-			if (deprecatedNodePositions.contains(node.getStartPosition())) {
-				deprecatedNodes.add(node);
-			}
-		}
-		for (ASTNode node: deprecatedNodes) {
-			while (node.getParent() != null) {
-				if (node instanceof MethodDeclaration) {
-					targets.add(node);
-					break;
+	    final List<ASTNode> ret = new ArrayList<>();
+		final List<String> targetMessages = new ArrayList<>();
+		// get target nodes' position from warning messages
+		for (String message : results.getCompileOutputs()) {
+			if (targetMessage(message)) {
+				if (messageInfo(message) != null) {
+					targetMessages.add(messageInfo(message));
 				}
-				node = node.getParent();
 			}
 		}
-		return targets;
+		List<Integer> targetNodePositions = targetNodePositions(targetMessages, tc);
+		// check whether test case contains obtained positions
+		int tcStartPosition = tc.getMethodDeclaration().getStartPosition();
+		int tcEndPosition   = tcStartPosition + tc.getMethodDeclaration().getLength();
+		for (int position : targetNodePositions) {
+			if (tcStartPosition <= position && position <= tcEndPosition) {
+				ret.add(tc.getMethodDeclaration());
+				return ret;
+			}
+		}
+		return ret;
 	}
 
 	@SuppressWarnings("unchecked")
@@ -78,10 +64,11 @@ public class AddSuppressWarningsAnnotations extends SimpleValidatorBase {
 			MethodDeclaration target = (MethodDeclaration) node;
 			MethodDeclaration replace = (MethodDeclaration) ASTNode.copySubtree(ast, target);
 			// create new annotation
+
 			SingleMemberAnnotation annotation = ast.newSingleMemberAnnotation();
 			annotation.setTypeName(ast.newName("SuppressWarnings"));
 			StringLiteral value = ast.newStringLiteral();
-			value.setLiteralValue("deprecated");
+			value.setLiteralValue(SuppressWarning());
 			annotation.setValue(value);
 			// insert annotation
 			replace.modifiers().add(0, annotation);
@@ -94,32 +81,35 @@ public class AddSuppressWarningsAnnotations extends SimpleValidatorBase {
 		return document.get();
 	}
 
+	abstract public String SuppressWarning();
+
+	abstract public boolean targetMessage(String message);
+
+	public static boolean WarningMessage(String message) {
+		return message.contains("WARNING") && message.contains("test");
+	}
+
 	/**
-	 * @param outputs: [WARNING] /home/ubuntu/workspace/VTR/subjects/commons-codec/src/test/java/org/apache/commons/codec/binary/Base64Test.java:[150,81] UTF_8 in org.apache.commons.codec.Charsets has been deprecated
-	 * @return
+	 * @param message: [WARNING] /home/ubuntu/workspace/VTR/subjects/commons-codec/src/test/java/org/apache/commons/codec/binary/Base64Test.java:[150,81] UTF_8 in org.apache.commons.codec.Charsets has been deprecated
+	 * @return [WARNING] /home/ubuntu/workspace/VTR/subjects/commons-codec/src/test/java/org/apache/commons/codec/binary/Base64Test.java:[150,81]
 	 */
-	private List<String> deprecatedMessages(List<String> outputs) {
-		List<String> ret = new ArrayList<>();
-		for (String message: outputs) {
-			String[] messages = message.split(" ");
-			if (messages.length < 2) {
-				continue;
-			}
-			if ( message.contains("WARNING") && (message.contains("非推奨") || message.contains("deprecated")) ) {
-				ret.add(messages[1]);
-			}
+	private String messageInfo(String message) {
+		String[] infos = message.split(" ");
+		if (infos.length < 2) {
+			return null;
 		}
-		return ret;
+		return infos[1];
 	}
 	
-	private List<Integer> deprecatedNodePositions(List<String> deprecatedMessages, TestCase tc) {
+	private List<Integer> targetNodePositions(List<String> targetMessages, TestCase tc) {
 		List<Integer> ret = new ArrayList<>();
-		for (String message: deprecatedMessages) {
+		for (String message: targetMessages) {
 			if (isTarget(message, tc)) {
 				int line  = getLinePos(message);
 				int col  = getColPos(message);
 				CompilationUnit cu = tc.getCompilationUnit();
 				int pos = cu.getPosition(line, col);
+				System.out.println(pos);
 				ret.add(pos);
 			}
 		}
@@ -129,7 +119,7 @@ public class AddSuppressWarningsAnnotations extends SimpleValidatorBase {
 	/**
 	 * 
 	 * @param info: /Users/TK/workspace/VTR/subjects/commons-codec/src/test/java/org/apache/commons/codec/binary/Base64Test.java:[447,97]
-	 * @return
+	 * @return 447
 	 */
 	private int getLinePos(String info) {
 		if (info.split(":").length < 2) {
@@ -143,7 +133,7 @@ public class AddSuppressWarningsAnnotations extends SimpleValidatorBase {
 	/**
 	 * 
 	 * @param info: /Users/TK/workspace/VTR/subjects/commons-codec/src/test/java/org/apache/commons/codec/binary/Base64Test.java:[447,97]
-	 * @return
+	 * @return 97
 	 */
 	private int getColPos(String info) {
 		if (info.split(":").length < 2) {

@@ -1,4 +1,4 @@
-package jp.mzw.vtr.validate.coding_style;
+package jp.mzw.vtr.validate.outputs.suppress_warnings.add_override_annotation;
 
 import jp.mzw.vtr.core.Project;
 import jp.mzw.vtr.git.Commit;
@@ -19,10 +19,10 @@ import java.io.IOException;
 /**
  * Created by TK on 2017/02/02.
  */
-abstract public class AddOverrideAnnotationsBase extends SimpleValidatorBase {
-	protected static Logger LOGGER = LoggerFactory.getLogger(AddOverrideAnnotationsBase.class);
+abstract public class AddOverrideAnnotationBase extends SimpleValidatorBase {
+	protected static Logger LOGGER = LoggerFactory.getLogger(AddOverrideAnnotationBase.class);
 
-	public AddOverrideAnnotationsBase(Project project) {
+	public AddOverrideAnnotationBase(Project project) {
 		super(project);
 	}
 

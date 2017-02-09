@@ -1,4 +1,4 @@
-package jp.mzw.vtr.validate.outputs;
+package jp.mzw.vtr.validate.outputs.suppress_warnings;
 
 import java.io.IOException;
 import java.util.ArrayList;

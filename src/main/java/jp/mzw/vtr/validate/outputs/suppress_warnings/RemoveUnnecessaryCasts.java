@@ -1,11 +1,10 @@
-package jp.mzw.vtr.validate.outputs;
+package jp.mzw.vtr.validate.outputs.suppress_warnings;
 
 import jp.mzw.vtr.core.Project;
 import jp.mzw.vtr.git.Commit;
 import jp.mzw.vtr.maven.Results;
 import jp.mzw.vtr.maven.TestCase;
 import jp.mzw.vtr.validate.SimpleValidatorBase;
-import org.eclipse.jdt.core.CompletionContext;
 import org.eclipse.jdt.core.dom.*;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 import org.eclipse.jface.text.BadLocationException;
