@@ -116,7 +116,7 @@ public class Validator implements CheckoutConductor.Listener {
 			// determine whether POM content is updated
 			boolean updatePomContent = changePomContent(prvPomContent, curPomContent);
 			// Get compile and JavaDoc results
-			final Results results = getResults(commit);
+			Results results = null;
 			// Validate
 			LOGGER.info("Validating...");
 			startup();
@@ -129,6 +129,10 @@ public class Validator implements CheckoutConductor.Listener {
 						continue;
 					}
 					// validate
+					if (results == null) {
+						results = getResults(commit);
+					}
+					final Results submit = results;
 					for (final Class<? extends ValidatorBase> clazz : validatorClasses) {
 						final List<String> duplicates = duplicateMap.get(clazz.getName());
 						if (duplicates.contains(tc.getFullName())) {
@@ -139,7 +143,7 @@ public class Validator implements CheckoutConductor.Listener {
 							public Long call() throws Exception {
 								Constructor<?> constructor = clazz.getConstructor(Project.class);
 								ValidatorBase clone = (ValidatorBase) constructor.newInstance(project);
-								ValidationResult result = clone.validate(commit, tc, results);
+								ValidationResult result = clone.validate(commit, tc, submit);
 								if (result != null) {
 									validationResults.add(result);
 									duplicates.add(tc.getFullName());
