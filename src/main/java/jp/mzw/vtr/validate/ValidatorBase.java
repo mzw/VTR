@@ -192,8 +192,11 @@ abstract public class ValidatorBase {
 		}
 		// New
 		else {
-			for (ValidationResult vr : results) {
-				builder.append(vr.toCsv());
+			// new
+			if (!results.isEmpty()) {
+				for (ValidationResult vr : results) {
+					builder.append(vr.toCsv());
+				}
 			}
 		}
 		// Write
