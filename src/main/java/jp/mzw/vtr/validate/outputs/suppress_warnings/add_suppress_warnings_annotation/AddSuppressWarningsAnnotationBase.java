@@ -109,7 +109,6 @@ abstract public class AddSuppressWarningsAnnotationBase extends SimpleValidatorB
 				int col  = getColPos(message);
 				CompilationUnit cu = tc.getCompilationUnit();
 				int pos = cu.getPosition(line, col);
-				System.out.println(pos);
 				ret.add(pos);
 			}
 		}
