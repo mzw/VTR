@@ -81,18 +81,13 @@ public class DoNotSwallowTestErrorsSilently extends SimpleValidatorBase {
 			for (Object object : node.catchClauses()) {
 				catches.add((CatchClause) object);
 			}
-			ListRewrite listRewrite = rewrite.getListRewrite(node.getBody(), Block.STATEMENTS_PROPERTY);
-			ASTNode previous = null;
+			ListRewrite listRewrite = rewrite.getListRewrite(getNearestParentBlock(node), Block.STATEMENTS_PROPERTY);
 			for (Object object : node.getBody().statements()) {
 				ASTNode statement = (ASTNode) object;
 				ASTNode copy = ASTNode.copySubtree(ast, statement);
-				if (previous == null) {
-					rewrite.replace(node, copy, null);
-				} else {
-					listRewrite.insertAfter(copy, previous, null);
-				}
-				previous = copy;
+				listRewrite.insertBefore(copy, node, null);
 			}
+			rewrite.remove(node, null);
 		}
 		// Add exception throws if necessary
 		List<ITypeBinding> adds = new ArrayList<>();
@@ -160,4 +155,20 @@ public class DoNotSwallowTestErrorsSilently extends SimpleValidatorBase {
 		return ret;
 	}
 
+	public static Block getNearestParentBlock(ASTNode node) {
+		if (node == null) {
+			return null;
+		}
+		if (node instanceof Block) {
+			return (Block) node;
+		}
+		ASTNode parent = node.getParent();
+		while (parent != null) {
+			if (parent instanceof Block) {
+				return (Block) parent;
+			}
+			parent = parent.getParent();
+		}
+		return null;
+	}
 }
