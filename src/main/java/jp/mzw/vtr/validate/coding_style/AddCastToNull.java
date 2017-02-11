@@ -20,6 +20,7 @@ import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.ParameterizedType;
+import org.eclipse.jdt.core.dom.PrimitiveType;
 import org.eclipse.jdt.core.dom.Type;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 import org.eclipse.jface.text.BadLocationException;
@@ -149,8 +150,17 @@ public class AddCastToNull extends SimpleValidatorBase {
 						Type type = null;
 						if (declaredArgument.isArray()) {
 							ITypeBinding elementType = declaredArgument.getElementType();
-							Type simpleType = ast.newSimpleType(ast.newName(elementType.getName()));
-							ArrayType arrayType = ast.newArrayType(simpleType);
+							Type newType = null;
+							if (elementType.isPrimitive()) {
+								newType = ast.newPrimitiveType(PrimitiveType.toCode(elementType.getName()));
+							} else {
+								newType = ast.newSimpleType(ast.newName(elementType.getName()));
+							}
+							// TODO for debugging
+							if (newType == null) {
+								System.out.println("Unknown type: " + elementType);
+							}
+							ArrayType arrayType = ast.newArrayType(newType);
 							for (int d = 1; d < declaredArgument.getDimensions(); d++) {
 								arrayType.dimensions().add(ast.newDimension());
 							}
