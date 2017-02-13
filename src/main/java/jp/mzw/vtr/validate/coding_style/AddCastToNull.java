@@ -221,8 +221,40 @@ public class AddCastToNull extends SimpleValidatorBase {
 						} else if(declaredArgument.isTypeVariable()) {
 							LOGGER.info("Type variable is limited: {}", declaredArgument);
 							return origin;
+						} else if(declaredArgument.isCapture()) {
+							LOGGER.info("Captured type is limited: {}", declaredArgument);
+							return origin;
 						} else {
-							type = ast.newSimpleType(ast.newSimpleName(declaredArgument.getName()));
+							try {
+								type = ast.newSimpleType(ast.newSimpleName(declaredArgument.getName()));
+							} catch (IllegalArgumentException e) {
+								// TODO for debugging
+								System.out.println(e.getMessage());
+								System.out.println(declaredArgument);
+								System.out.println("\t" + declaredArgument.isAnnotation());
+								System.out.println("\t" + declaredArgument.isAnonymous());
+								System.out.println("\t" + declaredArgument.isArray());
+								System.out.println("\t" + declaredArgument.isCapture());
+								System.out.println("\t" + declaredArgument.isClass());
+								System.out.println("\t" + declaredArgument.isDeprecated());
+								System.out.println("\t" + declaredArgument.isEnum());
+								System.out.println("\t" + declaredArgument.isFromSource());
+								System.out.println("\t" + declaredArgument.isGenericType());
+								System.out.println("\t" + declaredArgument.isInterface());
+								System.out.println("\t" + declaredArgument.isIntersectionType());
+								System.out.println("\t" + declaredArgument.isLocal());
+								System.out.println("\t" + declaredArgument.isMember());
+								System.out.println("\t" + declaredArgument.isNested());
+								System.out.println("\t" + declaredArgument.isNullType());
+								System.out.println("\t" + declaredArgument.isParameterizedType());
+								System.out.println("\t" + declaredArgument.isRawType());
+								System.out.println("\t" + declaredArgument.isRecovered());
+								System.out.println("\t" + declaredArgument.isSynthetic());
+								System.out.println("\t" + declaredArgument.isTopLevel());
+								System.out.println("\t" + declaredArgument.isTypeVariable());
+								System.out.println("\t" + declaredArgument.isUpperbound());
+								System.out.println("\t" + declaredArgument.isWildcardType());
+							}
 						}
 						if (type != null) {
 							CastExpression cast = ast.newCastExpression();
