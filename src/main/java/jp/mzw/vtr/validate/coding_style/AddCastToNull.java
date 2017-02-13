@@ -201,12 +201,21 @@ public class AddCastToNull extends SimpleValidatorBase {
 							}
 							type = arrayType;
 						} else if(declaredArgument.isParameterizedType()) {
-							System.out.println(commit.getId() + ", " + tc.getFullName());
 							Type simpleType = ast.newSimpleType(ast.newName(declaredArgument.getErasure().getName()));
 							ParameterizedType parameterizedType = ast.newParameterizedType(simpleType);
 							for (ITypeBinding typeArgument : declaredArgument.getTypeArguments()) {
-								Type typeParameter = ast.newSimpleType(ast.newSimpleName(typeArgument.getErasure().getName()));
-								parameterizedType.typeArguments().add(typeParameter);
+								ITypeBinding ensuredType = typeArgument.getErasure();
+								if (ensuredType.isArray()) {
+									Type newType = ast.newSimpleType(ast.newName(ensuredType.getElementType().getName()));
+									ArrayType arrayType = ast.newArrayType(newType);
+									for (int d = 1; d < ensuredType.getDimensions(); d++) {
+										arrayType.dimensions().add(ast.newDimension());
+									}
+									parameterizedType.typeArguments().add(arrayType);
+								} else {
+									Type typeParameter = ast.newSimpleType(ast.newSimpleName(typeArgument.getErasure().getName()));
+									parameterizedType.typeArguments().add(typeParameter);
+								}
 							}
 							type = parameterizedType;
 						} else if(declaredArgument.isTypeVariable()) {
