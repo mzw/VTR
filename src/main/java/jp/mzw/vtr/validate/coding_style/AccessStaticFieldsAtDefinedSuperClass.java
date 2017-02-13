@@ -49,6 +49,10 @@ public class AccessStaticFieldsAtDefinedSuperClass extends SimpleValidatorBase {
 		});
 
 		for (QualifiedName target : targets) {
+			String definedSuperClassName = definedSuperClassName(target);
+			if (definedSuperClassName == null) {
+				continue;
+			}
 			if (!target.getQualifier().toString().equals(definedSuperClassName(target))) {
 				ret.add(target);
 			}
@@ -79,15 +83,19 @@ public class AccessStaticFieldsAtDefinedSuperClass extends SimpleValidatorBase {
 	}
 
 	private String definedSuperClassName(QualifiedName target) {
-		ITypeBinding binding = target.getQualifier().resolveTypeBinding().getSuperclass();
+		ITypeBinding current = target.getQualifier().resolveTypeBinding();
+		ITypeBinding binding = target.getQualifier().resolveTypeBinding();
 		while (binding != null) {
 			for (IVariableBinding variable : binding.getDeclaredFields()) {
 				if (variable.getName().equals(target.getName().toString())) {
+					if (current.equals(binding)) {
+						return null;
+					}
 					return binding.getName();
 				}
 			}
 			binding = binding.getSuperclass();
 		}
-		return target.getQualifier().toString();
+		return null;
 	}
 }

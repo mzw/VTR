@@ -10,37 +10,31 @@ import jp.mzw.vtr.maven.Results;
 import jp.mzw.vtr.maven.TestCase;
 import jp.mzw.vtr.validate.SimpleValidatorBase;
 
-import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
-import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.Javadoc;
 import org.eclipse.jdt.core.dom.TagElement;
-import org.eclipse.jdt.core.dom.TextElement;
-import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 import org.eclipse.jface.text.BadLocationException;
-import org.eclipse.jface.text.Document;
 import org.eclipse.text.edits.MalformedTreeException;
-import org.eclipse.text.edits.TextEdit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class ReplaceAtTodoWithTODO extends SimpleValidatorBase {
 	protected static Logger LOGGER = LoggerFactory.getLogger(ReplaceAtTodoWithTODO.class);
-	
+
 	public ReplaceAtTodoWithTODO(Project project) {
 		super(project);
 	}
-	
+
 	@SuppressWarnings("unchecked")
 	@Override
 	protected List<ASTNode> detect(final Commit commit, final TestCase tc, final Results results) {
 		List<ASTNode> ret = new ArrayList<>();
 		final List<Object> targets = tc.getCompilationUnit().getCommentList();
-		for (Object target: targets) {
+		for (Object target : targets) {
 			if (target instanceof Javadoc) {
 				Javadoc comment = (Javadoc) target;
 				List<Object> tags = comment.tags();
-				for (Object tag: tags) {
+				for (Object tag : tags) {
 					if (tag instanceof TagElement) {
 						TagElement element = (TagElement) tag;
 						String tagName = element.getTagName();
@@ -54,27 +48,34 @@ public class ReplaceAtTodoWithTODO extends SimpleValidatorBase {
 		return ret;
 	}
 
-	@SuppressWarnings("unchecked")
 	@Override
-	protected String getModified(String origin, final Commit commit, final TestCase tc, final Results results) throws IOException, MalformedTreeException, BadLocationException {
-		// prepare
-		CompilationUnit cu = tc.getCompilationUnit();
-		AST ast = cu.getAST();
-		ASTRewrite rewrite = ASTRewrite.create(ast);
+	protected String getModified(String origin, final Commit commit, final TestCase tc, final Results results)
+			throws IOException, MalformedTreeException, BadLocationException {
 		// detect
-		for (ASTNode node: detect(commit, tc, results)) {
-			TagElement target = (TagElement) node;
-			TextElement targetText = (TextElement) target.fragments().get(0);
-			TagElement replace = ast.newTagElement();
-			TextElement replaceText = ast.newTextElement();
-			replaceText.setText("TODO" + targetText.getText());
-			replace.fragments().add(replaceText);
-			rewrite.replace(target, replace, null);
+		char[] array = origin.toCharArray();
+		StringBuilder builder = new StringBuilder();
+		for (int i = 0; i < array.length; i++) {
+
+			boolean start = false;
+			boolean in = false;
+			for (ASTNode detect : detect(commit, tc, results)) {
+				TagElement node = (TagElement) detect;
+				if (i == node.getStartPosition()) {
+					start = true;
+					break;
+				} else if (node.getStartPosition() < i && i < node.getStartPosition() + "@todo".length()) {
+					in = true;
+					break;
+				}
+			}
+			if (start) {
+				builder.append("TODO ");
+			} else if (in) {
+				// skip
+			} else {
+				builder.append(array[i]);
+			}
 		}
-		// modify
-		Document document = new Document(origin);
-		TextEdit edit = rewrite.rewriteAST(document, null);
-		edit.apply(document);
-		return document.get();
+		return builder.toString();
 	}
 }

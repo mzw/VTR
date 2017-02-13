@@ -63,18 +63,16 @@ public class AddExplicitBlocks extends SimpleValidatorBase {
                 rewrite.replace(target, replace, null);
             } else if (node instanceof ForStatement) {
                 ForStatement target = (ForStatement) node;
-                ForStatement replace = (ForStatement) ASTNode.copySubtree(ast, target);
-                Block body = ast.newBlock();
-                body.statements().add(replace.getBody());
-                replace.setBody(body);
-                rewrite.replace(target, replace, null);
+                Statement body = (Statement) ASTNode.copySubtree(ast, target.getBody());
+                Block block = ast.newBlock();
+                block.statements().add(body);
+                rewrite.replace(target.getBody(), block, null);
             } else if (node instanceof WhileStatement) {
                 WhileStatement target = (WhileStatement) node;
-                WhileStatement replace = (WhileStatement) ASTNode.copySubtree(ast, target);
-                Block body = ast.newBlock();
-                body.statements().add(replace.getBody());
-                replace.setBody(body);
-                rewrite.replace(target, replace, null);
+                Statement body = (Statement) ASTNode.copySubtree(ast, target.getBody());
+                Block block = ast.newBlock();
+                block.statements().add(body);
+                rewrite.replace(target.getBody(), block, null);
             }
         }
         // modify

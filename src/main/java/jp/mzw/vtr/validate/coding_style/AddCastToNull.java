@@ -153,7 +153,6 @@ public class AddCastToNull extends SimpleValidatorBase {
 							if (elementType.isPrimitive()) {
 								newType = ast.newPrimitiveType(PrimitiveType.toCode(elementType.getName()));
 							} else if (elementType.isGenericType()) {
-								System.out.println("soko");
 								LOGGER.info("Generic type is limited: {}", elementType);
 								return origin;
 							} else if (elementType.isParameterizedType()) {
@@ -205,15 +204,57 @@ public class AddCastToNull extends SimpleValidatorBase {
 							Type simpleType = ast.newSimpleType(ast.newName(declaredArgument.getErasure().getName()));
 							ParameterizedType parameterizedType = ast.newParameterizedType(simpleType);
 							for (ITypeBinding typeArgument : declaredArgument.getTypeArguments()) {
-								Type typeParameter = ast.newSimpleType(ast.newSimpleName(typeArgument.getErasure().getName()));
-								parameterizedType.typeArguments().add(typeParameter);
+								ITypeBinding ensuredType = typeArgument.getErasure();
+								if (ensuredType.isArray()) {
+									Type newType = ast.newSimpleType(ast.newName(ensuredType.getElementType().getName()));
+									ArrayType arrayType = ast.newArrayType(newType);
+									for (int d = 1; d < ensuredType.getDimensions(); d++) {
+										arrayType.dimensions().add(ast.newDimension());
+									}
+									parameterizedType.typeArguments().add(arrayType);
+								} else {
+									Type typeParameter = ast.newSimpleType(ast.newSimpleName(typeArgument.getErasure().getName()));
+									parameterizedType.typeArguments().add(typeParameter);
+								}
 							}
 							type = parameterizedType;
 						} else if(declaredArgument.isTypeVariable()) {
 							LOGGER.info("Type variable is limited: {}", declaredArgument);
 							return origin;
+						} else if(declaredArgument.isCapture()) {
+							LOGGER.info("Captured type is limited: {}", declaredArgument);
+							return origin;
 						} else {
-							type = ast.newSimpleType(ast.newSimpleName(declaredArgument.getName()));
+							try {
+								type = ast.newSimpleType(ast.newSimpleName(declaredArgument.getName()));
+							} catch (IllegalArgumentException e) {
+								// TODO for debugging
+								System.out.println(e.getMessage());
+								System.out.println(declaredArgument);
+								System.out.println("\t" + declaredArgument.isAnnotation());
+								System.out.println("\t" + declaredArgument.isAnonymous());
+								System.out.println("\t" + declaredArgument.isArray());
+								System.out.println("\t" + declaredArgument.isCapture());
+								System.out.println("\t" + declaredArgument.isClass());
+								System.out.println("\t" + declaredArgument.isDeprecated());
+								System.out.println("\t" + declaredArgument.isEnum());
+								System.out.println("\t" + declaredArgument.isFromSource());
+								System.out.println("\t" + declaredArgument.isGenericType());
+								System.out.println("\t" + declaredArgument.isInterface());
+								System.out.println("\t" + declaredArgument.isIntersectionType());
+								System.out.println("\t" + declaredArgument.isLocal());
+								System.out.println("\t" + declaredArgument.isMember());
+								System.out.println("\t" + declaredArgument.isNested());
+								System.out.println("\t" + declaredArgument.isNullType());
+								System.out.println("\t" + declaredArgument.isParameterizedType());
+								System.out.println("\t" + declaredArgument.isRawType());
+								System.out.println("\t" + declaredArgument.isRecovered());
+								System.out.println("\t" + declaredArgument.isSynthetic());
+								System.out.println("\t" + declaredArgument.isTopLevel());
+								System.out.println("\t" + declaredArgument.isTypeVariable());
+								System.out.println("\t" + declaredArgument.isUpperbound());
+								System.out.println("\t" + declaredArgument.isWildcardType());
+							}
 						}
 						if (type != null) {
 							CastExpression cast = ast.newCastExpression();

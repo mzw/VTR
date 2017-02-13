@@ -22,6 +22,7 @@ import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jdt.core.dom.ArrayAccess;
+import org.eclipse.jdt.core.dom.ArrayType;
 import org.eclipse.jdt.core.dom.Assignment;
 import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.EnhancedForStatement;
@@ -838,6 +839,15 @@ public class ConvertForLoopOperation extends ConvertLoopOperation {
 						parameterizedType.typeArguments().add(typeParameter);
 					}
 					type = parameterizedType;
+				} else if(componentType.isArray()) {
+					ITypeBinding elementType = componentType.getElementType();
+					if (elementType.isPrimitive()) {
+						type = ast.newPrimitiveType(PrimitiveType.toCode(elementType.getName()));
+					} else {
+						type = ast.newSimpleType(ast.newName(elementType.getName()));
+					}
+				} else if(componentType.isPrimitive()) {
+					type = ast.newPrimitiveType(PrimitiveType.toCode(componentType.getName()));
 				} else {
 					name = ast.newSimpleName(arrayTypeBinding.getComponentType().getName());
 					type = ast.newSimpleType(name);
