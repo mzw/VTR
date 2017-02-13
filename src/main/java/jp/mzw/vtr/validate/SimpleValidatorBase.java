@@ -54,6 +54,14 @@ abstract public class SimpleValidatorBase extends ValidatorBase {
 			String origin = FileUtils.readFileToString(testcase.getTestFile());
 			String modified = getModified(origin.toString(), commit, testcase, results);
 			List<String> patch = genPatch(origin, modified, testcase.getTestFile(), testcase.getTestFile());
+			// No modification
+			if (patch.isEmpty()) {
+				return;
+			} else if (patch.size() == 1) {
+				if ("".equals(patch.get(0))) {
+					return;
+				}
+			}
 			output(result, testcase, patch);
 		} catch (IOException | MalformedTreeException | BadLocationException e) {
 			LOGGER.warn("Failed to generate patch: {}", e.getMessage());
