@@ -37,6 +37,7 @@ import org.eclipse.jdt.core.dom.ASTParser;
 import org.eclipse.jdt.core.dom.Modifier;
 import org.eclipse.jdt.core.dom.Name;
 import org.eclipse.jdt.core.dom.NumberLiteral;
+import org.eclipse.jdt.core.dom.ParameterizedType;
 import org.eclipse.jdt.core.dom.PostfixExpression;
 import org.eclipse.jdt.core.dom.PrefixExpression;
 import org.eclipse.jdt.core.dom.PrimitiveType;
@@ -828,8 +829,19 @@ public class ConvertForLoopOperation extends ConvertLoopOperation {
 			if (arrayTypeBinding.isPrimitive()) {
 				type = ast.newPrimitiveType(PrimitiveType.toCode(arrayTypeBinding.getName()));
 			} else {
-				name = ast.newSimpleName(arrayTypeBinding.getComponentType().getName());
-				type = ast.newSimpleType(name);
+				ITypeBinding componentType = arrayTypeBinding.getComponentType();
+				if (componentType.isParameterizedType()) {
+					Type simpleType = ast.newSimpleType(ast.newName(componentType.getErasure().getName()));
+					ParameterizedType parameterizedType = ast.newParameterizedType(simpleType);
+					for (ITypeBinding typeArgument : componentType.getTypeArguments()) {
+						Type typeParameter = ast.newSimpleType(ast.newSimpleName(typeArgument.getErasure().getName()));
+						parameterizedType.typeArguments().add(typeParameter);
+					}
+					type = parameterizedType;
+				} else {
+					name = ast.newSimpleName(arrayTypeBinding.getComponentType().getName());
+					type = ast.newSimpleType(name);
+				}
 			}
 		}
 		if (arrayTypeBinding.getDimensions() != 1) {
