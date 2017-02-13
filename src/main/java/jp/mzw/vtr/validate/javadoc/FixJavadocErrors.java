@@ -84,7 +84,7 @@ public class FixJavadocErrors extends SimpleValidatorBase {
 		}
 		// rewrite
 		for (JavadocErrorMessage message : messages) {
-		    if (message.getMethod() == null) {
+			if (message.getMethod() == null) {
 				continue;
 			}
 			if (!message.getMethod().equals(tc.getMethodDeclaration())) {
