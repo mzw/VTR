@@ -153,7 +153,6 @@ public class AddCastToNull extends SimpleValidatorBase {
 							if (elementType.isPrimitive()) {
 								newType = ast.newPrimitiveType(PrimitiveType.toCode(elementType.getName()));
 							} else if (elementType.isGenericType()) {
-								System.out.println("soko");
 								LOGGER.info("Generic type is limited: {}", elementType);
 								return origin;
 							} else if (elementType.isParameterizedType()) {
