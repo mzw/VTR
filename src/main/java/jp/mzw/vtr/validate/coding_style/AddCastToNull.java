@@ -146,19 +146,55 @@ public class AddCastToNull extends SimpleValidatorBase {
 					ITypeBinding declaredArgument = declaredArguments[i];
 					// Determine whether this argument should be casted
 					if ((isNull(targetArgument)) && (!declaredArgument.isPrimitive())) {
-
 						Type type = null;
 						if (declaredArgument.isArray()) {
 							ITypeBinding elementType = declaredArgument.getElementType();
 							Type newType = null;
 							if (elementType.isPrimitive()) {
 								newType = ast.newPrimitiveType(PrimitiveType.toCode(elementType.getName()));
+							} else if (elementType.isGenericType()) {
+								System.out.println("soko");
+								LOGGER.info("Generic type is limited: {}", elementType);
+								return origin;
+							} else if (elementType.isParameterizedType()) {
+								Type simpleType = ast.newSimpleType(ast.newName(elementType.getErasure().getName()));
+								ParameterizedType parameterizedType = ast.newParameterizedType(simpleType);
+								for (ITypeBinding typeArgument : elementType.getTypeArguments()) {
+									Type typeParameter = ast.newSimpleType(ast.newSimpleName(typeArgument.getErasure().getName()));
+									parameterizedType.typeArguments().add(typeParameter);
+								}
+								newType = parameterizedType;
 							} else {
-								newType = ast.newSimpleType(ast.newName(elementType.getName()));
-							}
-							// TODO for debugging
-							if (newType == null) {
-								System.out.println("Unknown type: " + elementType);
+								try {
+									newType = ast.newSimpleType(ast.newName(elementType.getName()));
+								} catch (IllegalArgumentException e) {
+									// TODO for debugging
+									System.out.println(e.getMessage());
+									System.out.println(elementType);
+									System.out.println("\t" + elementType.isAnnotation());
+									System.out.println("\t" + elementType.isAnonymous());
+									System.out.println("\t" + elementType.isArray());
+									System.out.println("\t" + elementType.isCapture());
+									System.out.println("\t" + elementType.isClass());
+									System.out.println("\t" + elementType.isDeprecated());
+									System.out.println("\t" + elementType.isEnum());
+									System.out.println("\t" + elementType.isFromSource());
+									System.out.println("\t" + elementType.isGenericType());
+									System.out.println("\t" + elementType.isInterface());
+									System.out.println("\t" + elementType.isIntersectionType());
+									System.out.println("\t" + elementType.isLocal());
+									System.out.println("\t" + elementType.isMember());
+									System.out.println("\t" + elementType.isNested());
+									System.out.println("\t" + elementType.isNullType());
+									System.out.println("\t" + elementType.isParameterizedType());
+									System.out.println("\t" + elementType.isRawType());
+									System.out.println("\t" + elementType.isRecovered());
+									System.out.println("\t" + elementType.isSynthetic());
+									System.out.println("\t" + elementType.isTopLevel());
+									System.out.println("\t" + elementType.isTypeVariable());
+									System.out.println("\t" + elementType.isUpperbound());
+									System.out.println("\t" + elementType.isWildcardType());
+								}
 							}
 							ArrayType arrayType = ast.newArrayType(newType);
 							for (int d = 1; d < declaredArgument.getDimensions(); d++) {
@@ -173,6 +209,9 @@ public class AddCastToNull extends SimpleValidatorBase {
 								parameterizedType.typeArguments().add(typeParameter);
 							}
 							type = parameterizedType;
+						} else if(declaredArgument.isTypeVariable()) {
+							LOGGER.info("Type variable is limited: {}", declaredArgument);
+							return origin;
 						} else {
 							type = ast.newSimpleType(ast.newSimpleName(declaredArgument.getName()));
 						}
