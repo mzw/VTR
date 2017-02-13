@@ -189,7 +189,7 @@ public class UseArithmeticAssignmentOperators extends SimpleValidatorBase {
 			Expression left = (Expression) ASTNode.copySubtree(ast, target.getLeftHandSide());
 			replace.setLeftHandSide(left);
 			// operator
-			Assignment.Operator operator = Assignment.Operator.toOperator(change.getOprator() + target.getOperator().toString());
+			Assignment.Operator operator = getCompositeOperator(change.getOprator());
 			replace.setOperator(operator);
 			// right
 			Expression right = (Expression) ASTNode.copySubtree(ast, change.getRest());
@@ -202,6 +202,35 @@ public class UseArithmeticAssignmentOperators extends SimpleValidatorBase {
 		TextEdit edit = rewrite.rewriteAST(document, null);
 		edit.apply(document);
 		return document.get();
+	}
+	
+	public static Assignment.Operator getCompositeOperator(String operator) {
+		if ("*".equals(operator)) {
+			return Assignment.Operator.toOperator("*=");
+		} else if ("/".equals(operator)) {
+			return Assignment.Operator.toOperator("/=");
+		} else if ("%".equals(operator)) {
+			return Assignment.Operator.toOperator("%=");
+		} else if ("+".equals(operator)) {
+			return Assignment.Operator.toOperator("+=");
+		} else if ("-".equals(operator)) {
+			return Assignment.Operator.toOperator("-=");
+		} else if ("<<".equals(operator)) {
+			return Assignment.Operator.toOperator("<<=");
+		} else if (">>".equals(operator)) {
+			return Assignment.Operator.toOperator(">>=");
+		} else if (">>>".equals(operator)) {
+			return Assignment.Operator.toOperator(">>>=");
+		} else if ("&&".equals(operator)) {
+			return Assignment.Operator.toOperator("&=");
+		} else if ("^".equals(operator)) {
+			return Assignment.Operator.toOperator("^=");
+		} else if ("||".equals(operator)) {
+			return Assignment.Operator.toOperator("|=");
+		}
+		return null;
+		
+		
 	}
 
 }
