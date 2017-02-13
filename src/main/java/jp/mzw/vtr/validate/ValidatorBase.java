@@ -463,14 +463,14 @@ abstract public class ValidatorBase {
 		return -1;
 	}
 
-	public static double getJunitVersion(File projectDir) throws IOException {
+	public static Version getJunitVersion(File projectDir) throws IOException {
 		String pom = MavenUtils.getPomContent(projectDir);
 		if (pom == null) {
-			return -1;
+			return null;
 		}
 		org.jsoup.nodes.Document document = org.jsoup.Jsoup.parse(pom, "", org.jsoup.parser.Parser.xmlParser());
 		if (document == null) {
-			return -1;
+			return null;
 		}
 		for (org.jsoup.nodes.Element dependency : document.select("dependencies dependency")) {
 			boolean junit = false;
@@ -483,9 +483,52 @@ abstract public class ValidatorBase {
 				}
 			}
 			if (junit) {
-				return new Double(version);
+				return Version.parse(version);
 			}
 		}
-		return -1;
+		return null;
+	}
+	
+	public static class Version {
+		int major;
+		int minor;
+		int revision;
+		
+		public Version(int major, int minor, int revision) {
+			this.major = major;
+			this.minor = minor;
+			this.revision = revision;
+		}
+		
+		public static Version parse(String string) {
+			if (string == null) {
+				return null;
+			}
+			String[] split = string.split("\\.");
+			int major = Integer.parseInt(split[0]);
+			int minor = 2 <= split.length ? Integer.parseInt(split[1]) : Integer.MIN_VALUE;
+			int revision = 3 <= split.length ? Integer.parseInt(split[2]) : Integer.MIN_VALUE;;
+			return new Version(major, minor, revision);
+		}
+		
+		public int compareTo(Version version) {
+			if (version == null) {
+				return -1;
+			}
+	        if (this.major != version.major) {
+	            return Integer.compare(this.major, version.major);
+	        }
+	        if (this.minor != version.minor) {
+	            return Integer.compare(this.minor, version.minor);
+	        }
+	        if (this.revision != version.revision) {
+	            return Integer.compare(this.revision, version.revision);
+	        }
+	        return 0;
+		}
+		
+		public String toString() {
+			return this.major + "." + this.minor + "." + this.revision;
+		}
 	}
 }

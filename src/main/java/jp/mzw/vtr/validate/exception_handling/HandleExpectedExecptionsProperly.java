@@ -42,7 +42,8 @@ public class HandleExpectedExecptionsProperly extends SimpleValidatorBase {
 	@Override
 	protected List<ASTNode> detect(final Commit commit, final TestCase tc, final Results results) throws IOException, MalformedTreeException, BadLocationException {
 		final List<ASTNode> ret = new ArrayList<>();
-		if (ValidatorBase.getJunitVersion(projectDir) < 4.0) {
+		Version version = ValidatorBase.getJunitVersion(projectDir);
+		if (Version.parse("4").compareTo(version) < 0) {
 			return ret;
 		}
 		final CompilationUnit cu = tc.getCompilationUnit();

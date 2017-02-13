@@ -14,6 +14,7 @@ import org.eclipse.jdt.core.dom.CompilationUnit;
 import org.eclipse.jdt.core.dom.ImportDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.SingleMemberAnnotation;
+import org.eclipse.jdt.core.dom.VariableDeclarationStatement;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 import org.eclipse.jdt.core.dom.rewrite.ListRewrite;
 import org.eclipse.jface.text.BadLocationException;
@@ -87,7 +88,13 @@ public class AssertNotNullToInstances extends SimpleValidatorBase {
 		for (ASTNode detect : detect(commit, testcase, results)) {
 			ClassInstanceCreation node = (ClassInstanceCreation) detect;
 			MethodInvocation method = (MethodInvocation) rewrite.createStringPlaceholder("Assert.assertNotNull(" + node.toString() + ")", ASTNode.METHOD_INVOCATION);
-			rewrite.replace(node, method, null);
+			// From: Class var = new Class();
+			// To:   AssertNotNull(new Class();
+			if (node.getParent().getParent() instanceof VariableDeclarationStatement) {
+				rewrite.replace(node.getParent().getParent(), method, null);
+			} else {
+				rewrite.replace(node, method, null);
+			}
 		}
 		// import
 		final List<ImportDeclaration> imports = new ArrayList<>();
@@ -99,21 +106,21 @@ public class AssertNotNullToInstances extends SimpleValidatorBase {
 			}
 		});
 		boolean imported = false;
-		double version = ValidatorBase.getJunitVersion(projectDir);
+		Version version = ValidatorBase.getJunitVersion(projectDir);
 		ImportDeclaration old = null;
 		for (ImportDeclaration implemented : imports) {
 			String name = implemented.getName().toString();
-			if (version < 4.0 && "junit.framework.Assert".equals(name)) {
+			if (Version.parse("4").compareTo(version) < 0 && "junit.framework.Assert".equals(name)) {
 				imported = true;
-			} else if (4.0 <= version && "org.junit.Assert".equals(name)) {
+			} else if (0 < Version.parse("4").compareTo(version) && "org.junit.Assert".equals(name)) {
 				imported = true;
-			} else if (4.0 <= version && "junit.framework.Assert".equals(name)) {
+			} else if (0 < Version.parse("4").compareTo(version) && "junit.framework.Assert".equals(name)) {
 				old = implemented;
 			}
 		}
 		if (!imported) {
 			ImportDeclaration add = ast.newImportDeclaration();
-			if (4.0 <= version) {
+			if (0 < Version.parse("4").compareTo(version)) {
 				add.setName(ast.newName("org.junit.Assert"));
 			} else {
 				add.setName(ast.newName("junit.framework.Assert"));
