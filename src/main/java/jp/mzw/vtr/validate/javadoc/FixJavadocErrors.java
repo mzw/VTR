@@ -11,17 +11,7 @@ import jp.mzw.vtr.maven.Results;
 import jp.mzw.vtr.maven.TestCase;
 import jp.mzw.vtr.validate.SimpleValidatorBase;
 
-import org.eclipse.jdt.core.dom.AST;
-import org.eclipse.jdt.core.dom.ASTNode;
-import org.eclipse.jdt.core.dom.ASTVisitor;
-import org.eclipse.jdt.core.dom.CompilationUnit;
-import org.eclipse.jdt.core.dom.ITypeBinding;
-import org.eclipse.jdt.core.dom.Javadoc;
-import org.eclipse.jdt.core.dom.MethodDeclaration;
-import org.eclipse.jdt.core.dom.SimpleName;
-import org.eclipse.jdt.core.dom.SimpleType;
-import org.eclipse.jdt.core.dom.TagElement;
-import org.eclipse.jdt.core.dom.TextElement;
+import org.eclipse.jdt.core.dom.*;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 import org.eclipse.jface.text.BadLocationException;
 import org.eclipse.jface.text.Document;
@@ -94,6 +84,12 @@ public class FixJavadocErrors extends SimpleValidatorBase {
 		}
 		// rewrite
 		for (JavadocErrorMessage message : messages) {
+			if (message.getMethod() == null) {
+				continue;
+			}
+			if (!message.getMethod().equals(tc.getMethodDeclaration())) {
+				continue;
+			}
 			if (message.getDescription().startsWith("no @throws for ")) {
 				String exception = message.getDescription().replace("no @throws for ", "");
 				final List<ITypeBinding> exceptions = new ArrayList<>();
