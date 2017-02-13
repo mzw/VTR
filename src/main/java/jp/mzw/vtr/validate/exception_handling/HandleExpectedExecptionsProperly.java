@@ -151,14 +151,14 @@ public class HandleExpectedExecptionsProperly extends SimpleValidatorBase {
 		}
 		// modify Test annotation
 		Annotation annot = ValidatorUtils.getTestAnnotation(tc);
+		Annotation newAnnot = ast.newMarkerAnnotation();
+		newAnnot.setTypeName(ast.newName("Test"));
+		Annotation newAnnotWithExpectedExceptions = createTestAnnotation(newAnnot, atTestAnnot, rewrite);
 		if (annot == null) {
-			Annotation newAnnot = ast.newMarkerAnnotation();
-			newAnnot.setTypeName(ast.newName("Test"));
-			Annotation newAnnotWithExpectedExceptions = createTestAnnotation(newAnnot, atTestAnnot, rewrite);
 			ListRewrite lr = rewrite.getListRewrite(method, MethodDeclaration.MODIFIERS2_PROPERTY);
 			lr.insertFirst(newAnnotWithExpectedExceptions, null);
 		} else {
-			System.out.println("Need to replace exsiting Test annotation");
+			rewrite.replace(annot, newAnnotWithExpectedExceptions, null);
 		}
 		// modify throw clauses
 		ListRewrite list = rewrite.getListRewrite(method, MethodDeclaration.THROWN_EXCEPTION_TYPES_PROPERTY);
