@@ -162,6 +162,31 @@ public class FixJavadocErrors extends SimpleValidatorBase {
 						System.out.println("TODO: " + "unknown tag " + tag.getTagName());
 					}
 				}
+			} else if (message.getDescription().startsWith("element not closed")) {
+				Javadoc javadoc = message.getMethod().getJavadoc();
+				Javadoc copy = (Javadoc) ASTNode.copySubtree(ast, javadoc);
+				copy.tags().clear();
+				for (Object comment : javadoc.tags()) {
+					if (!comment.toString().contains("<") || !comment.toString().contains(">")) {
+						copy.tags().add(comment);
+						continue;
+					}
+					Tidy tidy = new Tidy();
+					tidy.setQuiet(true);
+					tidy.setShowErrors(0);
+					tidy.setShowWarnings(false);
+					ByteArrayOutputStream output = new ByteArrayOutputStream();
+					tidy.parse(new ByteArrayInputStream(comment.toString().getBytes("utf-8")), output);
+					String content = getBody(output.toString()).replace("* ", "");
+					content = content.replace("\n", "\n* ");
+					TagElement tag = ast.newTagElement();
+					TextElement text = ast.newTextElement();
+					text.setText(content);
+					tag.fragments().add(text);
+					copy.tags().add(tag);
+					output.close();
+				}
+				rewrite.replace(javadoc, copy, null);
 			} else {
 				System.out.println("TODO: " + message.toString());
 			}
@@ -179,5 +204,10 @@ public class FixJavadocErrors extends SimpleValidatorBase {
 				tagName.equals("@link") || tagName.equals("@linkplain") || tagName.equals("@literal") ||
 				tagName.equals("@param") || tagName.equals("@return") || tagName.equals("@see") ||
 				tagName.equals("@throws");
+	}
+
+
+	private String getBody(String html) {
+		return html.split("<body>")[1].split("</body>")[0];
 	}
 }
