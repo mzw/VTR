@@ -135,6 +135,19 @@ public class FixJavadocErrors extends SimpleValidatorBase {
 				    tag.fragments().add(text);
 				}
 				rewrite.replace(javadoc, copy, null);
+			} else if (message.getDescription().startsWith("unknown tag")) {
+				Javadoc javadoc = message.getMethod().getJavadoc();
+				for (Object content : javadoc.tags()) {
+					TagElement tag = (TagElement) content;
+					if (officialTag(tag.getTagName())) {
+						continue;
+					} else if (tag.getTagName().equals("@todo")) {
+						// we've already dealt with todo tag in ReplaceAtTodoWithTODO
+						continue;
+					} else {
+						System.out.println("TODO: " + "unknown tag");
+					}
+				}
 			} else {
 				System.out.println("TODO: " + message.toString());
 			}
@@ -144,5 +157,12 @@ public class FixJavadocErrors extends SimpleValidatorBase {
 		TextEdit edit = rewrite.rewriteAST(document, null);
 		edit.apply(document);
 		return document.get();
+	}
+
+	private boolean officialTag(String tagName) {
+		return tagName.equals("@author") || tagName.equals("@code") || tagName.equals("@deprecated") ||
+				tagName.equals("@docRoot") || tagName.equals("exception") || tagName.equals("inheritDoc") ||
+				tagName.equals("@link") || tagName.equals("@linkplain") || tagName.equals("@literal") ||
+				tagName.equals("@param") || tagName.equals("@return") || tagName.equals("@see");
 	}
 }
