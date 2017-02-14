@@ -122,6 +122,19 @@ public class FixJavadocErrors extends SimpleValidatorBase {
 				} else {
 					System.out.println("TODO: " + "tag is null");
 				}
+			} else if (message.getDescription().startsWith("no description for @throws")) {
+				Javadoc javadoc = message.getMethod().getJavadoc();
+				Javadoc copy = (Javadoc) ASTNode.copySubtree(ast, javadoc);
+				for (Object content : copy.tags()) {
+				    TagElement tag = (TagElement) content;
+				    if (!tag.getTagName().equals("@throws")) {
+						continue;
+					}
+					TextElement text = ast.newTextElement();
+				    text.setText("TODO: add description for @throws");
+				    tag.fragments().add(text);
+				}
+				rewrite.replace(javadoc, copy, null);
 			} else {
 				System.out.println("TODO: " + message.toString());
 			}
