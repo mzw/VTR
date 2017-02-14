@@ -1,8 +1,9 @@
 package jp.mzw.vtr.validate.javadoc;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 import jp.mzw.vtr.core.Project;
 import jp.mzw.vtr.git.Commit;
@@ -19,6 +20,7 @@ import org.eclipse.text.edits.MalformedTreeException;
 import org.eclipse.text.edits.TextEdit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.w3c.tidy.Tidy;
 
 public class FixJavadocErrors extends SimpleValidatorBase {
 	protected static Logger LOGGER = LoggerFactory.getLogger(FixJavadocErrors.class);
@@ -118,14 +120,14 @@ public class FixJavadocErrors extends SimpleValidatorBase {
 				// so tag remains null
 				if (tag == null) {
 					String[] packages = exception.split("\\.");
-				    String exceptionName = packages[packages.length - 1];
-				    tag = ast.newTagElement();
-				    tag.setTagName(TagElement.TAG_THROWS);
-				    SimpleName name = ast.newSimpleName(exceptionName);
-				    tag.fragments().add(name);
-				    TextElement text = ast.newTextElement();
-				    text.setText("TODO: Add description for this exception");
-				    tag.fragments().add(text);
+					String exceptionName = packages[packages.length - 1];
+					tag = ast.newTagElement();
+					tag.setTagName(TagElement.TAG_THROWS);
+					SimpleName name = ast.newSimpleName(exceptionName);
+					tag.fragments().add(name);
+					TextElement text = ast.newTextElement();
+					text.setText("TODO: Add description for this exception");
+					tag.fragments().add(text);
 				}
 				Javadoc javadoc = message.getMethod().getJavadoc();
 				Javadoc copy = (Javadoc) ASTNode.copySubtree(ast, javadoc);
@@ -135,16 +137,16 @@ public class FixJavadocErrors extends SimpleValidatorBase {
 				Javadoc javadoc = message.getMethod().getJavadoc();
 				Javadoc copy = (Javadoc) ASTNode.copySubtree(ast, javadoc);
 				for (Object content : copy.tags()) {
-				    TagElement tag = (TagElement) content;
-				    if (tag.getTagName() == null) {
+					TagElement tag = (TagElement) content;
+					if (tag.getTagName() == null) {
 						continue;
 					}
-				    if (!tag.getTagName().equals("@throws")) {
+					if (!tag.getTagName().equals("@throws")) {
 						continue;
 					}
 					TextElement text = ast.newTextElement();
-				    text.setText("TODO: add description for @throws");
-				    tag.fragments().add(text);
+					text.setText("TODO: add description for @throws");
+					tag.fragments().add(text);
 				}
 				rewrite.replace(javadoc, copy, null);
 			} else if (message.getDescription().startsWith("unknown tag")) {
