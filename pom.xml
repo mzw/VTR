@@ -239,6 +239,13 @@
 			<artifactId>icu4j</artifactId>
 			<version>58.2</version>
 		</dependency>
+		<dependency>
+			<groupId>org.w3c.tidy</groupId>
+			<artifactId>jtidy</artifactId>
+			<version>r938</version>
+			<scope>system</scope>
+			<systemPath>${project.basedir}/lib/jtidy-r938.jar</systemPath>
+		</dependency>
 	</dependencies>
 
 	<build>
