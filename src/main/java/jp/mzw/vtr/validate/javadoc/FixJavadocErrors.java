@@ -127,6 +127,9 @@ public class FixJavadocErrors extends SimpleValidatorBase {
 				Javadoc copy = (Javadoc) ASTNode.copySubtree(ast, javadoc);
 				for (Object content : copy.tags()) {
 				    TagElement tag = (TagElement) content;
+				    if (tag.getTagName() == null) {
+						continue;
+					}
 				    if (!tag.getTagName().equals("@throws")) {
 						continue;
 					}
