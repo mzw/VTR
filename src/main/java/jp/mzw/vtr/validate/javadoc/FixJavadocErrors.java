@@ -119,7 +119,6 @@ public class FixJavadocErrors extends SimpleValidatorBase {
 				if (tag == null) {
 					String[] packages = exception.split("\\.");
 				    String exceptionName = packages[packages.length - 1];
-				    System.out.println(exceptionName);
 				    tag = ast.newTagElement();
 				    tag.setTagName(TagElement.TAG_THROWS);
 				    SimpleName name = ast.newSimpleName(exceptionName);
