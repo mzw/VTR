@@ -114,6 +114,8 @@ public class FixJavadocErrors extends SimpleValidatorBase {
 						break;
 					}
 				}
+				// can't resolve type bindings of imported exceptions,
+				// so tag remains null
 				if (tag == null) {
 					String[] packages = exception.split("\\.");
 				    String exceptionName = packages[packages.length - 1];
@@ -125,10 +127,6 @@ public class FixJavadocErrors extends SimpleValidatorBase {
 				    TextElement text = ast.newTextElement();
 				    text.setText("TODO: Add description for this exception");
 				    tag.fragments().add(text);
-				    System.out.println("Check if we can gnerate patches correctly.");
-				    System.out.println("Commit: " + commit.getId());
-					System.out.println("TestCase: " + tc.getFullName());
-
 				}
 				Javadoc javadoc = message.getMethod().getJavadoc();
 				Javadoc copy = (Javadoc) ASTNode.copySubtree(ast, javadoc);
