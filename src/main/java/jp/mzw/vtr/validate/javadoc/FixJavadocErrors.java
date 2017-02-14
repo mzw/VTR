@@ -114,14 +114,26 @@ public class FixJavadocErrors extends SimpleValidatorBase {
 						break;
 					}
 				}
-				if (tag != null) {
-					Javadoc javadoc = message.getMethod().getJavadoc();
-					Javadoc copy = (Javadoc) ASTNode.copySubtree(ast, javadoc);
-					copy.tags().add(tag);
-					rewrite.replace(javadoc, copy, null);
-				} else {
-					System.out.println("TODO: " + "tag is null");
+				if (tag == null) {
+					String[] packages = exception.split("\\.");
+				    String exceptionName = packages[packages.length - 1];
+				    System.out.println(exceptionName);
+				    tag = ast.newTagElement();
+				    tag.setTagName(TagElement.TAG_THROWS);
+				    SimpleName name = ast.newSimpleName(exceptionName);
+				    tag.fragments().add(name);
+				    TextElement text = ast.newTextElement();
+				    text.setText("TODO: Add description for this exception");
+				    tag.fragments().add(text);
+				    System.out.println("Check if we can gnerate patches correctly.");
+				    System.out.println("Commit: " + commit.getId());
+					System.out.println("TestCase: " + tc.getFullName());
+
 				}
+				Javadoc javadoc = message.getMethod().getJavadoc();
+				Javadoc copy = (Javadoc) ASTNode.copySubtree(ast, javadoc);
+				copy.tags().add(tag);
+				rewrite.replace(javadoc, copy, null);
 			} else if (message.getDescription().startsWith("no description for @throws")) {
 				Javadoc javadoc = message.getMethod().getJavadoc();
 				Javadoc copy = (Javadoc) ASTNode.copySubtree(ast, javadoc);
