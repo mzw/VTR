@@ -14,7 +14,6 @@ import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.Annotation;
 import org.eclipse.jdt.core.dom.Block;
 import org.eclipse.jdt.core.dom.Comment;
-import org.eclipse.jdt.core.dom.Expression;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
@@ -166,11 +165,10 @@ public class ValidatorUtils {
 	 * @param expression
 	 * @return
 	 */
-	public static boolean isClosable(Expression expression) {
-		if (expression == null) {
+	public static boolean isClosable(ITypeBinding binding) {
+		if (binding == null) {
 			return false;
 		}
-		ITypeBinding binding = expression.resolveTypeBinding();
 		while (binding != null) {
 			for (ITypeBinding interfaze : binding.getInterfaces()) {
 				if ("java.io.Closeable".equals(interfaze.getQualifiedName())) {
