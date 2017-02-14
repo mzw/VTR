@@ -47,6 +47,9 @@ public class CloseResources extends SimpleValidatorBase {
 			public boolean visit(VariableDeclarationStatement node) {
 				for (Object object : node.fragments()) {
 					VariableDeclarationFragment fragment = (VariableDeclarationFragment) object;
+					if (fragment.getInitializer() == null) {
+						continue;
+					}
 					if (ValidatorUtils.isClosable(fragment.getInitializer().resolveTypeBinding())) {
 						closables.add(fragment.getName());
 					}
