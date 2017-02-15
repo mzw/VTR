@@ -55,17 +55,17 @@ abstract public class SimpleValidatorBase extends ValidatorBase {
 			String modified = getModified(origin.toString(), commit, testcase, results);
 			List<String> patch = genPatch(origin, modified, testcase.getTestFile(), testcase.getTestFile());
 			// No modification
-			if (patch.isEmpty()) {
+			if (NoModification(patch)) {
 				return;
-			} else if (patch.size() == 1) {
-				if ("".equals(patch.get(0))) {
-					return;
-				}
 			}
 			output(result, testcase, patch);
 		} catch (IOException | MalformedTreeException | BadLocationException e) {
 			LOGGER.warn("Failed to generate patch: {}", e.getMessage());
 		}
+	}
+
+	protected static boolean NoModification(List<String> patch) {
+		return patch.isEmpty() || (patch.size() == 1 && "".equals(patch.get(0)));
 	}
 	
 	protected TestCase getTestCase(ValidationResult result, File projectDir) throws IOException {
