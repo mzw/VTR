@@ -168,7 +168,12 @@ public class FixJavadocErrors extends SimpleValidatorBase {
 				copy.tags().clear();
 				for (Object comment : javadoc.tags()) {
 					if (!comment.toString().contains("<") || !comment.toString().contains(">")) {
-						copy.tags().add(comment);
+						if (!(comment instanceof TagElement)) {
+							System.out.println("TODO: check the type of javadoc comment" + comment.getClass());
+							continue;
+						}
+						TagElement element = (TagElement) ASTNode.copySubtree(ast, (TagElement) comment);
+						copy.tags().add(element);
 						continue;
 					}
 					Tidy tidy = new Tidy();
