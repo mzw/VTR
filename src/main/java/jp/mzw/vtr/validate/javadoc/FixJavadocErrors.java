@@ -2,6 +2,7 @@ package jp.mzw.vtr.validate.javadoc;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.util.*;
 
@@ -12,6 +13,9 @@ import jp.mzw.vtr.maven.Results;
 import jp.mzw.vtr.maven.TestCase;
 import jp.mzw.vtr.validate.SimpleValidatorBase;
 
+import jp.mzw.vtr.validate.ValidationResult;
+import jp.mzw.vtr.validate.ValidatorBase;
+import org.apache.commons.io.FileUtils;
 import org.eclipse.jdt.core.dom.*;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 import org.eclipse.jface.text.BadLocationException;
@@ -28,6 +32,8 @@ public class FixJavadocErrors extends SimpleValidatorBase {
 	public FixJavadocErrors(Project project) {
 		super(project);
 	}
+
+	protected Map<String, String> modifyMap = new HashMap<>();
 
 	@Override
 	protected List<ASTNode> detect(final Commit commit, final TestCase tc, final Results results) throws IOException, MalformedTreeException, BadLocationException {
@@ -60,7 +66,6 @@ public class FixJavadocErrors extends SimpleValidatorBase {
 		}
 		CompilationUnit cu = tc.getCompilationUnit();
 		AST ast = cu.getAST();
-		ASTRewrite rewrite = ASTRewrite.create(ast);
 		// get method declarations
 		final List<MethodDeclaration> methods = new ArrayList<>();
 		tc.getCompilationUnit().accept(new ASTVisitor() {
@@ -86,6 +91,7 @@ public class FixJavadocErrors extends SimpleValidatorBase {
 		}
 		// rewrite
 		for (JavadocErrorMessage message : messages) {
+			ASTRewrite rewrite = ASTRewrite.create(ast);
 			if (message.getMethod() == null) {
 				continue;
 			}
@@ -133,6 +139,8 @@ public class FixJavadocErrors extends SimpleValidatorBase {
 				Javadoc copy = (Javadoc) ASTNode.copySubtree(ast, javadoc);
 				copy.tags().add(tag);
 				rewrite.replace(javadoc, copy, null);
+				String modified = getModified(origin, rewrite);
+				modifyMap.put("NoAtThrowsFor", modified);
 			} else if (message.getDescription().startsWith("no description for @throws")) {
 				Javadoc javadoc = message.getMethod().getJavadoc();
 				Javadoc copy = (Javadoc) ASTNode.copySubtree(ast, javadoc);
@@ -149,6 +157,8 @@ public class FixJavadocErrors extends SimpleValidatorBase {
 					tag.fragments().add(text);
 				}
 				rewrite.replace(javadoc, copy, null);
+				String modified = getModified(origin, rewrite);
+				modifyMap.put("NoDescriptionForAtThrows", modified);
 			} else if (message.getDescription().startsWith("unknown tag")) {
 				Javadoc javadoc = message.getMethod().getJavadoc();
 				for (Object content : javadoc.tags()) {
@@ -195,15 +205,57 @@ public class FixJavadocErrors extends SimpleValidatorBase {
 					output.close();
 				}
 				rewrite.replace(javadoc, copy, null);
+				String modified = getModified(origin, rewrite);
+				modifyMap.put("ElementNotClosed", modified);
 			} else {
 				System.out.println("TODO: " + message.toString());
 			}
 		}
 		// modify
 		Document document = new Document(origin);
+		return document.get();
+	}
+
+	public String getModified(String origin, ASTRewrite rewrite) throws BadLocationException {
+		Document document = new Document(origin);
 		TextEdit edit = rewrite.rewriteAST(document, null);
 		edit.apply(document);
 		return document.get();
+	}
+
+	@Override
+	public void generate(ValidationResult result) {
+		try {
+			// Read
+			Commit commit = new Commit(result.getCommitId(), null);
+			TestCase testcase = getTestCase(result, projectDir);
+			Results results = Results.parse(outputDir, projectId, commit);
+			// Generate
+			String origin = FileUtils.readFileToString(testcase.getTestFile());
+			getModified(origin, commit, testcase, results);
+			for (Map.Entry<String, String> map : this.modifyMap.entrySet()) {
+				List<String> patch = genPatch(origin, map.getValue(), testcase.getTestFile(), testcase.getTestFile());
+				// No modification
+				if (NoModification(patch)) {
+					return;
+				}
+				output(result, testcase, patch, map.getKey());
+			}
+		} catch (IOException | MalformedTreeException | BadLocationException e) {
+			LOGGER.warn("Failed to generate patch: {}", e.getMessage());
+		}
+	}
+
+	protected void output(ValidationResult result, TestCase tc, List<String> patch, String modifyType) throws IOException {
+		File projectDir = new File(this.outputDir, this.projectId);
+		File validateDir = new File(projectDir, ValidatorBase.VALIDATOR_DIRNAME);
+		File commitDir = new File(validateDir, result.getCommitId());
+		File patternDir = new File(commitDir, result.getValidatorName());
+		if (!patternDir.exists()) {
+			patternDir.mkdirs();
+		}
+		File patchFile = new File(patternDir, tc.getFullName() + "#" + modifyType + ".patch");
+		FileUtils.writeLines(patchFile, patch);
 	}
 
 	private boolean officialTag(String tagName) {
