@@ -193,6 +193,10 @@ public class FixJavadocErrors extends SimpleValidatorBase {
 				String modified = getModified(origin, rewrite);
 				modifyMap.put("ElementNotClosed", modified);
 			} else if (message.getDescription().startsWith("bad use of")) {
+				if (message.getDescription().startsWith("bad use of '>'")) {
+					System.out.println("TODO: need to handle bad use of" + message.toString());
+					continue;
+				}
 				Javadoc javadoc = message.getMethod().getJavadoc();
 				Javadoc copy = (Javadoc) ASTNode.copySubtree(ast, javadoc);
 				copy.tags().clear();
@@ -231,7 +235,7 @@ public class FixJavadocErrors extends SimpleValidatorBase {
 				Javadoc javadoc = message.getMethod().getJavadoc();
 				Javadoc copy = (Javadoc) ASTNode.copySubtree(ast, javadoc);
 				Iterator itr = copy.tags().iterator();
-				while(itr.hasNext()) {
+				while (itr.hasNext()) {
 					TagElement tag = (TagElement) itr.next();
 					if (targetTagElement(cu, tag, message)) {
 						itr.remove();
@@ -241,25 +245,89 @@ public class FixJavadocErrors extends SimpleValidatorBase {
 				String modified = getModified(origin, rewrite);
 				modifyMap.put("ExceptionNotThrown", modified);
 			} else if (message.getDescription().startsWith("bad HTML entity")) {
-					Javadoc javadoc = message.getMethod().getJavadoc();
-					Javadoc copy = (Javadoc) ASTNode.copySubtree(ast, javadoc);
-					copy.tags().clear();
-					for (Object comment : javadoc.tags()) {
-						TagElement tag = ast.newTagElement();
-						TextElement text = ast.newTextElement();
-						String content = getTidyModify(comment.toString());
-						text.setText(content);
-						tag.fragments().add(text);
-						copy.tags().add(tag);
-					}
-					rewrite.replace(javadoc, copy, null);
-					String modified = getModified(origin, rewrite);
-					modifyMap.put("BadHTMLEntity", modified);
+				Javadoc javadoc = message.getMethod().getJavadoc();
+				Javadoc copy = (Javadoc) ASTNode.copySubtree(ast, javadoc);
+				copy.tags().clear();
+				for (Object comment : javadoc.tags()) {
+					TagElement tag = ast.newTagElement();
+					TextElement text = ast.newTextElement();
+					String content = getTidyModify(comment.toString());
+					text.setText(content);
+					tag.fragments().add(text);
+					copy.tags().add(tag);
+				}
+				rewrite.replace(javadoc, copy, null);
+				String modified = getModified(origin, rewrite);
+				modifyMap.put("BadHTMLEntity", modified);
 			} else if (message.getDescription().startsWith("cannot find symbol")) {
 				if (compileError(results)) {
 					continue;
 				} else {
 					System.out.println("TODO: cannot find symbol without compile error");
+				}
+			} else if (message.getDescription().startsWith("unexpected text")) {
+				Javadoc javadoc = message.getMethod().getJavadoc();
+				Javadoc copy = null;
+				for (Object comment : javadoc.tags()) {
+					TagElement tag = (TagElement) comment;
+					if (targetTagElement(cu, tag, message)) {
+						if (tag.getTagName() == null) {
+							continue;
+						}
+						if (tag.getTagName().equals(TagElement.TAG_SEE)) {
+							copy = (Javadoc) ASTNode.copySubtree(ast, javadoc);
+							TagElement replace = (TagElement) ASTNode.copySubtree(ast, tag);
+							replace.fragments().clear();
+							for (Object fragment : tag.fragments()) {
+								if (fragment.toString().contains("http")) {
+									TextElement text = ast.newTextElement();
+									text.setText("<a href=\"" + fragment.toString() + "\"></a>");
+									tag.fragments().add(text);
+								} else {
+									replace.fragments().add(ASTNode.copySubtree(ast, (ASTNode) fragment));
+								}
+							}
+						} else {
+							System.out.println("TODO: unexpected text at " + tag.getTagName());
+						}
+					}
+				}
+				if (copy != null) {
+					rewrite.replace(javadoc, copy, null);
+					String modified = getModified(origin, rewrite);
+					modifyMap.put("UnexpectedText", modified);
+				}
+			} else if (message.getDescription().startsWith("incorrect use of inline tag")) {
+				Javadoc javadoc = message.getMethod().getJavadoc();
+				Javadoc copy = null;
+				for (Object comment : javadoc.tags()) {
+					TagElement tag = (TagElement) comment;
+					if (targetTagElement(cu, tag, message)) {
+						if (tag.getTagName() == null) {
+							continue;
+						}
+						if (tag.getTagName().equals(TagElement.TAG_LINK)) {
+							copy = (Javadoc) ASTNode.copySubtree(ast, javadoc);
+							TagElement replace = (TagElement) ASTNode.copySubtree(ast, tag);
+							replace.fragments().clear();
+							for (Object fragment : tag.fragments()) {
+								if (fragment.toString().contains("http")) {
+									TextElement text = ast.newTextElement();
+									text.setText("<a href=\"" + fragment.toString().replace("\"", "") + "\"></a>");
+									tag.fragments().add(text);
+								} else {
+									replace.fragments().add(ASTNode.copySubtree(ast, (ASTNode) fragment));
+								}
+							}
+						} else {
+							System.out.println("TODO: incorrect use of inline tag at " + tag.getTagName());
+						}
+					}
+				}
+				if (copy != null) {
+					rewrite.replace(javadoc, copy, null);
+					String modified = getModified(origin, rewrite);
+					modifyMap.put("IncorrectUseOfInlineTag", modified);
 				}
 			} else {
 				System.out.println("TODO: " + message.toString());
@@ -349,11 +417,13 @@ public class FixJavadocErrors extends SimpleValidatorBase {
 	}
 
 	private boolean officialTag(String tagName) {
-		return tagName.equals("@author") || tagName.equals("@code") || tagName.equals("@deprecated") ||
-				tagName.equals("@docRoot") || tagName.equals("exception") || tagName.equals("inheritDoc") ||
-				tagName.equals("@link") || tagName.equals("@linkplain") || tagName.equals("@literal") ||
-				tagName.equals("@param") || tagName.equals("@return") || tagName.equals("@see") ||
-				tagName.equals("@throws");
+		return tagName.equals(TagElement.TAG_AUTHOR) || tagName.equals(TagElement.TAG_CODE) || tagName.equals(TagElement.TAG_DEPRECATED) ||
+				tagName.equals(TagElement.TAG_DOCROOT) || tagName.equals(TagElement.TAG_EXCEPTION) || tagName.equals(TagElement.TAG_INHERITDOC) ||
+				tagName.equals(TagElement.TAG_LINK) || tagName.equals(TagElement.TAG_LINKPLAIN) || tagName.equals(TagElement.TAG_LITERAL) ||
+				tagName.equals(TagElement.TAG_PARAM) || tagName.equals(TagElement.TAG_RETURN) || tagName.equals(TagElement.TAG_SEE) ||
+				tagName.equals(TagElement.TAG_SERIAL) || tagName.equals(TagElement.TAG_SERIALDATA) || tagName.equals(TagElement.TAG_SERIALFIELD) ||
+				tagName.equals(TagElement.TAG_SINCE) || tagName.equals(TagElement.TAG_THROWS) || tagName.equals(TagElement.TAG_VALUE) ||
+				tagName.equals(TagElement.TAG_VERSION);
 	}
 
 	private boolean todoTag(String tagName) {
