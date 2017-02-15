@@ -157,6 +157,7 @@ public class Repair {
 	private Map<EvaluatorBase, Status> results;
 	public enum Status {
 		Improved,
+		PartiallyImproved,
 		Stay,
 		Degraded,
 		Broken
