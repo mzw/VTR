@@ -3,11 +3,15 @@ package jp.mzw.vtr.maven;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import jp.mzw.vtr.core.VtrUtils;
 
 public class PitInstrumenter extends JacocoInstrumenter {
 	protected static Logger LOGGER = LoggerFactory.getLogger(PitInstrumenter.class);
@@ -71,4 +75,41 @@ public class PitInstrumenter extends JacocoInstrumenter {
 		return pitDir.listFiles();
 	}
 
+	public static String getTargetClasses(File projectDir) {
+		StringBuilder builder = new StringBuilder();
+		String delim = "";
+		File root = new File(projectDir, "src/main/java");
+		if (!root.exists()) {
+			return "jp.mzw.vtr.invalid";
+		}
+		List<File> files = getJavaFiles(root);
+		List<String> classNames = getClassNames(root, files);
+		for (String className : classNames) {
+			builder.append(delim).append(className);
+			delim = "</param><param>";
+		}
+		return builder.toString();
+	}
+	
+	public static List<String> getClassNames(File root, List<File> files) {
+		final List<String> ret = new ArrayList<>();
+		for (File file : files) {
+			String path = VtrUtils.getFilePath(root, file);
+			String className = path.replace(".java", "").replace("/", ".");
+			ret.add(className);
+		}
+		return ret;
+	}
+	
+	public static List<File> getJavaFiles(File root) {
+		final List<File> ret = new ArrayList<>();
+		for (File child : root.listFiles()) {
+			if (child.isFile() && child.getName().endsWith(".java")) {
+				ret.add(child);
+			} else if (child.isDirectory()) {
+				ret.addAll(getJavaFiles(child));
+			}
+		}
+		return ret;
+	}
 }
