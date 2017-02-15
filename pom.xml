@@ -239,6 +239,13 @@
 			<artifactId>icu4j</artifactId>
 			<version>58.2</version>
 		</dependency>
+        <dependency>
+            <groupId>raykernel.apps</groupId>
+            <artifactId>readability</artifactId>
+            <version>v.1</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/lib/readability.jar</systemPath>
+        </dependency>
 	</dependencies>
 
 	<build>
@@ -248,8 +255,8 @@
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>3.2</version>
 				<configuration>
-					<source>1.7</source>
-					<target>1.7</target>
+					<source>1.8</source>
+					<target>1.8</target>
 					<encoding>UTF-8</encoding>
 				</configuration>
 			</plugin>
