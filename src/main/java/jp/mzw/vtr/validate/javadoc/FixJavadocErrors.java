@@ -1,9 +1,6 @@
 package jp.mzw.vtr.validate.javadoc;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.util.*;
 
 import jp.mzw.vtr.core.Project;
@@ -168,7 +165,7 @@ public class FixJavadocErrors extends SimpleValidatorBase {
 					}
 					if (officialTag(tag.getTagName())) {
 						continue;
-					} else if (tag.getTagName().equals("@todo")) {
+					} else if (todoTag(tag.getTagName())) {
 						// we've already dealt with todo tag in ReplaceAtTodoWithTODO
 						continue;
 					} else {
@@ -181,32 +178,40 @@ public class FixJavadocErrors extends SimpleValidatorBase {
 				copy.tags().clear();
 				for (Object comment : javadoc.tags()) {
 					if (!comment.toString().contains("<") || !comment.toString().contains(">")) {
-						if (!(comment instanceof TagElement)) {
-							System.out.println("TODO: check the type of javadoc comment" + comment.getClass());
-							continue;
-						}
 						TagElement element = (TagElement) ASTNode.copySubtree(ast, (TagElement) comment);
 						copy.tags().add(element);
 						continue;
 					}
-					Tidy tidy = new Tidy();
-					tidy.setQuiet(true);
-					tidy.setShowErrors(0);
-					tidy.setShowWarnings(false);
-					ByteArrayOutputStream output = new ByteArrayOutputStream();
-					tidy.parse(new ByteArrayInputStream(comment.toString().getBytes("utf-8")), output);
-					String content = getBody(output.toString()).replace("* ", "");
-					content = content.replace("\n", "\n* ");
 					TagElement tag = ast.newTagElement();
 					TextElement text = ast.newTextElement();
+					String content = getTidyModify(comment.toString());
 					text.setText(content);
 					tag.fragments().add(text);
 					copy.tags().add(tag);
-					output.close();
 				}
 				rewrite.replace(javadoc, copy, null);
 				String modified = getModified(origin, rewrite);
 				modifyMap.put("ElementNotClosed", modified);
+			} else if (message.getDescription().startsWith("bad use of")) {
+				Javadoc javadoc = message.getMethod().getJavadoc();
+				Javadoc copy = (Javadoc) ASTNode.copySubtree(ast, javadoc);
+				copy.tags().clear();
+				for (Object comment : javadoc.tags()) {
+					if (!hasSpecialCharacter(comment.toString())) {
+						TagElement element = (TagElement) ASTNode.copySubtree(ast, (TagElement) comment);
+						copy.tags().add(element);
+						continue;
+					}
+					TagElement tag = ast.newTagElement();
+					TextElement text = ast.newTextElement();
+					String content = getTidyModify(comment.toString());
+					text.setText(content);
+					tag.fragments().add(text);
+					copy.tags().add(tag);
+				}
+				rewrite.replace(javadoc, copy, null);
+				String modified = getModified(origin, rewrite);
+				modifyMap.put("BadUseOf", modified);
 			} else {
 				System.out.println("TODO: " + message.toString());
 			}
@@ -221,6 +226,30 @@ public class FixJavadocErrors extends SimpleValidatorBase {
 		TextEdit edit = rewrite.rewriteAST(document, null);
 		edit.apply(document);
 		return document.get();
+	}
+
+	protected String getTidyModify(String comment) {
+		Tidy tidy = new Tidy();
+		tidy.setQuiet(true);
+		tidy.setShowErrors(0);
+		tidy.setShowWarnings(false);
+		ByteArrayOutputStream output = new ByteArrayOutputStream();
+		try {
+			tidy.parse(new ByteArrayInputStream(comment.getBytes("utf-8")), output);
+			String content = getBody(output.toString()).replace("* ", "");
+			output.close();
+			content = content.replace("\n", "\n* ");
+			return content;
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return comment;
+	}
+
+	private boolean hasSpecialCharacter(String comment) {
+		return (comment.contains("<") && !comment.contains(">")) ||
+				(comment.contains(">") && !comment.contains("<")) ||
+				(comment.contains("&"));
 	}
 
 	@Override
@@ -266,6 +295,9 @@ public class FixJavadocErrors extends SimpleValidatorBase {
 				tagName.equals("@throws");
 	}
 
+	private boolean todoTag(String tagName) {
+		return tagName.equals("@todo") || tagName.equals("@TODO");
+	}
 
 	private String getBody(String html) {
 		return html.split("<body>")[1].split("</body>")[0];
