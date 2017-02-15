@@ -35,9 +35,9 @@ abstract public class EvaluatorBase {
 	// TODO Add evaluators from resources
 	public static List<EvaluatorBase> getEvaluators(Project project) {
 		final List<EvaluatorBase> ret = new ArrayList<>();
-//		ret.add(new Readability(project));
-//		ret.add(new MutationAnalysis(project));
-//		ret.add(new Performance(project));
+		ret.add(new Readability(project));
+		ret.add(new MutationAnalysis(project));
+		ret.add(new Performance(project));
 		ret.add(new Output(project));
 		return ret;
 	}
