@@ -153,6 +153,9 @@ public class FixJavadocErrors extends SimpleValidatorBase {
 				Javadoc javadoc = message.getMethod().getJavadoc();
 				for (Object content : javadoc.tags()) {
 					TagElement tag = (TagElement) content;
+					if (tag.getTagName() == null) {
+						continue;
+					}
 					if (officialTag(tag.getTagName())) {
 						continue;
 					} else if (tag.getTagName().equals("@todo")) {
