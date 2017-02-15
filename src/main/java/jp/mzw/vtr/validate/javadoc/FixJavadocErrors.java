@@ -240,6 +240,21 @@ public class FixJavadocErrors extends SimpleValidatorBase {
 				rewrite.replace(javadoc, copy, null);
 				String modified = getModified(origin, rewrite);
 				modifyMap.put("ExceptionNotThrown", modified);
+			} else if (message.getDescription().startsWith("bad HTML entity")) {
+					Javadoc javadoc = message.getMethod().getJavadoc();
+					Javadoc copy = (Javadoc) ASTNode.copySubtree(ast, javadoc);
+					copy.tags().clear();
+					for (Object comment : javadoc.tags()) {
+						TagElement tag = ast.newTagElement();
+						TextElement text = ast.newTextElement();
+						String content = getTidyModify(comment.toString());
+						text.setText(content);
+						tag.fragments().add(text);
+						copy.tags().add(tag);
+					}
+					rewrite.replace(javadoc, copy, null);
+					String modified = getModified(origin, rewrite);
+					modifyMap.put("BadHTMLEntity", modified);
 			} else {
 				System.out.println("TODO: " + message.toString());
 			}
@@ -271,8 +286,7 @@ public class FixJavadocErrors extends SimpleValidatorBase {
 
 	private boolean hasSpecialCharacter(String comment) {
 		return (comment.contains("<") && !comment.contains(">")) ||
-				(comment.contains(">") && !comment.contains("<")) ||
-				(comment.contains("&"));
+				(comment.contains(">") && !comment.contains("<"));
 	}
 
 	protected boolean targetTagElement(CompilationUnit cu, TagElement tag, JavadocErrorMessage message) {
