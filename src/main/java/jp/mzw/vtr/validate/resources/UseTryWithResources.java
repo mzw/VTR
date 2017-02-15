@@ -477,7 +477,7 @@ public class UseTryWithResources extends SimpleValidatorBase {
 			String origin = FileUtils.readFileToString(testcase.getTestFile());
 			String modified = getModified(origin.toString(), commit, testcase, results);
 			List<String> _patch = genPatch(getTestCaseSource(origin, testcase.getName()), getTestCaseSource(modified, testcase.getName()),
-					testcase.getTestFile(), testcase.getTestFile(), (testcase.getStartLineNumber() - 1) * -1);
+					testcase.getTestFile(), testcase.getTestFile(), (testcase.getStartLineNumber() - 1) * -1 - 1);
 			List<String> patch = new ArrayList<>();
 			for (String line : _patch) {
 				if (line.contains("try (") && line.contains(");")) {

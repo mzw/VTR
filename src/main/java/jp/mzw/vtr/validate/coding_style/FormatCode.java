@@ -46,7 +46,7 @@ public class FormatCode extends SimpleValidatorBase {
 			String origin = FileUtils.readFileToString(tc.getTestFile());
 			String modified = getModified(origin, null, tc, null);
 			List<String> patch = genPatch(getTestCaseSource(origin, tc.getName()), getTestCaseSource(modified, tc.getName()), tc.getTestFile(),
-					tc.getTestFile(), (tc.getStartLineNumber() - 1) * -1);
+					tc.getTestFile(), (tc.getStartLineNumber() - 1) * -1 - 1);
 			output(result, tc, patch);
 		} catch (IOException | MalformedTreeException | BadLocationException e) {
 			LOGGER.warn("Failed to generate patch: {}", e.getMessage());
