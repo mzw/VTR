@@ -78,9 +78,25 @@ public class Results {
 		FileUtils.writeLines(javadocResultsFile, javadocResults);
 	}
 
+	public void output(File outputDir) throws IOException {
+		File compileOutputsFile = new File(outputDir, COMPILE_OUTPUTS_FILENAME);
+		FileUtils.writeLines(compileOutputsFile, compileOutputs);
+
+		File compileErrorsFile = new File(outputDir, COMPILE_ERRORS_FILENAME);
+		FileUtils.writeLines(compileErrorsFile, compileErrors);
+
+		File javadocResultsFile = new File(outputDir, JAVADOC_RESULTS_FILENAME);
+		FileUtils.writeLines(javadocResultsFile, javadocResults);
+	}
+
 	public static boolean is(File outputDir, String projectId, Commit commit) {
 		File commitDir = getCommitDir(outputDir, projectId, commit);
 		return commitDir.exists();
+	}
+
+	public static File getDir(File outputDir, String projectId, Commit commit) {
+		File commitDir = getCommitDir(outputDir, projectId, commit);
+		return commitDir;
 	}
 
 	public static Results parse(File outputDir, String projectId, Commit commit) throws IOException {

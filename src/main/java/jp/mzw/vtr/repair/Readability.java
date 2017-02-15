@@ -126,10 +126,10 @@ public class Readability extends EvaluatorBase {
 			// specific
 			Result before = beforeResults.get(repair);
 			Result after = afterResults.get(repair);
-			builder.append(before.getScore()).append(",");
-			builder.append(before.getSplitNum()).append(",");
-			builder.append(after.getScore()).append(",");
-			builder.append(after.getSplitNum());
+			builder.append(before == null ? "" : before.getScore()).append(",");
+			builder.append(before == null ? "" : before.getSplitNum()).append(",");
+			builder.append(after == null ? "" : after.getScore()).append(",");
+			builder.append(after == null ? "" : after.getSplitNum());
 			// end
 			builder.append("\n");
 		}
