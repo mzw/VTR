@@ -227,6 +227,19 @@ public class FixJavadocErrors extends SimpleValidatorBase {
 				rewrite.replace(javadoc, copy, null);
 				String modified = getModified(origin, rewrite);
 				modifyMap.put("NestedTagNotAllowed", modified);
+			} else if (message.getDescription().startsWith("exception not thrown")) {
+				Javadoc javadoc = message.getMethod().getJavadoc();
+				Javadoc copy = (Javadoc) ASTNode.copySubtree(ast, javadoc);
+				Iterator itr = copy.tags().iterator();
+				while(itr.hasNext()) {
+					TagElement tag = (TagElement) itr.next();
+					if (targetTagElement(cu, tag, message)) {
+						itr.remove();
+					}
+				}
+				rewrite.replace(javadoc, copy, null);
+				String modified = getModified(origin, rewrite);
+				modifyMap.put("ExceptionNotThrown", modified);
 			} else {
 				System.out.println("TODO: " + message.toString());
 			}
@@ -243,28 +256,28 @@ public class FixJavadocErrors extends SimpleValidatorBase {
 		return document.get();
 	}
 
-	protected String getTidyModify(String comment) {
+	protected String getTidyModify(String comment) throws IOException {
 		Tidy tidy = new Tidy();
 		tidy.setQuiet(true);
 		tidy.setShowErrors(0);
 		tidy.setShowWarnings(false);
 		ByteArrayOutputStream output = new ByteArrayOutputStream();
-		try {
-			tidy.parse(new ByteArrayInputStream(comment.getBytes("utf-8")), output);
-			String content = getBody(output.toString()).replace("* ", "");
-			output.close();
-			content = content.replace("\n", "\n* ");
-			return content;
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		return comment;
+		tidy.parse(new ByteArrayInputStream(comment.getBytes("utf-8")), output);
+		String content = getBody(output.toString()).replace("* ", "");
+		output.close();
+		content = content.replace("\n", "\n* ");
+		return content;
 	}
 
 	private boolean hasSpecialCharacter(String comment) {
 		return (comment.contains("<") && !comment.contains(">")) ||
 				(comment.contains(">") && !comment.contains("<")) ||
 				(comment.contains("&"));
+	}
+
+	protected boolean targetTagElement(CompilationUnit cu, TagElement tag, JavadocErrorMessage message) {
+		return (cu.getLineNumber(tag.getStartPosition()) <= message.getLineno()) &&
+				(message.getLineno() <= cu.getLineNumber(tag.getStartPosition() + tag.getLength()));
 	}
 
 	@Override
