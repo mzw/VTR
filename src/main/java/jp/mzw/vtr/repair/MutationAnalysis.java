@@ -86,7 +86,7 @@ public class MutationAnalysis extends EvaluatorBase {
 				}
 			}
 			LOGGER.info("Invoke PIT for applied version");
-			int compile = MavenUtils.maven(this.projectDir, Arrays.asList("compile", "test-compile"), mavenHome, mavenOutput);
+			int compile = MavenUtils.maven(this.projectDir, Arrays.asList("test-compile"), mavenHome, mavenOutput);
 			if (compile != 0) {
 				LOGGER.warn("Failed to compile: {} at {}", repair.getTestCaseFullName(), repair.getCommit().getId());
 				return;
@@ -167,8 +167,8 @@ public class MutationAnalysis extends EvaluatorBase {
 			builder.append(repair.toCsv(this)).append(",");
 			// specific
 			Result result = results.get(repair);
-			builder.append(result.getBefore()).append(",");
-			builder.append(result.getAfter());
+			builder.append(result == null ? "" : result.getBefore()).append(",");
+			builder.append(result == null ? "" : result.getAfter());
 			// end
 			builder.append("\n");
 		}
