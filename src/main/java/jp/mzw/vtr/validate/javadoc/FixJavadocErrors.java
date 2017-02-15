@@ -255,6 +255,12 @@ public class FixJavadocErrors extends SimpleValidatorBase {
 					rewrite.replace(javadoc, copy, null);
 					String modified = getModified(origin, rewrite);
 					modifyMap.put("BadHTMLEntity", modified);
+			} else if (message.getDescription().startsWith("cannot find symbol")) {
+				if (compileError(results)) {
+					continue;
+				} else {
+					System.out.println("TODO: cannot find symbol without compile error");
+				}
 			} else {
 				System.out.println("TODO: " + message.toString());
 			}
@@ -292,6 +298,19 @@ public class FixJavadocErrors extends SimpleValidatorBase {
 	protected boolean targetTagElement(CompilationUnit cu, TagElement tag, JavadocErrorMessage message) {
 		return (cu.getLineNumber(tag.getStartPosition()) <= message.getLineno()) &&
 				(message.getLineno() <= cu.getLineNumber(tag.getStartPosition() + tag.getLength()));
+	}
+
+	public boolean compileError(Results results) {
+		if (!results.getCompileErrors().isEmpty()) {
+			return true;
+		} else {
+			for (String message : results.getCompileOutputs()) {
+				if (message.contains("COMPILATION ERROR")) {
+					return true;
+				}
+			}
+		}
+		return false;
 	}
 
 	@Override
