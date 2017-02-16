@@ -89,13 +89,22 @@ public class RepairEvaluator {
 			}
 			repair.parse(projectDir);
 			for (EvaluatorBase each : evaluators) {
+				if (!include(each, repair)) {
+					continue;
+				}
 				each.evaluateBefore(repair);
 			}
 			repair.apply(projectDir);
 			for (EvaluatorBase each : evaluators) {
+				if (!include(each, repair)) {
+					continue;
+				}
 				each.evaluateAfter(repair);
 			}
 			for (EvaluatorBase each : evaluators) {
+				if (!include(each, repair)) {
+					continue;
+				}
 				each.compare(repair);
 			}
 			repair.revert();
@@ -104,5 +113,15 @@ public class RepairEvaluator {
 		for (EvaluatorBase each : evaluators) {
 			each.output(repairs);
 		}
+	}
+
+	private static boolean include(EvaluatorBase evaluator, Repair repair) {
+		for (Class<? extends ValidatorBase> validator : evaluator.includeValidators()) {
+			String validatorName = validator.getName();
+			if (validatorName.equals(repair.getValidatorName())) {
+				return true;
+			}
+		}
+		return false;
 	}
 }

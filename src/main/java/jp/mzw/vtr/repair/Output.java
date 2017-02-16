@@ -2,6 +2,7 @@ package jp.mzw.vtr.repair;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -18,6 +19,17 @@ import jp.mzw.vtr.maven.CompilerPlugin;
 import jp.mzw.vtr.maven.JavadocUtils;
 import jp.mzw.vtr.maven.MavenUtils;
 import jp.mzw.vtr.maven.Results;
+import jp.mzw.vtr.validate.ValidatorBase;
+import jp.mzw.vtr.validate.javadoc.FixJavadocErrors;
+import jp.mzw.vtr.validate.javadoc.ReplaceAtTodoWithTODO;
+import jp.mzw.vtr.validate.javadoc.UseCodeAnnotationsAtJavaDoc;
+import jp.mzw.vtr.validate.outputs.RemovePrintStatements;
+import jp.mzw.vtr.validate.outputs.suppress_warnings.DeleteUnnecessaryAssignmenedVariables;
+import jp.mzw.vtr.validate.outputs.suppress_warnings.IntroduceAutoBoxing;
+import jp.mzw.vtr.validate.outputs.suppress_warnings.RemoveUnnecessaryCasts;
+import jp.mzw.vtr.validate.outputs.suppress_warnings.add_suppress_warnings_annotation.AddSuppressWarningsDeprecationAnnotation;
+import jp.mzw.vtr.validate.outputs.suppress_warnings.add_suppress_warnings_annotation.AddSuppressWarningsRawtypesAnnotation;
+import jp.mzw.vtr.validate.outputs.suppress_warnings.add_suppress_warnings_annotation.AddSuppressWarningsUncheckedAnnotation;
 
 public class Output extends EvaluatorBase {
 	protected static Logger LOGGER = LoggerFactory.getLogger(Output.class);
@@ -35,6 +47,30 @@ public class Output extends EvaluatorBase {
 	public void evaluateBefore(Repair repair) {
 		// NOP because before outputs should be stored when running
 		// Validator/PatchGenerator
+	}
+
+	@Override
+	public List<Class<? extends ValidatorBase>> includeValidators() {
+		final List<Class<? extends ValidatorBase>> includes = new ArrayList<>();
+
+		/*
+		 * Sharp-shooting outputs
+		 */
+		// Suppress warnings
+		includes.add(DeleteUnnecessaryAssignmenedVariables.class);
+		includes.add(IntroduceAutoBoxing.class);
+		includes.add(RemoveUnnecessaryCasts.class);
+		includes.add(AddSuppressWarningsDeprecationAnnotation.class);
+		includes.add(AddSuppressWarningsRawtypesAnnotation.class);
+		includes.add(AddSuppressWarningsUncheckedAnnotation.class);
+		// Prints for debugging
+		includes.add(RemovePrintStatements.class);
+		// JavaDoc warnings and errors
+		includes.add(FixJavadocErrors.class);
+		includes.add(ReplaceAtTodoWithTODO.class);
+		includes.add(UseCodeAnnotationsAtJavaDoc.class);
+
+		return includes;
 	}
 
 	@Override
@@ -72,12 +108,14 @@ public class Output extends EvaluatorBase {
 	public void compare(Repair repair) {
 		File beforeDir = Results.getDir(outputDir, projectId, repair.getCommit());
 		File beforeCompileOutputs = new File(beforeDir, Results.COMPILE_OUTPUTS_FILENAME);
-//		File beforeCompileErrors = new File(beforeDir, Results.COMPILE_ERRORS_FILENAME);
+		// File beforeCompileErrors = new File(beforeDir,
+		// Results.COMPILE_ERRORS_FILENAME);
 		File beforeJavadocErrors = new File(beforeDir, Results.JAVADOC_RESULTS_FILENAME);
 
 		File afterDir = getAfterDir(repair);
 		File afterCompileOutputs = new File(afterDir, Results.COMPILE_OUTPUTS_FILENAME);
-//		File afterCompileErrors = new File(afterDir, Results.COMPILE_ERRORS_FILENAME);
+		// File afterCompileErrors = new File(afterDir,
+		// Results.COMPILE_ERRORS_FILENAME);
 		File afterJavadocErrors = new File(afterDir, Results.JAVADOC_RESULTS_FILENAME);
 
 		if (!beforeCompileOutputs.exists() || !beforeJavadocErrors.exists() || !afterDir.exists() || !afterJavadocErrors.exists()) {
@@ -87,11 +125,13 @@ public class Output extends EvaluatorBase {
 
 		try {
 			List<String> beforeCompileOutputsLines = FileUtils.readLines(beforeCompileOutputs);
-//			List<String> beforeCompileErrorsLines = FileUtils.readLines(beforeCompileErrors);
+			// List<String> beforeCompileErrorsLines =
+			// FileUtils.readLines(beforeCompileErrors);
 			List<String> beforeJavadocErrorsLines = FileUtils.readLines(beforeJavadocErrors);
 
 			List<String> afterCompileOutputsLines = FileUtils.readLines(afterCompileOutputs);
-//			List<String> afterCompileErrorsLines = FileUtils.readLines(afterCompileErrors);
+			// List<String> afterCompileErrorsLines =
+			// FileUtils.readLines(afterCompileErrors);
 			List<String> afterJavadocErrorsLines = FileUtils.readLines(afterJavadocErrors);
 
 			int beforeNumOfWarnings = getNumOfWarnings(beforeCompileOutputsLines);

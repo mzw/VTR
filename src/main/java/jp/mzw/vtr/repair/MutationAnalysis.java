@@ -2,6 +2,7 @@ package jp.mzw.vtr.repair;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -20,6 +21,11 @@ import org.slf4j.LoggerFactory;
 import jp.mzw.vtr.core.Project;
 import jp.mzw.vtr.maven.MavenUtils;
 import jp.mzw.vtr.maven.PitInstrumenter;
+import jp.mzw.vtr.validate.ValidatorBase;
+import jp.mzw.vtr.validate.exception_handling.AddFailStatementsForHandlingExpectedExceptions;
+import jp.mzw.vtr.validate.exception_handling.DoNotSwallowTestErrorsSilently;
+import jp.mzw.vtr.validate.junit.AddTestAnnotations;
+import jp.mzw.vtr.validate.junit.AssertNotNullToInstances;
 
 public class MutationAnalysis extends EvaluatorBase {
 	protected static Logger LOGGER = LoggerFactory.getLogger(MutationAnalysis.class);
@@ -32,13 +38,30 @@ public class MutationAnalysis extends EvaluatorBase {
 	Map<Repair, Result> results;
 
 	/**
-	 * @
-	 * @param project
+	 * @ @param
+	 *       project
 	 */
 	public MutationAnalysis(Project project) {
 		super(project);
 		this.classesUnderTest = PitInstrumenter.getTargetClasses(projectDir);
 		results = new HashMap<>();
+	}
+
+	@Override
+	public List<Class<? extends ValidatorBase>> includeValidators() {
+		final List<Class<? extends ValidatorBase>> includes = new ArrayList<>();
+
+		/*
+		 * Mutation analysis
+		 */
+		// JUnit
+		includes.add(AddTestAnnotations.class);
+		includes.add(AssertNotNullToInstances.class); // +SuppressWarnings
+		// Exception handling
+		includes.add(AddFailStatementsForHandlingExpectedExceptions.class);
+		includes.add(DoNotSwallowTestErrorsSilently.class);
+
+		return includes;
 	}
 
 	@Override

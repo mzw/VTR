@@ -2,6 +2,7 @@ package jp.mzw.vtr.repair;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -14,6 +15,10 @@ import org.apache.maven.shared.invoker.MavenInvocationException;
 import jp.mzw.vtr.core.Project;
 import jp.mzw.vtr.core.VtrUtils;
 import jp.mzw.vtr.maven.MavenUtils;
+import jp.mzw.vtr.validate.ValidatorBase;
+import jp.mzw.vtr.validate.coding_style.UseProcessWaitfor;
+import jp.mzw.vtr.validate.resources.CloseResources;
+import jp.mzw.vtr.validate.resources.UseTryWithResources;
 
 public class Performance extends EvaluatorBase {
 
@@ -24,6 +29,21 @@ public class Performance extends EvaluatorBase {
 		super(project);
 		beforeResults = new HashMap<>();
 		afterResults = new HashMap<>();
+	}
+
+	@Override
+	public List<Class<? extends ValidatorBase>> includeValidators() {
+		final List<Class<? extends ValidatorBase>> includes = new ArrayList<>();
+
+		/*
+		 * Performance
+		 */
+		// Resources
+		includes.add(UseProcessWaitfor.class);
+		includes.add(CloseResources.class);
+		includes.add(UseTryWithResources.class);
+
+		return includes;
 	}
 
 	@Override

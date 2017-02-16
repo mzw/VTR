@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import jp.mzw.vtr.core.Project;
+import jp.mzw.vtr.validate.ValidatorBase;
 
 abstract public class EvaluatorBase {
 	protected static Logger LOGGER = LoggerFactory.getLogger(EvaluatorBase.class);
@@ -31,14 +32,15 @@ abstract public class EvaluatorBase {
 	abstract public void evaluateAfter(Repair repair);
 	abstract public void compare(Repair repair);
 	abstract public void output(List<Repair> repairs) throws IOException;
+	abstract public List<Class<? extends ValidatorBase>> includeValidators();
 	
 	// TODO Add evaluators from resources
 	public static List<EvaluatorBase> getEvaluators(Project project) {
 		final List<EvaluatorBase> ret = new ArrayList<>();
-		ret.add(new Readability(project));
-		ret.add(new MutationAnalysis(project));
+//		ret.add(new Readability(project));
+//		ret.add(new MutationAnalysis(project));
 		ret.add(new Performance(project));
-		ret.add(new Output(project));
+//		ret.add(new Output(project));
 		return ret;
 	}
 
