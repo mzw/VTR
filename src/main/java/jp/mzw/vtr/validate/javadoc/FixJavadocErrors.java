@@ -98,9 +98,7 @@ public class FixJavadocErrors extends SimpleValidatorBase {
 			} else if (thirdProcessMessages(message)) {
 				thirdProcessMessages.add(message);
 			} else {
-				System.out.println("TODO: " + message.toString());
-				System.out.println("Commit: " + commit.getId());
-				System.out.println("TestCase: " + tc.getFullName());
+				printTODO(commit, message);
 			}
 		}
 		List<TagElement> removed = new ArrayList<>();
@@ -163,13 +161,15 @@ public class FixJavadocErrors extends SimpleValidatorBase {
 					} else if (message.getDescription().startsWith("unknown tag")) {
 						TagElement replace = UnknownTag(cu, message);
 						if (replace == null) {
-							System.out.println("TODO: Check why replace is null " + message.toString());
+							System.out.println("TODO: Check why replace is null");
+							printTODO(commit, message);
 							continue;
 						}
 					} else if (message.getDescription().startsWith("unexpected text")) {
 						TagElement replace = UnexpectedText(ast, cu, message);
 						if (replace == null) {
-							System.out.println("TODO: Check why replace is null " + message.toString());
+							System.out.println("TODO: Check why replace is null");
+							printTODO(commit, message);
 							continue;
 						}
 						modified.add(target);
@@ -177,7 +177,8 @@ public class FixJavadocErrors extends SimpleValidatorBase {
 					} else if (message.getDescription().startsWith("incorrect use of inline tag")) {
 						TagElement replace = IncorrectUseOfInlineTag(ast, cu, message);
 						if (replace == null) {
-							System.out.println("TODO: Check why replace is null " + message.toString());
+							System.out.println("TODO: Check why replace is null");
+							printTODO(commit, message);
 							continue;
 						}
 						modified.add(target);
@@ -345,7 +346,7 @@ public class FixJavadocErrors extends SimpleValidatorBase {
 		}
 		TagElement ret = (TagElement) ASTNode.copySubtree(ast, target);
 		TextElement text = ast.newTextElement();
-		text.setText("TODO: add description for " + target.getTagName());
+		text.setText("TODO: add description for this");
 		ret.fragments().add(text);
 		return ret;
 	}
@@ -454,5 +455,12 @@ public class FixJavadocErrors extends SimpleValidatorBase {
 			}
 		}
 		return "Link";
+	}
+
+	protected void printTODO(Commit commit, JavadocErrorMessage message) {
+		System.out.println("TODO: " + message.toString());
+		System.out.println("See: https://github.com/apache/" + this.projectId +
+				"/blob/" + commit.getId() + "/" + message.toString().split(":")[0] +
+				"#L" + message.getLineno());
 	}
 }
