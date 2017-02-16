@@ -42,7 +42,6 @@ import jp.mzw.vtr.maven.MavenUtils;
 import jp.mzw.vtr.maven.TestRunner;
 import jp.mzw.vtr.maven.TestSuite;
 import jp.mzw.vtr.repair.EvaluatorBase;
-import jp.mzw.vtr.repair.Repair;
 import jp.mzw.vtr.repair.RepairEvaluator;
 import jp.mzw.vtr.validate.ValidationResult;
 import jp.mzw.vtr.validate.Validator;
@@ -257,39 +256,9 @@ public class CLI {
 			throws IOException, ParseException, GitAPIException, MavenInvocationException, DocumentException, PatchFailedException {
 		// prepare
 		RepairEvaluator evaluator = new RepairEvaluator(project).parse();
-		List<Repair> repairs = evaluator.getRepairs();
 		List<EvaluatorBase> evaluators = EvaluatorBase.getEvaluators(project);
-		// checkout and evaluate
-		CheckoutConductor cc = new CheckoutConductor(project);
-		String curCommitId = null;
-		for (Repair repair : repairs) {
-			Commit commit = repair.getCommit();
-			if (curCommitId == null) {
-				cc.checkout(commit);
-				curCommitId = commit.getId();
-			} else {
-				if (!curCommitId.equals(commit.getId())) {
-					cc.checkout(commit);
-					curCommitId = commit.getId();
-				}
-			}
-			repair.parse(evaluator.getProjectDir());
-			for (EvaluatorBase each : evaluators) {
-				each.evaluateBefore(repair);
-			}
-			repair.apply(evaluator.getProjectDir());
-			for (EvaluatorBase each : evaluators) {
-				each.evaluateAfter(repair);
-			}
-			for (EvaluatorBase each : evaluators) {
-				each.compare(repair);
-			}
-			repair.revert();
-		}
-		// output
-		for (EvaluatorBase each : evaluators) {
-			each.output(repairs);
-		}
+		// evaluate
+		evaluator.evaluate(evaluators);
 	}
 
 	private static void eval(String type, String... args) throws IOException, ParseException, GitAPIException {

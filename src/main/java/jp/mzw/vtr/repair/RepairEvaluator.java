@@ -2,13 +2,17 @@ package jp.mzw.vtr.repair;
 
 import java.io.File;
 import java.io.IOException;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.eclipse.jgit.api.errors.GitAPIException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import difflib.PatchFailedException;
 import jp.mzw.vtr.core.Project;
+import jp.mzw.vtr.git.CheckoutConductor;
 import jp.mzw.vtr.git.Commit;
 import jp.mzw.vtr.validate.ValidatorBase;
 
@@ -20,7 +24,7 @@ public class RepairEvaluator {
 	protected File outputDir;
 	protected File mavenHome;
 	protected boolean mavenOutput;
-	
+
 	protected List<Repair> repairs;
 
 	public RepairEvaluator(Project project) {
@@ -30,10 +34,6 @@ public class RepairEvaluator {
 		this.mavenHome = project.getMavenHome();
 		this.mavenOutput = project.getMavenOutput();
 		this.repairs = new ArrayList<>();
-	}
-	
-	public File getProjectDir() {
-		return projectDir;
 	}
 
 	public RepairEvaluator parse() throws IOException {
@@ -70,8 +70,39 @@ public class RepairEvaluator {
 		return this;
 	}
 
-	public List<Repair> getRepairs() {
-		return this.repairs;
+	public void evaluate(List<EvaluatorBase> evaluators) throws GitAPIException, IOException, PatchFailedException, ParseException {
+		if (repairs.isEmpty()) {
+			parse();
+		}
+		CheckoutConductor cc = new CheckoutConductor(projectId, projectDir, outputDir);
+		String curCommitId = null;
+		for (Repair repair : repairs) {
+			Commit commit = repair.getCommit();
+			if (curCommitId == null) {
+				cc.checkout(commit);
+				curCommitId = commit.getId();
+			} else {
+				if (!curCommitId.equals(commit.getId())) {
+					cc.checkout(commit);
+					curCommitId = commit.getId();
+				}
+			}
+			repair.parse(projectDir);
+			for (EvaluatorBase each : evaluators) {
+				each.evaluateBefore(repair);
+			}
+			repair.apply(projectDir);
+			for (EvaluatorBase each : evaluators) {
+				each.evaluateAfter(repair);
+			}
+			for (EvaluatorBase each : evaluators) {
+				each.compare(repair);
+			}
+			repair.revert();
+		}
+		// output
+		for (EvaluatorBase each : evaluators) {
+			each.output(repairs);
+		}
 	}
-
 }
