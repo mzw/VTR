@@ -1,14 +1,18 @@
 package jp.mzw.vtr.validate.javadoc;
 
-import java.io.*;
-import java.util.*;
-
 import jp.mzw.vtr.core.Project;
 import jp.mzw.vtr.git.Commit;
 import jp.mzw.vtr.maven.JavadocUtils.JavadocErrorMessage;
 import jp.mzw.vtr.maven.Results;
 import jp.mzw.vtr.maven.TestCase;
 import jp.mzw.vtr.validate.SimpleValidatorBase;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 import org.eclipse.jdt.core.dom.*;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
@@ -28,7 +32,8 @@ public class FixJavadocErrors extends SimpleValidatorBase {
 	}
 
 	@Override
-	protected List<ASTNode> detect(final Commit commit, final TestCase tc, final Results results) throws IOException, MalformedTreeException, BadLocationException {
+	protected List<ASTNode> detect(final Commit commit, final TestCase tc, final Results results)
+			throws IOException, MalformedTreeException, BadLocationException {
 		final List<ASTNode> ret = new ArrayList<>();
 		List<JavadocErrorMessage> messages = results.getJavadocErrorMessages(projectDir, tc.getTestFile());
 		if (messages == null) {
@@ -51,7 +56,8 @@ public class FixJavadocErrors extends SimpleValidatorBase {
 
 	@SuppressWarnings("unchecked")
 	@Override
-	protected String getModified(String origin, final Commit commit, final TestCase tc, final Results results) throws IOException, MalformedTreeException, BadLocationException {
+	protected String getModified(String origin, final Commit commit, final TestCase tc, final Results results)
+			throws IOException, MalformedTreeException, BadLocationException {
 		List<ASTNode> detects = detect(commit, tc, results);
 		if (detects.isEmpty()) {
 			return origin;
@@ -101,13 +107,14 @@ public class FixJavadocErrors extends SimpleValidatorBase {
 
 		// rewrite
 		Javadoc javadoc = method.getJavadoc();
-        for (JavadocErrorMessage message : firstProcessMessages) {
+		for (JavadocErrorMessage message : firstProcessMessages) {
 			// add or delete javadoc tags
 			// 既存のASTに操作
 			if (message.getDescription().startsWith("no @throws for ")) {
-			    TagElement target = NoAtThrowsFor(ast, message);
-			    javadoc.tags().add(target);
+				TagElement target = NoAtThrowsFor(ast, message);
+				javadoc.tags().add(target);
 			} else if (message.getDescription().startsWith("exception not thrown")) {
+				@SuppressWarnings("rawtypes")
 				Iterator itr = javadoc.tags().iterator();
 				while (itr.hasNext()) {
 					TagElement target = (TagElement) itr.next();
@@ -128,13 +135,13 @@ public class FixJavadocErrors extends SimpleValidatorBase {
 				}
 			}
 			for (JavadocErrorMessage message : thirdProcessMessages) {
-        		if (targetTagElement(cu, tag, message)) {
-        			thirdProcessTargets.add(tag);
+				if (targetTagElement(cu, tag, message)) {
+					thirdProcessTargets.add(tag);
 				}
 			}
 		}
 		Javadoc copy = (Javadoc) ASTNode.copySubtree(ast, javadoc);
-        copy.tags().clear();
+		copy.tags().clear();
 		for (Object obj : javadoc.tags()) {
 			TagElement tag = (TagElement) obj;
 			if (secondProcessTargets.contains(tag)) {
@@ -195,8 +202,8 @@ public class FixJavadocErrors extends SimpleValidatorBase {
 		rewrite.replace(javadoc, copy, null);
 		// modify
 		Document document = new Document(origin);
-        TextEdit edit = rewrite.rewriteAST(document, null);
-        edit.apply(document);
+		TextEdit edit = rewrite.rewriteAST(document, null);
+		edit.apply(document);
 		return document.get();
 	}
 
@@ -214,8 +221,8 @@ public class FixJavadocErrors extends SimpleValidatorBase {
 	}
 
 	protected boolean targetTagElement(CompilationUnit cu, TagElement tag, JavadocErrorMessage message) {
-		return (cu.getLineNumber(tag.getStartPosition()) <= message.getLineno()) &&
-				(message.getLineno() <= cu.getLineNumber(tag.getStartPosition() + tag.getLength()));
+		return (cu.getLineNumber(tag.getStartPosition()) <= message.getLineno())
+				&& (message.getLineno() <= cu.getLineNumber(tag.getStartPosition() + tag.getLength()));
 	}
 
 	protected TagElement targetTagElement(CompilationUnit cu, JavadocErrorMessage message) {
@@ -243,13 +250,13 @@ public class FixJavadocErrors extends SimpleValidatorBase {
 	}
 
 	private boolean officialTag(String tagName) {
-		return tagName.equals(TagElement.TAG_AUTHOR) || tagName.equals(TagElement.TAG_CODE) || tagName.equals(TagElement.TAG_DEPRECATED) ||
-				tagName.equals(TagElement.TAG_DOCROOT) || tagName.equals(TagElement.TAG_EXCEPTION) || tagName.equals(TagElement.TAG_INHERITDOC) ||
-				tagName.equals(TagElement.TAG_LINK) || tagName.equals(TagElement.TAG_LINKPLAIN) || tagName.equals(TagElement.TAG_LITERAL) ||
-				tagName.equals(TagElement.TAG_PARAM) || tagName.equals(TagElement.TAG_RETURN) || tagName.equals(TagElement.TAG_SEE) ||
-				tagName.equals(TagElement.TAG_SERIAL) || tagName.equals(TagElement.TAG_SERIALDATA) || tagName.equals(TagElement.TAG_SERIALFIELD) ||
-				tagName.equals(TagElement.TAG_SINCE) || tagName.equals(TagElement.TAG_THROWS) || tagName.equals(TagElement.TAG_VALUE) ||
-				tagName.equals(TagElement.TAG_VERSION);
+		return tagName.equals(TagElement.TAG_AUTHOR) || tagName.equals(TagElement.TAG_CODE) || tagName.equals(TagElement.TAG_DEPRECATED)
+				|| tagName.equals(TagElement.TAG_DOCROOT) || tagName.equals(TagElement.TAG_EXCEPTION) || tagName.equals(TagElement.TAG_INHERITDOC)
+				|| tagName.equals(TagElement.TAG_LINK) || tagName.equals(TagElement.TAG_LINKPLAIN) || tagName.equals(TagElement.TAG_LITERAL)
+				|| tagName.equals(TagElement.TAG_PARAM) || tagName.equals(TagElement.TAG_RETURN) || tagName.equals(TagElement.TAG_SEE)
+				|| tagName.equals(TagElement.TAG_SERIAL) || tagName.equals(TagElement.TAG_SERIALDATA) || tagName.equals(TagElement.TAG_SERIALFIELD)
+				|| tagName.equals(TagElement.TAG_SINCE) || tagName.equals(TagElement.TAG_THROWS) || tagName.equals(TagElement.TAG_VALUE)
+				|| tagName.equals(TagElement.TAG_VERSION);
 	}
 
 	private boolean todoTag(String tagName) {
@@ -263,26 +270,24 @@ public class FixJavadocErrors extends SimpleValidatorBase {
 	private boolean errorMessages(JavadocErrorMessage message) {
 		return message.getDescription().startsWith("cannot find symbol");
 	}
+
 	private boolean firstProcessMessages(JavadocErrorMessage message) {
-		return message.getDescription().startsWith("no @throws for ") ||
-				message.getDescription().startsWith("exception not thrown");
-	}
-	private boolean secondProcessMessages(JavadocErrorMessage message) {
-		return message.getDescription().startsWith("no description for @throws") ||
-				message.getDescription().startsWith("unknown tag") ||
-				message.getDescription().startsWith("unexpected text") ||
-				message.getDescription().startsWith("incorrect use of inline tag");
-	}
-	private boolean thirdProcessMessages(JavadocErrorMessage message) {
-		return message.getDescription().startsWith("element not closed") ||
-				message.getDescription().startsWith("nested tag not allowed") ||
-				message.getDescription().startsWith("bad HTML entity") ||
-				message.getDescription().startsWith("illegal character") ||
-				message.getDescription().startsWith("bad use of") ||
-				message.getDescription().startsWith("malformed HTML") ||
-				message.getDescription().startsWith("nested tag not allowed");
+		return message.getDescription().startsWith("no @throws for ") || message.getDescription().startsWith("exception not thrown");
 	}
 
+	private boolean secondProcessMessages(JavadocErrorMessage message) {
+		return message.getDescription().startsWith("no description for @throws") || message.getDescription().startsWith("unknown tag")
+				|| message.getDescription().startsWith("unexpected text") || message.getDescription().startsWith("incorrect use of inline tag");
+	}
+
+	private boolean thirdProcessMessages(JavadocErrorMessage message) {
+		return message.getDescription().startsWith("element not closed") || message.getDescription().startsWith("nested tag not allowed")
+				|| message.getDescription().startsWith("bad HTML entity") || message.getDescription().startsWith("illegal character")
+				|| message.getDescription().startsWith("bad use of") || message.getDescription().startsWith("malformed HTML")
+				|| message.getDescription().startsWith("nested tag not allowed");
+	}
+
+	@SuppressWarnings("unchecked")
 	protected TagElement NoAtThrowsFor(AST ast, JavadocErrorMessage message) {
 		String exception = message.getDescription().replace("no @throws for ", "");
 		final List<ITypeBinding> exceptions = new ArrayList<>();
@@ -322,6 +327,7 @@ public class FixJavadocErrors extends SimpleValidatorBase {
 		return tag;
 	}
 
+	@SuppressWarnings("unchecked")
 	protected TagElement NoDescriptionForAtThrows(AST ast, CompilationUnit cu, JavadocErrorMessage message) {
 		TagElement target = targetTagElement(cu, message);
 		if (target == null) {
@@ -355,6 +361,7 @@ public class FixJavadocErrors extends SimpleValidatorBase {
 		}
 	}
 
+	@SuppressWarnings("unchecked")
 	protected TagElement UnexpectedText(AST ast, CompilationUnit cu, JavadocErrorMessage message) {
 		TagElement target = targetTagElement(cu, message);
 		if (target.getTagName() == null) {
@@ -376,6 +383,7 @@ public class FixJavadocErrors extends SimpleValidatorBase {
 		return ret;
 	}
 
+	@SuppressWarnings("unchecked")
 	protected TagElement IncorrectUseOfInlineTag(AST ast, CompilationUnit cu, JavadocErrorMessage message) {
 		TagElement target = targetTagElement(cu, message);
 		if (target.getTagName() == null) {
@@ -397,6 +405,7 @@ public class FixJavadocErrors extends SimpleValidatorBase {
 		return ret;
 	}
 
+	@SuppressWarnings("unchecked")
 	protected TagElement ModifyByTidy(AST ast, CompilationUnit cu, JavadocErrorMessage message) throws IOException {
 		TagElement target = targetTagElement(cu, message);
 		if (target == null) {
