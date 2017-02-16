@@ -129,6 +129,7 @@ public class Repair {
 		} catch (difflib.PatchFailedException e) {
 			originalTestFileContent.add(0, "");
 			modifiedTestFileContent = patch.applyTo(originalTestFileContent);
+			originalTestFileContent.remove(0);
 			modifiedTestFileContent.remove(0);
 			FileUtils.writeLines(testFile, modifiedTestFileContent);
 		}
