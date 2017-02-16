@@ -143,7 +143,7 @@ public class Repair {
 		StringBuilder builder = new StringBuilder();
 		for (Delta<String> delta : this.patch.getDeltas()) {
 			Chunk<String> original = delta.getOriginal();
-			for (int i = 0; i < original.size(); i++) {
+			for (int i = 0; i < original.size() - 1; i++) {
 				builder.append(originalTestFileContent.get(original.getPosition() + i + 1)).append("\n");
 			}
 		}
@@ -154,7 +154,7 @@ public class Repair {
 		StringBuilder builder = new StringBuilder();
 		for (Delta<String> delta : this.patch.getDeltas()) {
 			Chunk<String> revised = delta.getRevised();
-			for (int i = 0; i < revised.size(); i++) {
+			for (int i = 0; i < revised.size() - 1; i++) {
 				builder.append(modifiedTestFileContent.get(revised.getPosition() + i + 1)).append("\n");
 			}
 		}
