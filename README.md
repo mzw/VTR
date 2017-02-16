@@ -33,33 +33,33 @@ $ mvn compile test-compile dependency:copy-dependencies
 
 ### In-Advance Phase
 
-1. Make Dictionary
+#### 1. Make Dictionary
 
 ```
 $ sh/run dict vtr-example
 ```
 
-2.  Measure Coverage of Modified Test Cases
+#### 2.  Measure Coverage of Modified Test Cases
 
 ```
 $ sh/run cov vtr-example
 ```
 
-3. Detect Test-Case Modifications for Previously-Released Source Code
+#### 3. Detect Test-Case Modifications for Previously-Released Source Code
 
 ```
 $ sh/run detect vtr-example
 ```
 
-### Review Phase
+### In-Review Phase
 
-4. Cluster Detected Test-Case Modifications
+#### 4. Cluster Detected Test-Case Modifications
 
 ```
 $ sh/run cluster lcs complete 0.5
 ```
 
-5. Review VTR In-Advance Results
+#### 5. Review VTR In-Advance Results
 
 ```
 $ sh/run visualize html
@@ -67,19 +67,19 @@ $ sh/run visualize html
 
 ### In-Use Phase
 
-6. Validate Test Cases to Be Modified
+#### 6. Validate Test Cases to Be Modified
 
 ```
 $ sh/run validate vtr-example
 ```
 
-7. Generate Patches to Modify Test Cases Detected
+#### 7. Generate Patches to Modify Test Cases Detected
 
 ```
 $ sh/run gen vtr-example
 ```
 
-8. Evaluate Improvement of Modified Test Cases
+#### 8. Evaluate Improvement of Modified Test Cases
 
 ```
 $ sh/run repair vtr-example
