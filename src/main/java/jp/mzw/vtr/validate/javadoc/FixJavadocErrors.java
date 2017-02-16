@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Scanner;
 
 import org.eclipse.jdt.core.dom.*;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
@@ -86,7 +87,7 @@ public class FixJavadocErrors extends SimpleValidatorBase {
 			if (message.getMethod() == null) {
 				continue;
 			}
-			if (errorMessages(message)) {
+			if (limitationMessage(message)) {
 				if (compileError(results)) {
 					return origin;
 				}
@@ -97,9 +98,7 @@ public class FixJavadocErrors extends SimpleValidatorBase {
 			} else if (thirdProcessMessages(message)) {
 				thirdProcessMessages.add(message);
 			} else {
-				System.out.println("TODO: " + message.toString());
-				System.out.println("Commit: " + commit.getId());
-				System.out.println("TestCase: " + tc.getFullName());
+				printTODO(commit, message);
 			}
 		}
 		List<TagElement> removed = new ArrayList<>();
@@ -123,6 +122,9 @@ public class FixJavadocErrors extends SimpleValidatorBase {
 						itr.remove();
 					}
 				}
+			} else if (message.getDescription().startsWith("no @param for ")) {
+				TagElement tag = NotAtParamFor(ast, message);
+				javadoc.tags().add(tag);
 			}
 		}
 		List<TagElement> secondProcessTargets = new ArrayList<>();
@@ -154,20 +156,23 @@ public class FixJavadocErrors extends SimpleValidatorBase {
 					if (modified.contains(target)) {
 						continue;
 					}
-					if (message.getDescription().startsWith("no description for @throws")) {
+					if (message.getDescription().startsWith("no description for @throws") ||
+							message.getDescription().startsWith("no description for @exception")) {
 						TagElement replace = NoDescriptionForAtThrows(ast, cu, message);
 						modified.add(target);
 						copy.tags().add(replace);
 					} else if (message.getDescription().startsWith("unknown tag")) {
 						TagElement replace = UnknownTag(cu, message);
 						if (replace == null) {
-							System.out.println("TODO: Check why replace is null " + message.toString());
+							System.out.println("TODO: Check why replace is null");
+							printTODO(commit, message);
 							continue;
 						}
 					} else if (message.getDescription().startsWith("unexpected text")) {
 						TagElement replace = UnexpectedText(ast, cu, message);
 						if (replace == null) {
-							System.out.println("TODO: Check why replace is null " + message.toString());
+							System.out.println("TODO: Check why replace is null");
+							printTODO(commit, message);
 							continue;
 						}
 						modified.add(target);
@@ -175,7 +180,8 @@ public class FixJavadocErrors extends SimpleValidatorBase {
 					} else if (message.getDescription().startsWith("incorrect use of inline tag")) {
 						TagElement replace = IncorrectUseOfInlineTag(ast, cu, message);
 						if (replace == null) {
-							System.out.println("TODO: Check why replace is null " + message.toString());
+							System.out.println("TODO: Check why replace is null");
+							printTODO(commit, message);
 							continue;
 						}
 						modified.add(target);
@@ -216,8 +222,7 @@ public class FixJavadocErrors extends SimpleValidatorBase {
 		tidy.parse(new ByteArrayInputStream(comment.getBytes("utf-8")), output);
 		String content = getBody(output.toString()).replace("* ", "");
 		output.close();
-		content = content.replace("\n", " ");
-		return content;
+		return content.replace("\n", " ").trim();
 	}
 
 	protected boolean targetTagElement(CompilationUnit cu, TagElement tag, JavadocErrorMessage message) {
@@ -267,24 +272,30 @@ public class FixJavadocErrors extends SimpleValidatorBase {
 		return html.split("<body>")[1].split("</body>")[0];
 	}
 
-	private boolean errorMessages(JavadocErrorMessage message) {
-		return message.getDescription().startsWith("cannot find symbol");
+	// limitation to modify automatically
+	private boolean limitationMessage(JavadocErrorMessage message) {
+		return message.getDescription().startsWith("cannot find symbol") || message.getDescription().startsWith("can't find");
 	}
 
 	private boolean firstProcessMessages(JavadocErrorMessage message) {
-		return message.getDescription().startsWith("no @throws for ") || message.getDescription().startsWith("exception not thrown");
+		return message.getDescription().startsWith("no @throws for ")
+				|| message.getDescription().startsWith("exception not thrown")
+				|| message.getDescription().startsWith("no @param for");
 	}
 
 	private boolean secondProcessMessages(JavadocErrorMessage message) {
 		return message.getDescription().startsWith("no description for @throws") || message.getDescription().startsWith("unknown tag")
-				|| message.getDescription().startsWith("unexpected text") || message.getDescription().startsWith("incorrect use of inline tag");
+				|| message.getDescription().startsWith("unexpected text") || message.getDescription().startsWith("incorrect use of inline tag")
+				|| message.getDescription().startsWith("no description for @exception");
 	}
 
 	private boolean thirdProcessMessages(JavadocErrorMessage message) {
 		return message.getDescription().startsWith("element not closed") || message.getDescription().startsWith("nested tag not allowed")
 				|| message.getDescription().startsWith("bad HTML entity") || message.getDescription().startsWith("illegal character")
 				|| message.getDescription().startsWith("bad use of") || message.getDescription().startsWith("malformed HTML")
-				|| message.getDescription().startsWith("nested tag not allowed");
+				|| message.getDescription().startsWith("semicolon missing") || message.getDescription().startsWith("self-closing element not allowed")
+				|| message.getDescription().startsWith("empty <p> tag") || message.getDescription().startsWith("unmappable character for encoding UTF8")
+				|| message.getDescription().startsWith("unexpected end tag");
 	}
 
 	@SuppressWarnings("unchecked")
@@ -328,6 +339,32 @@ public class FixJavadocErrors extends SimpleValidatorBase {
 	}
 
 	@SuppressWarnings("unchecked")
+	protected TagElement NotAtParamFor(AST ast, JavadocErrorMessage message) {
+		String param = message.getDescription().replace("no @param for ", "");
+		final List<SingleVariableDeclaration> params = new ArrayList<>();
+		for (Object object : message.getMethod().parameters()) {
+			if (object instanceof SingleVariableDeclaration) {
+				SingleVariableDeclaration var = (SingleVariableDeclaration) object;
+				params.add(var);
+			} else {
+				System.out.println("TODO: implement for param type, " + object.getClass());
+			}
+		}
+		TagElement tag = ast.newTagElement();
+		tag.setTagName(TagElement.TAG_PARAM);
+		for (SingleVariableDeclaration var : params) {
+			if (param.equals(var.getName().toString())) {
+				SimpleName name = ast.newSimpleName(var.getName().toString());
+				tag.fragments().add(name);
+				TextElement text = ast.newTextElement();
+				text.setText("TODO: Add description for this param");
+				tag.fragments().add(text);
+			}
+		}
+		return tag;
+	}
+
+	@SuppressWarnings("unchecked")
 	protected TagElement NoDescriptionForAtThrows(AST ast, CompilationUnit cu, JavadocErrorMessage message) {
 		TagElement target = targetTagElement(cu, message);
 		if (target == null) {
@@ -336,12 +373,12 @@ public class FixJavadocErrors extends SimpleValidatorBase {
 		if (target.getTagName() == null) {
 			return null;
 		}
-		if (!target.getTagName().equals("@throws")) {
+		if (!(target.getTagName().equals("@throws") || target.getTagName().equals("@exception"))) {
 			return null;
 		}
 		TagElement ret = (TagElement) ASTNode.copySubtree(ast, target);
 		TextElement text = ast.newTextElement();
-		text.setText("TODO: add description for @throws");
+		text.setText("TODO: add description for this");
 		ret.fragments().add(text);
 		return ret;
 	}
@@ -364,17 +401,28 @@ public class FixJavadocErrors extends SimpleValidatorBase {
 	@SuppressWarnings("unchecked")
 	protected TagElement UnexpectedText(AST ast, CompilationUnit cu, JavadocErrorMessage message) {
 		TagElement target = targetTagElement(cu, message);
-		if (target.getTagName() == null) {
-			return null;
-		}
-		if (!target.getTagName().equals(TagElement.TAG_SEE)) {
+		if (target == null) {
 			return null;
 		}
 		TagElement ret = ast.newTagElement();
 		for (Object obj : target.fragments()) {
 			if (obj.toString().contains("http")) {
 				TextElement text = ast.newTextElement();
-				text.setText("<a href=\"" + obj.toString().trim() + "\"></a>");
+				if (obj.toString().startsWith("{@link \"")) {
+					// {@link "https://issues.apache.org/jira/browse/COLLECTIONS-360 COLLECTIONS-360"}
+					String url = obj.toString().replace("{@link \"", "").replace("}", "");
+					String html = createLink(url.split(" ")[0].trim());
+					text.setText(html);
+				} else if (obj.toString().startsWith("{@link ")) {
+					// * {@link https://issues.apache.org/jira/browse/DIGESTER-151}
+					String url = obj.toString().replace("{@link ", "").replace("}", "");
+					String html = createLink(url.trim());
+					text.setText(html);
+				} else {
+					// * @see https://issues.apache.org/jira/browse/COMPRESS-176
+					String html = createLink(obj.toString().trim());
+					text.setText(html);
+				}
 				ret.fragments().add(text);
 			} else {
 				ret.fragments().add(ASTNode.copySubtree(ast, (ASTNode) obj));
@@ -396,7 +444,8 @@ public class FixJavadocErrors extends SimpleValidatorBase {
 		for (Object obj : target.fragments()) {
 			if (obj.toString().contains("http")) {
 				TextElement text = ast.newTextElement();
-				text.setText("<a href=\"" + obj.toString().replace("\"", "").trim() + "\"></a>");
+				String html = createLink(obj.toString().replace("\"", "").trim());
+				text.setText(html);
 				ret.fragments().add(text);
 			} else {
 				ret.fragments().add(ASTNode.copySubtree(ast, (ASTNode) obj));
@@ -415,9 +464,35 @@ public class FixJavadocErrors extends SimpleValidatorBase {
 		for (Object obj : target.fragments()) {
 			TextElement text = ast.newTextElement();
 			String content = getTidyModify(obj.toString());
+			if (content.equals("")) {
+				content = "\n *";
+			}
 			text.setText(content);
 			ret.fragments().add(text);
 		}
 		return ret;
+	}
+
+	protected String createLink(String html) {
+		return "<a href=\"" + html + "\">" + _createLink(html) + "</a>";
+	}
+
+	private String _createLink(String html) {
+		Scanner sc = new Scanner(html);
+		sc.useDelimiter("/");
+		while (sc.hasNext()) {
+			String link = sc.next();
+			if (!sc.hasNext()) {
+				return link;
+			}
+		}
+		return "Link";
+	}
+
+	protected void printTODO(Commit commit, JavadocErrorMessage message) {
+		System.out.println("TODO: " + message.toString());
+		System.out.println("See: https://github.com/apache/" + this.projectId +
+				"/blob/" + commit.getId() + "/" + message.toString().split(":")[0] +
+				"#L" + message.getLineno());
 	}
 }
