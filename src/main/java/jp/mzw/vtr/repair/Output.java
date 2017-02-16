@@ -23,10 +23,14 @@ import jp.mzw.vtr.validate.ValidatorBase;
 import jp.mzw.vtr.validate.javadoc.FixJavadocErrors;
 import jp.mzw.vtr.validate.javadoc.ReplaceAtTodoWithTODO;
 import jp.mzw.vtr.validate.javadoc.UseCodeAnnotationsAtJavaDoc;
+import jp.mzw.vtr.validate.junit.AssertNotNullToInstances;
 import jp.mzw.vtr.validate.outputs.RemovePrintStatements;
+import jp.mzw.vtr.validate.outputs.suppress_warnings.AddSerialVersionUids;
 import jp.mzw.vtr.validate.outputs.suppress_warnings.DeleteUnnecessaryAssignmenedVariables;
 import jp.mzw.vtr.validate.outputs.suppress_warnings.IntroduceAutoBoxing;
 import jp.mzw.vtr.validate.outputs.suppress_warnings.RemoveUnnecessaryCasts;
+import jp.mzw.vtr.validate.outputs.suppress_warnings.add_override_annotation.AddOverrideAnnotationToMethodsInConstructors;
+import jp.mzw.vtr.validate.outputs.suppress_warnings.add_override_annotation.AddOverrideAnnotationToTestCase;
 import jp.mzw.vtr.validate.outputs.suppress_warnings.add_suppress_warnings_annotation.AddSuppressWarningsDeprecationAnnotation;
 import jp.mzw.vtr.validate.outputs.suppress_warnings.add_suppress_warnings_annotation.AddSuppressWarningsRawtypesAnnotation;
 import jp.mzw.vtr.validate.outputs.suppress_warnings.add_suppress_warnings_annotation.AddSuppressWarningsUncheckedAnnotation;
@@ -54,6 +58,12 @@ public class Output extends EvaluatorBase {
 		final List<Class<? extends ValidatorBase>> includes = new ArrayList<>();
 
 		/*
+		 * Mutation analysis
+		 */
+		// JUnit
+		includes.add(AssertNotNullToInstances.class); // +SuppressWarnings
+
+		/*
 		 * Sharp-shooting outputs
 		 */
 		// Suppress warnings
@@ -69,6 +79,14 @@ public class Output extends EvaluatorBase {
 		includes.add(FixJavadocErrors.class);
 		includes.add(ReplaceAtTodoWithTODO.class);
 		includes.add(UseCodeAnnotationsAtJavaDoc.class);
+
+		/*
+		 * Clean up
+		 */
+		// Missing code
+		includes.add(AddSerialVersionUids.class); // +SuppressWarnings
+		includes.add(AddOverrideAnnotationToMethodsInConstructors.class); // +SuppressWarnings
+		includes.add(AddOverrideAnnotationToTestCase.class); // +SuppressWarnings
 
 		return includes;
 	}
