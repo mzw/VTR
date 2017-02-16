@@ -94,7 +94,16 @@ public class RepairEvaluator {
 				}
 				each.evaluateBefore(repair);
 			}
-			repair.apply(projectDir);
+			boolean success = repair.apply(projectDir);
+			if (!success) {
+				for (EvaluatorBase each : evaluators) {
+					if (!include(each, repair)) {
+						continue;
+					}
+					repair.setStatus(each, Repair.Status.Broken);
+				}
+				continue;
+			}
 			for (EvaluatorBase each : evaluators) {
 				if (!include(each, repair)) {
 					continue;

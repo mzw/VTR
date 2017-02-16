@@ -24,25 +24,25 @@ public class Repair {
 	private Commit commit;
 	private String validatorName;
 	private File patchFile;
-	
+
 	private List<String> patchLines;
 	private Patch<String> patch;
-	
+
 	public Repair(Commit commit, String validatorName, File patchFile) throws IOException {
 		this.commit = commit;
 		this.validatorName = validatorName;
 		this.patchFile = patchFile;
-		
+
 		this.patchLines = FileUtils.readLines(this.patchFile);
-		patch = DiffUtils.parseUnifiedDiff(patchLines);	
-		
+		patch = DiffUtils.parseUnifiedDiff(patchLines);
+
 		results = new HashMap<>();
 	}
 
 	public Commit getCommit() {
 		return this.commit;
 	}
-	
+
 	public String getValidatorName() {
 		return this.validatorName;
 	}
@@ -50,7 +50,7 @@ public class Repair {
 	public File getPatchFile() {
 		return this.patchFile;
 	}
-	
+
 	public boolean isSameContent(File patch) throws IOException {
 		List<String> lines = FileUtils.readLines(patch);
 		if (lines == null) {
@@ -68,18 +68,18 @@ public class Repair {
 		}
 		return true;
 	}
-	
+
 	public Patch<String> getPatch() {
 		return this.patch;
 	}
-	
+
 	public String toString() {
 		return this.commit.getId() + ", " + this.validatorName + ", " + this.patchFile.getName();
 	}
 
 	private String clazz;
 	private String method;
-	
+
 	public Repair setTestCaseNames(String clazz, String method) {
 		this.clazz = clazz;
 		this.method = method;
@@ -93,57 +93,46 @@ public class Repair {
 	public String getTestCaseMethodName() {
 		return this.method;
 	}
-	
+
 	public String getTestCaseFullName() {
 		return this.clazz + "#" + this.method;
 	}
-	
+
 	public File testFile;
 	private List<String> originalTestFileContent;
 	private List<String> modifiedTestFileContent;
-	
+
 	public Repair parse(File projectDir) throws IOException {
 		this.testFile = getFile(projectDir);
 		this.originalTestFileContent = FileUtils.readLines(this.testFile);
 		return this;
 	}
-	
+
 	public File getFile(File projectDir) {
 		File src = new File(projectDir, "src/test/java");
 		File file = new File(src, this.clazz.replace(".", "/") + ".java");
 		return file;
 	}
-	
+
 	public List<String> getOriginalTestFileContent() {
 		return this.originalTestFileContent;
 	}
-	
+
 	public List<String> getModifiedTestFileContent() {
 		return this.modifiedTestFileContent;
 	}
-	
-	public void apply(File projectDir) throws IOException, PatchFailedException {
+
+	public boolean apply(File projectDir) throws IOException, PatchFailedException {
 		try {
 			modifiedTestFileContent = patch.applyTo(originalTestFileContent);
 			FileUtils.writeLines(testFile, modifiedTestFileContent);
+		} catch (difflib.PatchFailedException e) {
+			// TODO This exception might be caused by "Incorrect Chunk: the
+			// chunk content doesn't match the target"
+			LOGGER.warn("Invalid patch: {} at {} with {}, {}", getTestCaseFullName(), commit.getId(), getValidatorName(), e.getMessage());
+			return false;
 		}
-		// TODO Incorrect Chunk: the chunk content doesn't match the target
-		catch (difflib.PatchFailedException e1) {
-			LOGGER.warn("Invalid patch: {} at {} with {}", getTestCaseFullName(), commit.getId(), getValidatorName());
-			try {
-				String remove = originalTestFileContent.remove(0);
-				modifiedTestFileContent = patch.applyTo(originalTestFileContent);
-				originalTestFileContent.add(0, remove);
-				modifiedTestFileContent.add(0, remove);
-				FileUtils.writeLines(testFile, modifiedTestFileContent);
-			} catch (difflib.PatchFailedException e2) {
-				originalTestFileContent.add(0, "");
-				modifiedTestFileContent = patch.applyTo(originalTestFileContent);
-				originalTestFileContent.remove(0);
-				modifiedTestFileContent.remove(0);
-				FileUtils.writeLines(testFile, modifiedTestFileContent);
-			}
-		}
+		return true;
 	}
 
 	public void revert() throws IOException, PatchFailedException {
@@ -160,7 +149,7 @@ public class Repair {
 		}
 		return builder.toString();
 	}
-	
+
 	public String getRevisedPart() {
 		StringBuilder builder = new StringBuilder();
 		for (Delta<String> delta : this.patch.getDeltas()) {
@@ -171,25 +160,21 @@ public class Repair {
 		}
 		return builder.toString();
 	}
-	
 
 	private Map<EvaluatorBase, Status> results;
+
 	public enum Status {
-		Improved,
-		PartiallyImproved,
-		Stay,
-		Degraded,
-		Broken
+		Improved, PartiallyImproved, Stay, Degraded, Broken
 	}
-	
+
 	public void setStatus(EvaluatorBase evaluator, Status status) {
 		results.put(evaluator, status);
 	}
-	
+
 	public Status getStatus(EvaluatorBase evaluator) {
 		return results.get(evaluator);
 	}
-	
+
 	public String toCsv(EvaluatorBase evaluator) {
 		StringBuilder builder = new StringBuilder();
 		builder.append(commit.getId()).append(",");
