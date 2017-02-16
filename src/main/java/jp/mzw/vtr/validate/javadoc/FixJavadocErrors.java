@@ -122,6 +122,9 @@ public class FixJavadocErrors extends SimpleValidatorBase {
 						itr.remove();
 					}
 				}
+			} else if (message.getDescription().startsWith("no @param for ")) {
+				TagElement tag = NotAtParamFor(ast, message);
+				javadoc.tags().add(tag);
 			}
 		}
 		List<TagElement> secondProcessTargets = new ArrayList<>();
@@ -275,7 +278,9 @@ public class FixJavadocErrors extends SimpleValidatorBase {
 	}
 
 	private boolean firstProcessMessages(JavadocErrorMessage message) {
-		return message.getDescription().startsWith("no @throws for ") || message.getDescription().startsWith("exception not thrown");
+		return message.getDescription().startsWith("no @throws for ")
+				|| message.getDescription().startsWith("exception not thrown")
+				|| message.getDescription().startsWith("no @param for");
 	}
 
 	private boolean secondProcessMessages(JavadocErrorMessage message) {
@@ -289,7 +294,8 @@ public class FixJavadocErrors extends SimpleValidatorBase {
 				|| message.getDescription().startsWith("bad HTML entity") || message.getDescription().startsWith("illegal character")
 				|| message.getDescription().startsWith("bad use of") || message.getDescription().startsWith("malformed HTML")
 				|| message.getDescription().startsWith("semicolon missing") || message.getDescription().startsWith("self-closing element not allowed")
-				|| message.getDescription().startsWith("empty <p> tag") || message.getDescription().startsWith("unmappable character for encoding UTF8");
+				|| message.getDescription().startsWith("empty <p> tag") || message.getDescription().startsWith("unmappable character for encoding UTF8")
+				|| message.getDescription().startsWith("unexpected end tag");
 	}
 
 	@SuppressWarnings("unchecked")
@@ -328,6 +334,32 @@ public class FixJavadocErrors extends SimpleValidatorBase {
 			TextElement text = ast.newTextElement();
 			text.setText("TODO: Add description for this exception");
 			tag.fragments().add(text);
+		}
+		return tag;
+	}
+
+	@SuppressWarnings("unchecked")
+	protected TagElement NotAtParamFor(AST ast, JavadocErrorMessage message) {
+		String param = message.getDescription().replace("no @param for ", "");
+		final List<SingleVariableDeclaration> params = new ArrayList<>();
+		for (Object object : message.getMethod().parameters()) {
+			if (object instanceof SingleVariableDeclaration) {
+				SingleVariableDeclaration var = (SingleVariableDeclaration) object;
+				params.add(var);
+			} else {
+				System.out.println("TODO: implement for param type, " + object.getClass());
+			}
+		}
+		TagElement tag = ast.newTagElement();
+		tag.setTagName(TagElement.TAG_PARAM);
+		for (SingleVariableDeclaration var : params) {
+			if (param.equals(var.getName().toString())) {
+				SimpleName name = ast.newSimpleName(var.getName().toString());
+				tag.fragments().add(name);
+				TextElement text = ast.newTextElement();
+				text.setText("TODO: Add description for this param");
+				tag.fragments().add(text);
+			}
 		}
 		return tag;
 	}
