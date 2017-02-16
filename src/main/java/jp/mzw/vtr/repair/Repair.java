@@ -126,12 +126,23 @@ public class Repair {
 		try {
 			modifiedTestFileContent = patch.applyTo(originalTestFileContent);
 			FileUtils.writeLines(testFile, modifiedTestFileContent);
-		} catch (difflib.PatchFailedException e) {
-			originalTestFileContent.add(0, "");
-			modifiedTestFileContent = patch.applyTo(originalTestFileContent);
-			originalTestFileContent.remove(0);
-			modifiedTestFileContent.remove(0);
-			FileUtils.writeLines(testFile, modifiedTestFileContent);
+		}
+		// TODO Incorrect Chunk: the chunk content doesn't match the target
+		catch (difflib.PatchFailedException e1) {
+			LOGGER.warn("Invalid patch: {} at {} with {}", getTestCaseFullName(), commit.getId(), getValidatorName());
+			try {
+				String remove = originalTestFileContent.remove(0);
+				modifiedTestFileContent = patch.applyTo(originalTestFileContent);
+				originalTestFileContent.add(0, remove);
+				modifiedTestFileContent.add(0, remove);
+				FileUtils.writeLines(testFile, modifiedTestFileContent);
+			} catch (difflib.PatchFailedException e2) {
+				originalTestFileContent.add(0, "");
+				modifiedTestFileContent = patch.applyTo(originalTestFileContent);
+				originalTestFileContent.remove(0);
+				modifiedTestFileContent.remove(0);
+				FileUtils.writeLines(testFile, modifiedTestFileContent);
+			}
 		}
 	}
 
