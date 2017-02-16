@@ -123,8 +123,15 @@ public class Repair {
 	}
 	
 	public void apply(File projectDir) throws IOException, PatchFailedException {
-		modifiedTestFileContent = patch.applyTo(originalTestFileContent);
-		FileUtils.writeLines(testFile, modifiedTestFileContent);
+		try {
+			modifiedTestFileContent = patch.applyTo(originalTestFileContent);
+			FileUtils.writeLines(testFile, modifiedTestFileContent);
+		} catch (difflib.PatchFailedException e) {
+			originalTestFileContent.add(0, "");
+			modifiedTestFileContent = patch.applyTo(originalTestFileContent);
+			modifiedTestFileContent.remove(0);
+			FileUtils.writeLines(testFile, modifiedTestFileContent);
+		}
 	}
 
 	public void revert() throws IOException, PatchFailedException {
