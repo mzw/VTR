@@ -143,7 +143,7 @@ public class RuntimeOutput extends OutputBase {
             builder.append("\n");
         }
         // write
-        File csv = new File(dir, EvaluatorBase.REPAIR_FILENAME);
+        File csv = new File(dir, "runtime.csv");
         FileUtils.write(csv, builder.toString());
     }
 
