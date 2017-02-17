@@ -316,7 +316,7 @@ public class CLI {
 			for (int i = 1; i < records.size(); i++) { // skip header
 				CSVRecord record = records.get(i);
 				String subject = record.get(1);
-				String pattern = record.get(5);
+				String pattern = record.get(13);
 				// Read
 				{
 					Map<String, Integer> numberByPattern = patternsBySubject.get(subject);
