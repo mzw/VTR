@@ -57,6 +57,8 @@ public class Results {
 	public static final String COMPILE_OUTPUTS_FILENAME = "compile_outputs.txt";
 	public static final String COMPILE_ERRORS_FILENAME = "compile_errors.txt";
 	public static final String JAVADOC_RESULTS_FILENAME = "javadoc_error_messages.txt";
+	public static final String PATCH_BEFORE_RUNTIME_OUTPUTS_FILENAME = "before_runtime_outputs.txt";
+	public static final String PATCH_AFTER_RUNTIME_OUTPUTS_FILENAME = "after_runtime_outputs.txt";
 
 	public static File getCommitDir(File outputDir, String projectId, Commit commit) {
 		File projectDir = new File(outputDir, projectId);
@@ -89,6 +91,29 @@ public class Results {
 		FileUtils.writeLines(javadocResultsFile, javadocResults);
 	}
 
+	public void compileOutput(File outputDir) throws IOException {
+		File compileOutputsFile = new File(outputDir, COMPILE_OUTPUTS_FILENAME);
+		FileUtils.writeLines(compileOutputsFile, compileOutputs);
+
+		File compileErrorsFile = new File(outputDir, COMPILE_ERRORS_FILENAME);
+		FileUtils.writeLines(compileErrorsFile, compileErrors);
+	}
+	public void javadocOutput(File outputDir) throws IOException {
+		File javadocResultsFile = new File(outputDir, JAVADOC_RESULTS_FILENAME);
+		FileUtils.writeLines(javadocResultsFile, javadocResults);
+	}
+	public void patchBeforeRuntimeOutput(File outputDir) throws IOException {
+		File runtimeOutputsFile = new File(outputDir, PATCH_BEFORE_RUNTIME_OUTPUTS_FILENAME);
+		// compileOutputs has a runtime output. so, below statement isn't bug.
+		// if you have a question, ask Tsukamoto!
+		FileUtils.writeLines(runtimeOutputsFile, compileOutputs);
+	}
+	public void patchAfterRuntimeOutput(File outputDir) throws IOException {
+		File runtimeOutputsFile = new File(outputDir, PATCH_AFTER_RUNTIME_OUTPUTS_FILENAME);
+		// compileOutputs has a runtime output. so, below statement isn't bug.
+		// if you have a question, ask Tsukamoto!
+		FileUtils.writeLines(runtimeOutputsFile, compileOutputs);
+	}
 	public static boolean is(File outputDir, String projectId, Commit commit) {
 		File commitDir = getCommitDir(outputDir, projectId, commit);
 		return commitDir.exists();
