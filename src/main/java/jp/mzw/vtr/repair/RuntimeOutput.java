@@ -95,8 +95,8 @@ public class RuntimeOutput extends OutputBase {
         try {
             List<String> beforeRuntimeOutputsLines = FileUtils.readLines(beforeRuntimeOutputs);
             List<String> afterRuntimeOutputsLines = FileUtils.readLines(afterRuntimeOutputs);
-            int beforeNumOfRuntimeOutputs = beforeRuntimeOutputsLines.size();
-            int afterNumOfRuntimeOutputs = afterRuntimeOutputsLines.size();
+            int beforeNumOfRuntimeOutputs = getNumOfRuntimeOutputs(beforeRuntimeOutputsLines, repair);
+            int afterNumOfRuntimeOutputs  = getNumOfRuntimeOutputs(afterRuntimeOutputsLines, repair);
             if (beforeNumOfRuntimeOutputs > afterNumOfRuntimeOutputs) {
                 repair.setStatus(this, Repair.Status.Improved);
             } else if (beforeNumOfRuntimeOutputs == afterNumOfRuntimeOutputs) {
@@ -152,6 +152,23 @@ public class RuntimeOutput extends OutputBase {
         String each = "-Dtest=" + testCaseFullName;
         List<String> args = Arrays.asList(each, "test");
         return MavenUtils.maven(this.projectDir, args, this.mavenHome);
+    }
+
+    public static int getNumOfRuntimeOutputs(List<String> lines, Repair repair) {
+        int ret = 0;
+        boolean runtimeOutputs = false;
+        for (String line : lines) {
+            if (line.startsWith("Tests run: ")) {
+                return ret;
+            }
+            if (runtimeOutputs) {
+                ret++;
+            }
+            if (line.startsWith("Running " + repair.getTestCaseClassName())) {
+                runtimeOutputs = true;
+            }
+        }
+        return -1;
     }
 
     private static class Result {
