@@ -114,4 +114,8 @@ public class Results {
 		// Return
 		return results;
 	}
+
+	public boolean isBuildSuccess() {
+		return compileOutputs.contains("[INFO] BUILD SUCCESS");
+	}
 }

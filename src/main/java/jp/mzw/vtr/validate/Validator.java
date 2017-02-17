@@ -117,6 +117,10 @@ public class Validator implements CheckoutConductor.Listener {
 			boolean updatePomContent = changePomContent(prvPomContent, curPomContent);
 			// Get compile and JavaDoc results
 			final Results results = getResults(commit);
+			// Skip when target project's build fails
+			if (!results.isBuildSuccess()) {
+				return;
+			}
 			// Validate
 			LOGGER.info("Validating...");
 			startup();
