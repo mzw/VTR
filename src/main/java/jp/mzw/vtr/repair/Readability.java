@@ -3,9 +3,7 @@ package jp.mzw.vtr.repair;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
@@ -61,13 +59,8 @@ import raykernel.apps.readability.eval.Main;
 public class Readability extends EvaluatorBase {
 	protected static Logger LOGGER = LoggerFactory.getLogger(Readability.class);
 
-	protected Map<Repair, Result> beforeResults;
-	protected Map<Repair, Result> afterResults;
-
 	public Readability(Project project) {
 		super(project);
-		beforeResults = new HashMap<>();
-		afterResults = new HashMap<>();
 	}
 
 	@Override
@@ -149,6 +142,9 @@ public class Readability extends EvaluatorBase {
 
 	@Override
 	public void evaluateBefore(Repair repair) {
+		if (getFile(repair, Phase.Before, Type.Score).exists() && getFile(repair, Phase.Before, Type.Score).exists()) {
+			return;
+		}
 		// get
 		String content = repair.getOriginalPart();
 		// measure
@@ -170,7 +166,59 @@ public class Readability extends EvaluatorBase {
 			}
 		}
 		// put
-		beforeResults.put(repair, new Result(score, num));
+		try {
+			FileUtils.writeStringToFile(getFile(repair, Phase.Before, Type.Score), Double.toString(score));
+			FileUtils.writeStringToFile(getFile(repair, Phase.Before, Type.SplitNum), Integer.toString(num));
+		} catch (IOException e) {
+			LOGGER.warn("Failed to store score/split-num into file system: {}", e.getMessage());
+		}
+	}
+
+	public File getRepairDir(Repair repair) {
+		File rootDir = EvaluatorBase.getRepairDir(outputDir, projectId);
+		File evaluateDir = new File(rootDir, "readability");
+		File commitDir = new File(evaluateDir, repair.getCommit().getId());
+		File validateDir = new File(commitDir, repair.getValidatorName());
+		File testDir = new File(validateDir, repair.getTestCaseFullName());
+		return testDir;
+	}
+
+	public static enum Phase {
+		Before, After
+	};
+
+	public static enum Type {
+		Score, SplitNum
+	};
+
+	public File getFile(Repair repair, Phase phase, Type type) {
+		File dir = getRepairDir(repair);
+		if (!dir.exists()) {
+			dir.mkdirs();
+		}
+		return new File(dir, getFileName(phase, type));
+	}
+
+	public String getFileName(Phase phase, Type type) {
+		StringBuilder builder = new StringBuilder();
+		switch (phase) {
+		case Before:
+			builder.append("before_");
+			break;
+		case After:
+			builder.append("after_");
+			break;
+		}
+		switch (type) {
+		case Score:
+			builder.append("score");
+			break;
+		case SplitNum:
+			builder.append("split_num");
+			break;
+		}
+		builder.append(".txt");
+		return builder.toString();
 	}
 
 	@Override
@@ -196,35 +244,41 @@ public class Readability extends EvaluatorBase {
 			}
 		}
 		// put
-		afterResults.put(repair, new Result(score, num));
+		try {
+			FileUtils.writeStringToFile(getFile(repair, Phase.After, Type.Score), Double.toString(score));
+			FileUtils.writeStringToFile(getFile(repair, Phase.After, Type.SplitNum), Integer.toString(num));
+		} catch (IOException e) {
+			LOGGER.warn("Failed to store score/split-num into file system: {}", e.getMessage());
+		}
 	}
 
 	@Override
 	public void compare(Repair repair) {
-		Result before = beforeResults.get(repair);
-		Result after = afterResults.get(repair);
-
-		if (before.num < after.num) {
-			repair.setStatus(this, Repair.Status.Degraded);
-		} else if (before.num > after.num) {
-			repair.setStatus(this, Repair.Status.Improved);
-		} else {
-			if (before.score < after.score) {
-				repair.setStatus(this, Repair.Status.Improved);
-			} else if (before.score > after.score) {
+		try {
+			Result before = Result.parse(this, repair, Phase.Before);
+			Result after = Result.parse(this, repair, Phase.After);
+			if (before.num < after.num) {
 				repair.setStatus(this, Repair.Status.Degraded);
+			} else if (before.num > after.num) {
+				repair.setStatus(this, Repair.Status.Improved);
 			} else {
-				repair.setStatus(this, Repair.Status.Stay);
+				if (before.score < after.score) {
+					repair.setStatus(this, Repair.Status.Improved);
+				} else if (before.score > after.score) {
+					repair.setStatus(this, Repair.Status.Degraded);
+				} else {
+					repair.setStatus(this, Repair.Status.Stay);
+				}
 			}
+		} catch (NumberFormatException | IOException e) {
+			repair.setStatus(this, Repair.Status.Broken);
 		}
 	}
-
-	public static final String DIRNAME = "readability";
 
 	@Override
 	public void output(List<Repair> repairs) throws IOException {
 		File rootDir = EvaluatorBase.getRepairDir(outputDir, projectId);
-		File dir = new File(rootDir, DIRNAME);
+		File dir = new File(rootDir, "readability");
 		if (!repairs.isEmpty() && !dir.exists()) {
 			dir.mkdirs();
 		}
@@ -249,8 +303,8 @@ public class Readability extends EvaluatorBase {
 			// common
 			builder.append(repair.toCsv(this)).append(",");
 			// specific
-			Result before = beforeResults.get(repair);
-			Result after = afterResults.get(repair);
+			Result before = Result.parse(this, repair, Phase.Before);
+			Result after = Result.parse(this, repair, Phase.After);
 			builder.append(before == null ? "" : before.getScore()).append(",");
 			builder.append(before == null ? "" : before.getSplitNum()).append(",");
 			builder.append(after == null ? "" : after.getScore()).append(",");
@@ -278,6 +332,12 @@ public class Readability extends EvaluatorBase {
 
 		public int getSplitNum() {
 			return num;
+		}
+
+		public static Result parse(Readability readability, Repair repair, Phase phase) throws NumberFormatException, IOException {
+			double score = Double.parseDouble(FileUtils.readFileToString(readability.getFile(repair, phase, Type.Score)));
+			int num = Integer.parseInt(FileUtils.readFileToString(readability.getFile(repair, phase, Type.Score)));
+			return new Result(score, num);
 		}
 	}
 }
