@@ -113,7 +113,7 @@ public class MutationAnalysis extends EvaluatorBase {
 				}
 			}
 			LOGGER.info("Invoke PIT for applied version");
-			int compile = MavenUtils.maven(this.projectDir, Arrays.asList("test-compile"), mavenHome, mavenOutput);
+			int compile = MavenUtils.maven(this.projectDir, Arrays.asList("compile", "test-compile"), mavenHome, true);
 			if (compile != 0) {
 				LOGGER.warn("Failed to compile: {} at {}", repair.getTestCaseFullName(), repair.getCommit().getId());
 				return;

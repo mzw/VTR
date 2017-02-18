@@ -516,13 +516,13 @@ abstract public class ValidatorBase {
 				return -1;
 			}
 	        if (this.major != version.major) {
-	            return Integer.compare(this.major, version.major);
+	            return Integer.compare(version.major, this.major);
 	        }
 	        if (this.minor != version.minor) {
-	            return Integer.compare(this.minor, version.minor);
+	            return Integer.compare(version.minor, this.minor);
 	        }
 	        if (this.revision != version.revision) {
-	            return Integer.compare(this.revision, version.revision);
+	            return Integer.compare(version.revision, this.revision);
 	        }
 	        return 0;
 		}
