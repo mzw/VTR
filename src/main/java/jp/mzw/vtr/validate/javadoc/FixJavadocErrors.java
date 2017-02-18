@@ -478,6 +478,7 @@ public class FixJavadocErrors extends SimpleValidatorBase {
 	}
 
 	private String _createLink(String html) {
+		@SuppressWarnings("resource")
 		Scanner sc = new Scanner(html);
 		sc.useDelimiter("/");
 		while (sc.hasNext()) {

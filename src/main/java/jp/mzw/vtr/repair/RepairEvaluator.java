@@ -124,7 +124,7 @@ public class RepairEvaluator {
 		}
 	}
 
-	private static boolean include(EvaluatorBase evaluator, Repair repair) {
+	public static boolean include(EvaluatorBase evaluator, Repair repair) {
 		for (Class<? extends ValidatorBase> validator : evaluator.includeValidators()) {
 			String validatorName = validator.getName();
 			if (validatorName.equals(repair.getValidatorName())) {

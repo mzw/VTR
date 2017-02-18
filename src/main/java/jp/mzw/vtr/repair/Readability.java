@@ -243,6 +243,9 @@ public class Readability extends EvaluatorBase {
 		builder.append("\n");
 		// content
 		for (Repair repair : repairs) {
+			if (!RepairEvaluator.include(this, repair)) {
+				continue;
+			}
 			// common
 			builder.append(repair.toCsv(this)).append(",");
 			// specific

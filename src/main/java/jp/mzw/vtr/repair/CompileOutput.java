@@ -2,7 +2,6 @@ package jp.mzw.vtr.repair;
 
 import jp.mzw.vtr.core.Project;
 import jp.mzw.vtr.maven.CompilerPlugin;
-import jp.mzw.vtr.maven.JavadocUtils;
 import jp.mzw.vtr.maven.MavenUtils;
 import jp.mzw.vtr.maven.Results;
 import jp.mzw.vtr.validate.ValidatorBase;
@@ -144,6 +143,9 @@ public class CompileOutput extends OutputBase {
         builder.append("\n");
         // content
         for (Repair repair : repairs) {
+			if (!RepairEvaluator.include(this, repair)) {
+				continue;
+			}
             // common
             builder.append(repair.toCsv(this)).append(",");
             // specific
