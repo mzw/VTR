@@ -87,7 +87,7 @@ public class AssertNotNullToInstances extends SimpleValidatorBase {
 		// detect
 		for (ASTNode detect : detect(commit, testcase, results)) {
 			ClassInstanceCreation node = (ClassInstanceCreation) detect;
-			MethodInvocation method = (MethodInvocation) rewrite.createStringPlaceholder("Assert.assertNotNull(" + node.toString() + ")", ASTNode.METHOD_INVOCATION);
+			MethodInvocation method = (MethodInvocation) rewrite.createStringPlaceholder("Assert.assertNotNull(" + node.toString() + ");", ASTNode.METHOD_INVOCATION);
 			// From: Class var = new Class();
 			// To:   AssertNotNull(new Class();
 			if (node.getParent().getParent() instanceof VariableDeclarationStatement) {
