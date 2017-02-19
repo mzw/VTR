@@ -21,17 +21,10 @@ import jp.mzw.vtr.validate.coding_style.FormatCode;
 import jp.mzw.vtr.validate.coding_style.UseArithmeticAssignmentOperators;
 import jp.mzw.vtr.validate.coding_style.UseDiamondOperators;
 import jp.mzw.vtr.validate.coding_style.UseModifierFinalWherePossible;
-import jp.mzw.vtr.validate.coding_style.UseProcessWaitfor;
 import jp.mzw.vtr.validate.coding_style.UseThisIfNecessary;
-import jp.mzw.vtr.validate.exception_handling.AddFailStatementsForHandlingExpectedExceptions;
-import jp.mzw.vtr.validate.exception_handling.DoNotSwallowTestErrorsSilently;
 import jp.mzw.vtr.validate.exception_handling.HandleExpectedExecptionsProperly;
 import jp.mzw.vtr.validate.exception_handling.RemoveUnusedExceptions;
-import jp.mzw.vtr.validate.javadoc.FixJavadocErrors;
-import jp.mzw.vtr.validate.javadoc.ReplaceAtTodoWithTODO;
-import jp.mzw.vtr.validate.javadoc.UseCodeAnnotationsAtJavaDoc;
 import jp.mzw.vtr.validate.junit.AddTestAnnotations;
-import jp.mzw.vtr.validate.junit.AssertNotNullToInstances;
 import jp.mzw.vtr.validate.junit.ModifyAssertImports;
 import jp.mzw.vtr.validate.junit.SwapActualExpectedValues;
 import jp.mzw.vtr.validate.junit.UseAssertArrayEqualsProperly;
@@ -42,18 +35,9 @@ import jp.mzw.vtr.validate.junit.UseAssertNullProperly;
 import jp.mzw.vtr.validate.junit.UseAssertTrueProperly;
 import jp.mzw.vtr.validate.junit.UseFailInsteadOfAssertTrueFalse;
 import jp.mzw.vtr.validate.junit.UseStringContains;
-import jp.mzw.vtr.validate.outputs.RemovePrintStatements;
 import jp.mzw.vtr.validate.outputs.suppress_warnings.AddSerialVersionUids;
-import jp.mzw.vtr.validate.outputs.suppress_warnings.DeleteUnnecessaryAssignmenedVariables;
-import jp.mzw.vtr.validate.outputs.suppress_warnings.IntroduceAutoBoxing;
-import jp.mzw.vtr.validate.outputs.suppress_warnings.RemoveUnnecessaryCasts;
 import jp.mzw.vtr.validate.outputs.suppress_warnings.add_override_annotation.AddOverrideAnnotationToMethodsInConstructors;
 import jp.mzw.vtr.validate.outputs.suppress_warnings.add_override_annotation.AddOverrideAnnotationToTestCase;
-import jp.mzw.vtr.validate.outputs.suppress_warnings.add_suppress_warnings_annotation.AddSuppressWarningsDeprecationAnnotation;
-import jp.mzw.vtr.validate.outputs.suppress_warnings.add_suppress_warnings_annotation.AddSuppressWarningsRawtypesAnnotation;
-import jp.mzw.vtr.validate.outputs.suppress_warnings.add_suppress_warnings_annotation.AddSuppressWarningsUncheckedAnnotation;
-import jp.mzw.vtr.validate.resources.CloseResources;
-import jp.mzw.vtr.validate.resources.UseTryWithResources;
 import raykernel.apps.readability.eval.Main;
 
 public class Readability extends EvaluatorBase {
@@ -68,41 +52,6 @@ public class Readability extends EvaluatorBase {
 		final List<Class<? extends ValidatorBase>> includes = new ArrayList<>();
 
 		/*
-		 * Mutation analysis
-		 */
-		// JUnit
-		includes.add(AddTestAnnotations.class);
-		includes.add(AssertNotNullToInstances.class); // +SuppressWarnings
-		// Exception handling
-		includes.add(AddFailStatementsForHandlingExpectedExceptions.class);
-		includes.add(DoNotSwallowTestErrorsSilently.class);
-
-		/*
-		 * Performance
-		 */
-		// Resources
-		includes.add(UseProcessWaitfor.class);
-		includes.add(CloseResources.class);
-		includes.add(UseTryWithResources.class);
-
-		/*
-		 * Sharp-shooting outputs
-		 */
-		// Suppress warnings
-		includes.add(DeleteUnnecessaryAssignmenedVariables.class);
-		includes.add(IntroduceAutoBoxing.class);
-		includes.add(RemoveUnnecessaryCasts.class);
-		includes.add(AddSuppressWarningsDeprecationAnnotation.class);
-		includes.add(AddSuppressWarningsRawtypesAnnotation.class);
-		includes.add(AddSuppressWarningsUncheckedAnnotation.class);
-		// Prints for debugging
-		includes.add(RemovePrintStatements.class);
-		// JavaDoc warnings and errors
-		includes.add(FixJavadocErrors.class);
-		includes.add(ReplaceAtTodoWithTODO.class);
-		includes.add(UseCodeAnnotationsAtJavaDoc.class);
-
-		/*
 		 * Clean up
 		 */
 		// Code organizing
@@ -111,6 +60,7 @@ public class Readability extends EvaluatorBase {
 		includes.add(ConvertForLoopsToEnhanced.class);
 		includes.add(UseModifierFinalWherePossible.class);
 		includes.add(AddExplicitBlocks.class);
+		includes.add(AddTestAnnotations.class);
 		includes.add(ModifyAssertImports.class); // +JUnit
 		includes.add(UseAssertArrayEqualsProperly.class); // +JUnit
 		includes.add(UseAssertEqualsProperly.class); // +JUnit
