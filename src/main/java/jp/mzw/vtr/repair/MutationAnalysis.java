@@ -24,7 +24,6 @@ import jp.mzw.vtr.maven.PitInstrumenter;
 import jp.mzw.vtr.validate.ValidatorBase;
 import jp.mzw.vtr.validate.exception_handling.AddFailStatementsForHandlingExpectedExceptions;
 import jp.mzw.vtr.validate.exception_handling.DoNotSwallowTestErrorsSilently;
-import jp.mzw.vtr.validate.junit.AddTestAnnotations;
 import jp.mzw.vtr.validate.junit.AssertNotNullToInstances;
 
 public class MutationAnalysis extends EvaluatorBase {
@@ -55,7 +54,6 @@ public class MutationAnalysis extends EvaluatorBase {
 		 * Mutation analysis
 		 */
 		// JUnit
-		includes.add(AddTestAnnotations.class);
 		includes.add(AssertNotNullToInstances.class); // +SuppressWarnings
 		// Exception handling
 		includes.add(AddFailStatementsForHandlingExpectedExceptions.class);
@@ -113,7 +111,7 @@ public class MutationAnalysis extends EvaluatorBase {
 				}
 			}
 			LOGGER.info("Invoke PIT for applied version");
-			int compile = MavenUtils.maven(this.projectDir, Arrays.asList("compile", "test-compile"), mavenHome, true);
+			int compile = MavenUtils.maven(this.projectDir, Arrays.asList("compile", "test-compile"), mavenHome, mavenOutput);
 			if (compile != 0) {
 				LOGGER.warn("Failed to compile: {} at {}", repair.getTestCaseFullName(), repair.getCommit().getId());
 				return;
