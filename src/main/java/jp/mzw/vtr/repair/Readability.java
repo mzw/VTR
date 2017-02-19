@@ -114,6 +114,7 @@ public class Readability extends EvaluatorBase {
 				score = aveScore;
 				break;
 			}
+			System.gc();
 		}
 		// put
 		try {
