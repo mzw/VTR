@@ -287,7 +287,7 @@ public class Readability extends EvaluatorBase {
 
 		public static Result parse(Readability readability, Repair repair, Phase phase) throws NumberFormatException, IOException {
 			double score = Double.parseDouble(FileUtils.readFileToString(readability.getFile(repair, phase, Type.Score)));
-			int num = Integer.parseInt(FileUtils.readFileToString(readability.getFile(repair, phase, Type.Score)));
+			int num = Integer.parseInt(FileUtils.readFileToString(readability.getFile(repair, phase, Type.SplitNum)));
 			return new Result(score, num);
 		}
 	}
