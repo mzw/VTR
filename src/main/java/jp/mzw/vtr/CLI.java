@@ -372,6 +372,46 @@ public class CLI {
 				}
 				FileUtils.write(new File(file.getParent(), "subjects_by_patterns.txt"), builder.toString());
 			}
+		} else if ("repair".equals(type)) {
+			// Parse
+			String path_to_file = args[0];
+			File file = new File(path_to_file);
+			String content = FileUtils.readFileToString(file);
+			CSVParser parser = CSVParser.parse(content, CSVFormat.DEFAULT);
+			List<CSVRecord> records = parser.getRecords();
+			// Traverse
+			Map<String, Map<String, Integer>> patternsBySubject = new HashMap<>();
+			for (int i = 1; i < records.size(); i++) { // skip header
+				CSVRecord record = records.get(i);
+				String subject = file.getParent();
+				String pattern = record.get(1);
+				// Read
+				{
+					Map<String, Integer> numberByPattern = patternsBySubject.get(subject);
+					if (numberByPattern == null) {
+						numberByPattern = new HashMap<>();
+					}
+					Integer number = numberByPattern.get(pattern);
+					if (number == null) {
+						number = new Integer(1);
+					} else {
+						number = new Integer(number + 1);
+					}
+					numberByPattern.put(pattern, number);
+					patternsBySubject.put(subject, numberByPattern);
+				}
+			}
+			// Print
+			StringBuilder builder = new StringBuilder();
+			for (String subject : patternsBySubject.keySet()) {
+				Map<String, Integer> patterns = patternsBySubject.get(subject);
+				builder.append(subject).append("\n");
+				for (String pattern : patterns.keySet()) {
+					Integer number = patterns.get(pattern);
+					builder.append("\t").append(pattern).append(": ").append(number).append("\n");
+				}
+			}
+			FileUtils.write(new File(file.getParent(), "patterns_by_subject.txt"), builder.toString());
 		}
 	}
 }
