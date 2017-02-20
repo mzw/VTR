@@ -9,6 +9,7 @@ import jp.mzw.vtr.git.Commit;
 import jp.mzw.vtr.maven.Results;
 import jp.mzw.vtr.maven.TestCase;
 import jp.mzw.vtr.validate.SimpleValidatorBase;
+import jp.mzw.vtr.validate.ValidatorBase;
 import jp.mzw.vtr.validate.ValidatorUtils;
 
 import org.eclipse.jdt.core.dom.AST;
@@ -41,6 +42,9 @@ public class AddFailStatementsForHandlingExpectedExceptions extends SimpleValida
 	@Override
 	protected List<ASTNode> detect(final Commit commit, final TestCase tc, final Results results) throws IOException, MalformedTreeException, BadLocationException {
 		final List<ASTNode> ret = new ArrayList<>();
+		if (Version.parse("4").compareTo(ValidatorBase.getJunitVersion(projectDir)) < 0) {
+			return ret;
+		}
 		tc.getMethodDeclaration().accept(new ASTVisitor() {
 			@Override
 			public boolean visit(TryStatement node) {

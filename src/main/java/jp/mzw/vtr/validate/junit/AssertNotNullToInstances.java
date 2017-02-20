@@ -41,6 +41,9 @@ public class AssertNotNullToInstances extends SimpleValidatorBase {
 	@Override
 	protected List<ASTNode> detect(final Commit commit, final TestCase testcase, final Results results) throws IOException, MalformedTreeException, BadLocationException {
 		final List<ASTNode> ret = new ArrayList<>();
+		if (Version.parse("4").compareTo(ValidatorBase.getJunitVersion(projectDir)) < 0) {
+			return ret;
+		}
 		testcase.getMethodDeclaration().accept(new ASTVisitor() {
 			@Override
 			public boolean visit(SingleMemberAnnotation node) {
