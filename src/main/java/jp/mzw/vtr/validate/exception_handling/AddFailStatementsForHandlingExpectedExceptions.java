@@ -17,6 +17,7 @@ import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.Block;
 import org.eclipse.jdt.core.dom.CatchClause;
 import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.core.dom.ExpressionStatement;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.StringLiteral;
 import org.eclipse.jdt.core.dom.ThrowStatement;
@@ -137,9 +138,10 @@ public class AddFailStatementsForHandlingExpectedExceptions extends SimpleValida
 			StringLiteral arg = ast.newStringLiteral();
 			arg.setLiteralValue("Expected exception");
 			method.arguments().add(arg);
+			ExpressionStatement statement = ast.newExpressionStatement(method);
 			// insert
 			ListRewrite listRewrite = rewrite.getListRewrite(target.getBody(), Block.STATEMENTS_PROPERTY);
-			listRewrite.insertLast(method, null);
+			listRewrite.insertLast(statement, null);
 		}
 		// modify
 		Document document = new Document(origin);
