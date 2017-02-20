@@ -12,5 +12,7 @@
         <mutators>
             <mutator>DEFAULTS</mutator>
         </mutators>
+        <threads>100</threads>
+        <timeoutConstant>300</timeoutConstant>
     </configuration>
 </plugin>
