@@ -78,7 +78,7 @@ public class MutationAnalysis extends EvaluatorBase {
 					LOGGER.warn("Failed to compile: {} at {}", repair.getTestCaseFullName(), repair.getCommit().getId());
 					return;
 				}
-				MavenUtils.maven(this.projectDir, Arrays.asList("org.pitest:pitest-maven:mutationCoverage"), mavenHome, mavenOutput);
+				MavenUtils.maven(this.projectDir, Arrays.asList("org.pitest:pitest-maven:mutationCoverage", "-DtimeoutConst=1000"), mavenHome, mavenOutput);
 				for (File resultDir : PitInstrumenter.getPitResultsDir(this.projectDir)) {
 					if (!dir.exists()) {
 						dir.mkdirs();
@@ -116,7 +116,7 @@ public class MutationAnalysis extends EvaluatorBase {
 				LOGGER.warn("Failed to compile: {} at {}", repair.getTestCaseFullName(), repair.getCommit().getId());
 				return;
 			}
-			MavenUtils.maven(this.projectDir, Arrays.asList("org.pitest:pitest-maven:mutationCoverage"), mavenHome, mavenOutput);
+			MavenUtils.maven(this.projectDir, Arrays.asList("org.pitest:pitest-maven:mutationCoverage", "-DtimeoutConst=1000"), mavenHome, mavenOutput);
 			for (File resultDir : PitInstrumenter.getPitResultsDir(this.projectDir)) {
 				org.codehaus.plexus.util.FileUtils.copyDirectoryStructure(resultDir, getAfterDir(repair));
 				org.codehaus.plexus.util.FileUtils.deleteDirectory(resultDir);
