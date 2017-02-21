@@ -10,7 +10,9 @@
             <param>TEST-CLASS</param>
         </targetTests>
         <mutators>
-            <mutator>ALL</mutator>
+            <mutator>DEFAULTS</mutator>
         </mutators>
+        <threads>100</threads>
+        <timeoutConstant>300</timeoutConstant>
     </configuration>
 </plugin>
