@@ -248,6 +248,10 @@ public class Readability extends EvaluatorBase {
 		builder.append("\n");
 		// content
 		for (Repair repair : repairs) {
+			// ad-hoc fix for #201
+			if (repair.getTestCaseFullName().equals("org.apache.commons.net.ftp.parser.NTFTPEntryParserTest#testNET516")) {
+				continue;
+			}
 			if (!RepairEvaluator.include(this, repair)) {
 				continue;
 			}
