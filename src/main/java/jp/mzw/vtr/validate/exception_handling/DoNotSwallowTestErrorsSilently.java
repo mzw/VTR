@@ -10,6 +10,7 @@ import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.Block;
 import org.eclipse.jdt.core.dom.CatchClause;
 import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.core.dom.Comment;
 import org.eclipse.jdt.core.dom.IMethodBinding;
 import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
@@ -98,6 +99,7 @@ public class DoNotSwallowTestErrorsSilently extends SimpleValidatorBase {
 		for (CatchClause cc : catches) {
 			ITypeBinding removed = cc.getException().getType().resolveBinding();
 			boolean throwed = false;
+			boolean runtime = ValidatorUtils.isRuntimeException(removed);
 			for (Object object : tc.getMethodDeclaration().thrownExceptionTypes()) {
 				SimpleType thrown = (SimpleType) object;
 				ITypeBinding type = thrown.resolveBinding();
@@ -106,7 +108,7 @@ public class DoNotSwallowTestErrorsSilently extends SimpleValidatorBase {
 					break;
 				}
 			}
-			if (!throwed) {
+			if (!(runtime || throwed)) {
 				adds.add(removed);
 			}
 		}

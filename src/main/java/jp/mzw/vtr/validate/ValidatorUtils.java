@@ -18,6 +18,7 @@ import org.eclipse.jdt.core.dom.ITypeBinding;
 import org.eclipse.jdt.core.dom.MethodDeclaration;
 import org.eclipse.jdt.core.dom.MethodInvocation;
 import org.eclipse.jdt.core.dom.SimpleType;
+import org.eclipse.jdt.core.dom.ThrowStatement;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Element;
 import org.jsoup.parser.Parser;
@@ -153,6 +154,41 @@ public class ValidatorUtils {
 		return !junits.isEmpty();
 	}
 
+	public static boolean onlyPrintMethodInvocation(ASTNode node) {
+		List<MethodInvocation> methods = new ArrayList<>();
+		node.accept(new ASTVisitor() {
+			@Override
+			public boolean visit(MethodInvocation node) {
+				methods.add(node);
+				return super.visit(node);
+			}
+		});
+		return false;
+	}
+	public static boolean hasThrowStatements(ASTNode node) {
+		List<ThrowStatement> throwStatements = new ArrayList<>();
+		node.accept(new ASTVisitor() {
+			@Override
+			public boolean visit(ThrowStatement node) {
+				throwStatements.add(node);
+				return super.visit(node);
+			}
+		});
+		return !throwStatements.isEmpty();
+	}
+	public static boolean thisNodeHasThisComments(ASTNode node, Comment comment) {
+		int startNode = node.getStartPosition();
+		int endNode = startNode + node.getLength();
+		int startComment = comment.getStartPosition();
+		int endComment = startComment + comment.getLength();
+		return startNode <= startComment && endComment <= endNode;
+	}
+	public static String comment(Comment comment, String source) {
+		int start = comment.getStartPosition();
+		int end = start + comment.getLength();
+		return source.substring(start, end);
+	}
+
 	/**
 	 * List of JUnit assert method names
 	 */
@@ -195,6 +231,22 @@ public class ValidatorUtils {
 				if ("java.io.Serializable".equals(interfaze.getQualifiedName())) {
 					return true;
 				}
+			}
+			binding = binding.getSuperclass();
+		}
+		return false;
+	}
+
+	public static boolean isRuntimeException(ITypeBinding binding) {
+		if (binding == null) {
+			return false;
+		}
+		System.out.println(binding);
+		while (binding != null) {
+			System.out.println(binding.getQualifiedName());
+			if ("java.lang.RuntimeException".equals(binding.getQualifiedName()) ||
+					"RuntimeException".equals(binding.getQualifiedName())) {
+				return true;
 			}
 			binding = binding.getSuperclass();
 		}
