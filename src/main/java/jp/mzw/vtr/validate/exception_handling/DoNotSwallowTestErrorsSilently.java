@@ -83,6 +83,34 @@ public class DoNotSwallowTestErrorsSilently extends SimpleValidatorBase {
 		List<CatchClause> catches = new ArrayList<>();
 		for (ASTNode detect : detect(commit, tc, results)) {
 			TryStatement node = (TryStatement) detect;
+			// skip if try-with-resource
+			if (!node.resources().isEmpty()) {
+				return origin;
+			}
+			if (ValidatorUtils.hasAssertMethodInvocation(node.getBody())) {
+				// skip if try body has an assert method(including fail).
+				return origin;
+			}
+			if (node.getFinally() != null && ValidatorUtils.hasAssertMethodInvocation(node.getFinally())) {
+				// skip if finally body has an assert method(including fail).
+				return origin;
+			}
+			// skip if no catch clauses
+			if (node.catchClauses() == null) {
+				return origin;
+			}
+			for (CatchClause cc : (List<CatchClause>) node.catchClauses()) {
+				for (Comment comment : tc.getComments()) {
+					// no statements in this catch clauses
+					if (!(cc.getBody().statements() != null ||
+							// there are some statements in this catch clause, but all of them are print statement
+							(!cc.getBody().statements().isEmpty() && ValidatorUtils.onlyPrintMethodInvocation(cc)) ||
+							// catch clauses have exception expecting comment.
+							(ValidatorUtils.thisNodeHasThisComments(cc, comment) && todoComment(ValidatorUtils.comment(comment, origin))))) {
+						return origin;
+					}
+				}
+			}
 			for (Object object : node.catchClauses()) {
 				catches.add((CatchClause) object);
 			}
@@ -177,4 +205,9 @@ public class DoNotSwallowTestErrorsSilently extends SimpleValidatorBase {
 		}
 		return null;
 	}
+	public boolean todoComment(String comment) {
+		String content = comment.toLowerCase();
+		return content.contains("todo") || comment.contains("fix");
+	}
+
 }

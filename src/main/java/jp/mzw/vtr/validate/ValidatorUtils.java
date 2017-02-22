@@ -163,7 +163,13 @@ public class ValidatorUtils {
 				return super.visit(node);
 			}
 		});
-		return false;
+		for (MethodInvocation method : methods) {
+			String name = method.getName().toString();
+			if (!("printStackTrace".equals(name) || "print".equals(name) || "println".equals(name))) {
+				return false;
+			}
+		}
+		return true;
 	}
 	public static boolean hasThrowStatements(ASTNode node) {
 		List<ThrowStatement> throwStatements = new ArrayList<>();
@@ -198,7 +204,7 @@ public class ValidatorUtils {
 	/**
 	 * Determine whether given expression is closable
 	 * 
-	 * @param expression
+	 * @param binding
 	 * @return
 	 */
 	public static boolean isClosable(ITypeBinding binding) {
@@ -241,9 +247,7 @@ public class ValidatorUtils {
 		if (binding == null) {
 			return false;
 		}
-		System.out.println(binding);
 		while (binding != null) {
-			System.out.println(binding.getQualifiedName());
 			if ("java.lang.RuntimeException".equals(binding.getQualifiedName()) ||
 					"RuntimeException".equals(binding.getQualifiedName())) {
 				return true;
