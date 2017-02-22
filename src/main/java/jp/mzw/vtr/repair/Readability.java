@@ -254,17 +254,14 @@ public class Readability extends EvaluatorBase {
 			// common
 			builder.append(repair.toCsv(this)).append(",");
 			// specific
+			Result before = Result.parse(this, repair, Phase.Before);
+			builder.append(before == null ? "" : before.getScore()).append(",");
+			builder.append(before == null ? "" : before.getSplitNum()).append(",");
 			if (repair.getStatus(this).equals(Repair.Status.Broken)) {
-				Result before = Result.parse(this, repair, Phase.Before);
-				builder.append(before == null ? "" : before.getScore()).append(",");
-				builder.append(before == null ? "" : before.getSplitNum()).append(",");
 				builder.append(-1).append(",");
 				builder.append(-1);
 			} else {
-				Result before = Result.parse(this, repair, Phase.Before);
 				Result after = Result.parse(this, repair, Phase.After);
-				builder.append(before == null ? "" : before.getScore()).append(",");
-				builder.append(before == null ? "" : before.getSplitNum()).append(",");
 				builder.append(after == null ? "" : after.getScore()).append(",");
 				builder.append(after == null ? "" : after.getSplitNum());
 			}
