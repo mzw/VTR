@@ -248,22 +248,26 @@ public class Readability extends EvaluatorBase {
 		builder.append("\n");
 		// content
 		for (Repair repair : repairs) {
-			// ad-hoc fix for #201
-			if (repair.getTestCaseFullName().equals("org.apache.commons.net.ftp.parser.NTFTPEntryParserTest#testNET516")) {
-				continue;
-			}
 			if (!RepairEvaluator.include(this, repair)) {
 				continue;
 			}
 			// common
 			builder.append(repair.toCsv(this)).append(",");
 			// specific
-			Result before = Result.parse(this, repair, Phase.Before);
-			Result after = Result.parse(this, repair, Phase.After);
-			builder.append(before == null ? "" : before.getScore()).append(",");
-			builder.append(before == null ? "" : before.getSplitNum()).append(",");
-			builder.append(after == null ? "" : after.getScore()).append(",");
-			builder.append(after == null ? "" : after.getSplitNum());
+			if (repair.getStatus(this).equals(Repair.Status.Broken)) {
+				Result before = Result.parse(this, repair, Phase.Before);
+				builder.append(before == null ? "" : before.getScore()).append(",");
+				builder.append(before == null ? "" : before.getSplitNum()).append(",");
+				builder.append(-1).append(",");
+				builder.append(-1);
+			} else {
+				Result before = Result.parse(this, repair, Phase.Before);
+				Result after = Result.parse(this, repair, Phase.After);
+				builder.append(before == null ? "" : before.getScore()).append(",");
+				builder.append(before == null ? "" : before.getSplitNum()).append(",");
+				builder.append(after == null ? "" : after.getScore()).append(",");
+				builder.append(after == null ? "" : after.getSplitNum());
+			}
 			// end
 			builder.append("\n");
 		}
