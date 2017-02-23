@@ -45,6 +45,11 @@ public class MutationAnalysis extends EvaluatorBase {
 		this.classesUnderTest = PitInstrumenter.getTargetClasses(projectDir);
 		results = new HashMap<>();
 	}
+	
+	@Override
+	public String getName() {
+		return "mutation";
+	}
 
 	@Override
 	public List<Class<? extends ValidatorBase>> includeValidators() {
@@ -103,7 +108,8 @@ public class MutationAnalysis extends EvaluatorBase {
 			File dstPatchFile = new File(getAfterDir(repair), repair.getPatchFile().getName());
 			if (dstPatchFile.exists()) {
 				if (repair.isSameContent(dstPatchFile)) {
-					LOGGER.info("Patch not changed and already measured: {} at {}", repair.getTestCaseFullName(), repair.getCommit().getId());
+					LOGGER.info("Patch not changed and already measured: {} at {} by {}", repair.getTestCaseFullName(), repair.getCommit().getId(),
+							this.getClass().getName());
 					if (modified) {
 						pi.revert();
 					}

@@ -34,6 +34,11 @@ public class JavadocOutput extends OutputBase {
     }
 
     @Override
+    public String getName() {
+    	return "javadoc";
+    }
+    
+    @Override
     public void evaluateBefore(Repair repair) {
         // NOP because before outputs should be stored when running
         // Validator/PatchGenerator
@@ -52,6 +57,10 @@ public class JavadocOutput extends OutputBase {
     @Override
     public void evaluateAfter(Repair repair) {
         try {
+			File dstPatchFile = measure(repair);
+			if (dstPatchFile == null) {
+				return;
+			}
             MavenUtils.maven(projectDir, Arrays.asList("clean"), mavenHome);
             CompilerPlugin cp = new CompilerPlugin(projectDir);
             boolean modified = cp.instrument();
@@ -62,6 +71,7 @@ public class JavadocOutput extends OutputBase {
             if (modified) {
                 cp.revert();
             }
+			FileUtils.copyFile(repair.getPatchFile(), dstPatchFile);
         } catch (MavenInvocationException | IOException | InterruptedException | DocumentException e) {
             LOGGER.warn("Failed to get/store outputs: {} at {} with {}", repair.getTestCaseFullName(), repair.getCommit().getId(), this.getClass().getName());
         }

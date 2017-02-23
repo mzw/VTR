@@ -4,9 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.tuple.Pair;
@@ -22,13 +20,13 @@ import jp.mzw.vtr.validate.resources.UseTryWithResources;
 
 public class Performance extends EvaluatorBase {
 
-	protected Map<Repair, Result> beforeResults;
-	protected Map<Repair, Result> afterResults;
-
 	public Performance(Project project) {
 		super(project);
-		beforeResults = new HashMap<>();
-		afterResults = new HashMap<>();
+	}
+	
+	@Override
+	public String getName() {
+		return "performance";
 	}
 
 	@Override
@@ -49,6 +47,15 @@ public class Performance extends EvaluatorBase {
 	@Override
 	public void evaluateBefore(Repair repair) {
 		try {
+			File dstPatchFile = new File(getRepairDir(repair), repair.getPatchFile().getName());
+			if (dstPatchFile.exists()) {
+				if (repair.isSameContent(dstPatchFile)) {
+					LOGGER.info("Patch not changed and already measured: {} at {} by {}", repair.getTestCaseFullName(), repair.getCommit().getId(),
+							this.getClass().getName());
+					return;
+				}
+			}
+
 			int compile = MavenUtils.maven(this.projectDir, Arrays.asList("compile", "test-compile"), mavenHome, mavenOutput);
 			if (compile != 0) {
 				LOGGER.warn("Failed to compile before: {} at {}", repair.getTestCaseFullName(), repair.getCommit().getId());
@@ -61,7 +68,12 @@ public class Performance extends EvaluatorBase {
 			runJunitTestSuite(projectDir, mavenHome, repair.getTestCaseClassName());
 			long endMem = (rt.totalMemory() - rt.freeMemory());
 			long endTime = System.currentTimeMillis();
-			beforeResults.put(repair, new Result(endTime - startTime, endMem - startMem));
+
+			long time = endTime - startTime;
+			long mem = endMem - startMem;
+
+			FileUtils.writeStringToFile(getFile(repair, Phase.Before, Type.Time), Long.toString(time));
+			FileUtils.writeStringToFile(getFile(repair, Phase.Before, Type.Mem), Long.toString(mem));
 		} catch (MavenInvocationException | IOException | InterruptedException e) {
 			LOGGER.warn("Failed to evaluate before: {} at {} with {}", repair.getTestCaseFullName(), repair.getCommit().getId(), this.getClass().getName());
 		}
@@ -69,10 +81,13 @@ public class Performance extends EvaluatorBase {
 
 	@Override
 	public void evaluateAfter(Repair repair) {
-		if (beforeResults.get(repair) == null) {
-			return;
-		}
 		try {
+			File dstPatchFile = measure(repair);
+			if (dstPatchFile == null) {
+				return;
+			}
+			// start
+
 			int compile = MavenUtils.maven(this.projectDir, Arrays.asList("test-compile"), mavenHome, mavenOutput);
 			if (compile != 0) {
 				LOGGER.warn("Failed to compile after: {} at {}", repair.getTestCaseFullName(), repair.getCommit().getId());
@@ -85,7 +100,15 @@ public class Performance extends EvaluatorBase {
 			runJunitTestSuite(projectDir, mavenHome, repair.getTestCaseClassName());
 			long endMem = (rt.totalMemory() - rt.freeMemory());
 			long endTime = System.currentTimeMillis();
-			afterResults.put(repair, new Result(endTime - startTime, endMem - startMem));
+
+			long time = endTime - startTime;
+			long mem = endMem - startMem;
+
+			FileUtils.writeStringToFile(getFile(repair, Phase.After, Type.Time), Long.toString(time));
+			FileUtils.writeStringToFile(getFile(repair, Phase.After, Type.Mem), Long.toString(mem));
+			
+			// end
+			FileUtils.copyFile(repair.getPatchFile(), dstPatchFile);
 		} catch (MavenInvocationException | IOException | InterruptedException e) {
 			LOGGER.warn("Failed to evaluate after: {} at {} with {}", repair.getTestCaseFullName(), repair.getCommit().getId(), this.getClass().getName());
 		}
@@ -105,22 +128,26 @@ public class Performance extends EvaluatorBase {
 
 	@Override
 	public void compare(Repair repair) {
-		Result before = beforeResults.get(repair);
-		Result after = afterResults.get(repair);
-		if (before == null || after == null) {
+		try {
+			Result before = Result.parse(this, repair, Phase.Before);
+			Result after = Result.parse(this, repair, Phase.After);
+			if (before == null || after == null) {
+				repair.setStatus(this, Repair.Status.Broken);
+			} else if (before.getElapsedTime() < 0 || after.getElapsedTime() < 0 || before.getUsedMemory() < 0 || after.getUsedMemory() < 0) {
+				repair.setStatus(this, Repair.Status.Broken);
+			} else if (before.getElapsedTime() > after.getElapsedTime() && before.getUsedMemory() > after.getUsedMemory()) {
+				repair.setStatus(this, Repair.Status.Improved);
+			} else if (before.getElapsedTime() > after.getElapsedTime() && before.getUsedMemory() >= after.getUsedMemory()) {
+				repair.setStatus(this, Repair.Status.Improved);
+			} else if (before.getElapsedTime() >= after.getElapsedTime() && before.getUsedMemory() > after.getUsedMemory()) {
+				repair.setStatus(this, Repair.Status.Improved);
+			} else if (before.getElapsedTime() == after.getElapsedTime() && before.getUsedMemory() == after.getUsedMemory()) {
+				repair.setStatus(this, Repair.Status.Stay);
+			} else {
+				repair.setStatus(this, Repair.Status.Degraded);
+			}
+		} catch (NumberFormatException | IOException e) {
 			repair.setStatus(this, Repair.Status.Broken);
-		} else if (before.getElapsedTime() < 0 || after.getElapsedTime() < 0 || before.getUsedMemory() < 0 || after.getUsedMemory() < 0) {
-			repair.setStatus(this, Repair.Status.Broken);
-		} else if (before.getElapsedTime() > after.getElapsedTime() && before.getUsedMemory() > after.getUsedMemory()) {
-			repair.setStatus(this, Repair.Status.Improved);
-		} else if (before.getElapsedTime() > after.getElapsedTime() && before.getUsedMemory() >= after.getUsedMemory()) {
-			repair.setStatus(this, Repair.Status.Improved);
-		} else if (before.getElapsedTime() >= after.getElapsedTime() && before.getUsedMemory() > after.getUsedMemory()) {
-			repair.setStatus(this, Repair.Status.Improved);
-		} else if (before.getElapsedTime() == after.getElapsedTime() && before.getUsedMemory() == after.getUsedMemory()) {
-			repair.setStatus(this, Repair.Status.Stay);
-		} else {
-			repair.setStatus(this, Repair.Status.Degraded);
 		}
 	}
 
@@ -152,12 +179,17 @@ public class Performance extends EvaluatorBase {
 			// common
 			builder.append(repair.toCsv(this)).append(",");
 			// specific
-			Result before = beforeResults.get(repair);
-			Result after = afterResults.get(repair);
+			Result before = Result.parse(this, repair, Phase.Before);
 			builder.append(before == null ? "" : before.getElapsedTime()).append(",");
 			builder.append(before == null ? "" : before.getUsedMemory()).append(",");
-			builder.append(after == null ? "" : after.getElapsedTime()).append(",");
-			builder.append(after == null ? "" : after.getUsedMemory());
+			if (repair.getStatus(this).equals(Repair.Status.Broken)) {
+				builder.append(-1).append(",");
+				builder.append(-1);
+			} else {
+				Result after = Result.parse(this, repair, Phase.After);
+				builder.append(after == null ? "" : after.getElapsedTime()).append(",");
+				builder.append(after == null ? "" : after.getUsedMemory());
+			}
 			// end
 			builder.append("\n");
 		}
@@ -181,6 +213,12 @@ public class Performance extends EvaluatorBase {
 
 		public long getUsedMemory() {
 			return mem;
+		}
+
+		public static Result parse(Performance performence, Repair repair, Phase phase) throws NumberFormatException, IOException {
+			long time = Long.parseLong(FileUtils.readFileToString(performence.getFile(repair, phase, Type.Time)));
+			long mem = Long.parseLong(FileUtils.readFileToString(performence.getFile(repair, phase, Type.Mem)));
+			return new Result(time, mem);
 		}
 	}
 }

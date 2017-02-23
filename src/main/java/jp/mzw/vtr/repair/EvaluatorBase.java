@@ -19,7 +19,7 @@ abstract public class EvaluatorBase {
 	protected File outputDir;
 	protected File mavenHome;
 	protected boolean mavenOutput;
-	
+
 	public EvaluatorBase(Project project) {
 		projectId = project.getProjectId();
 		projectDir = project.getProjectDir();
@@ -29,11 +29,83 @@ abstract public class EvaluatorBase {
 	}
 
 	abstract public void evaluateBefore(Repair repair);
+
 	abstract public void evaluateAfter(Repair repair);
+
 	abstract public void compare(Repair repair);
+
 	abstract public void output(List<Repair> repairs) throws IOException;
+
 	abstract public List<Class<? extends ValidatorBase>> includeValidators();
-	
+
+	abstract public String getName();
+
+	public static enum Phase {
+		Before, After
+	};
+
+	public static enum Type {
+		Score, SplitNum, Time, Mem
+	};
+
+	public String getFileName(Phase phase, Type type) {
+		StringBuilder builder = new StringBuilder();
+		switch (phase) {
+		case Before:
+			builder.append("before_");
+			break;
+		case After:
+			builder.append("after_");
+			break;
+		}
+		switch (type) {
+		case Score:
+			builder.append("score");
+			break;
+		case SplitNum:
+			builder.append("split_num");
+			break;
+		case Time:
+			builder.append("time");
+			break;
+		case Mem:
+			builder.append("mem");
+			break;
+		}
+		builder.append(".txt");
+		return builder.toString();
+	}
+
+	public File getRepairDir(Repair repair) {
+		File rootDir = EvaluatorBase.getRepairDir(outputDir, projectId);
+		File evaluateDir = new File(rootDir, getName());
+		File commitDir = new File(evaluateDir, repair.getCommit().getId());
+		File validateDir = new File(commitDir, repair.getValidatorName());
+		File testDir = new File(validateDir, repair.getTestCaseFullName());
+		return testDir;
+	}
+
+	public File getFile(Repair repair, Phase phase, Type type) {
+		File dir = getRepairDir(repair);
+		if (!dir.exists()) {
+			dir.mkdirs();
+		}
+		return new File(dir, getFileName(phase, type));
+	}
+
+	public File measure(Repair repair) throws IOException {
+		File dstPatchFile = new File(getRepairDir(repair), repair.getPatchFile().getName());
+		if (!dstPatchFile.exists()) {
+			return dstPatchFile;
+		}
+		if (repair.isSameContent(dstPatchFile)) {
+			LOGGER.info("Patch not changed and already measured: {} at {} by {}", repair.getTestCaseFullName(), repair.getCommit().getId(),
+					getClass().getName());
+			return dstPatchFile;
+		}
+		return null;
+	}
+
 	// TODO Add evaluators from resources
 	public static List<EvaluatorBase> getEvaluators(Project project) {
 		final List<EvaluatorBase> ret = new ArrayList<>();
@@ -48,7 +120,7 @@ abstract public class EvaluatorBase {
 
 	public static final String REPAIR_DIRNAME = "repair";
 	public static final String REPAIR_FILENAME = "results.csv";
-	
+
 	public static File getRepairDir(File outputDir, String projectId) {
 		File projectDir = new File(outputDir, projectId);
 		File repairDir = new File(projectDir, REPAIR_DIRNAME);
@@ -73,7 +145,7 @@ abstract public class EvaluatorBase {
 		}
 		return builder.toString();
 	}
-	
+
 	public static String getCommonCsvHeader() {
 		StringBuilder builder = new StringBuilder();
 		builder.append("Commit").append(",");

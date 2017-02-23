@@ -46,6 +46,11 @@ public class Readability extends EvaluatorBase {
 	public Readability(Project project) {
 		super(project);
 	}
+	
+	@Override
+	public String getName() {
+		return "readability";
+	}
 
 	@Override
 	public List<Class<? extends ValidatorBase>> includeValidators() {
@@ -125,81 +130,41 @@ public class Readability extends EvaluatorBase {
 		}
 	}
 
-	public File getRepairDir(Repair repair) {
-		File rootDir = EvaluatorBase.getRepairDir(outputDir, projectId);
-		File evaluateDir = new File(rootDir, "readability");
-		File commitDir = new File(evaluateDir, repair.getCommit().getId());
-		File validateDir = new File(commitDir, repair.getValidatorName());
-		File testDir = new File(validateDir, repair.getTestCaseFullName());
-		return testDir;
-	}
-
-	public static enum Phase {
-		Before, After
-	};
-
-	public static enum Type {
-		Score, SplitNum
-	};
-
-	public File getFile(Repair repair, Phase phase, Type type) {
-		File dir = getRepairDir(repair);
-		if (!dir.exists()) {
-			dir.mkdirs();
-		}
-		return new File(dir, getFileName(phase, type));
-	}
-
-	public String getFileName(Phase phase, Type type) {
-		StringBuilder builder = new StringBuilder();
-		switch (phase) {
-		case Before:
-			builder.append("before_");
-			break;
-		case After:
-			builder.append("after_");
-			break;
-		}
-		switch (type) {
-		case Score:
-			builder.append("score");
-			break;
-		case SplitNum:
-			builder.append("split_num");
-			break;
-		}
-		builder.append(".txt");
-		return builder.toString();
-	}
-
 	@Override
 	public void evaluateAfter(Repair repair) {
-		// get
-		String content = repair.getRevisedPart();
-		// measure
-		int num = 1;
-		double score = 0;
-		for (int n = 1; n < content.length(); n++) {
-			double sumScore = 0;
-			int size = content.length() / n;
-			for (int m = 1; m <= n; m++) {
-				String subContent = content.substring(size * (m - 1), size * m - 1);
-				double subScore = Main.getReadability(subContent);
-				sumScore += subScore;
-			}
-			double aveScore = sumScore / n;
-			if (0 < aveScore) {
-				num = n;
-				score = aveScore;
-				break;
-			}
-		}
-		// put
 		try {
+			File dstPatchFile = measure(repair);
+			if (dstPatchFile == null) {
+				return;
+			}
+			// start
+			// get
+			String content = repair.getRevisedPart();
+			// measure
+			int num = 1;
+			double score = 0;
+			for (int n = 1; n < content.length(); n++) {
+				double sumScore = 0;
+				int size = content.length() / n;
+				for (int m = 1; m <= n; m++) {
+					String subContent = content.substring(size * (m - 1), size * m - 1);
+					double subScore = Main.getReadability(subContent);
+					sumScore += subScore;
+				}
+				double aveScore = sumScore / n;
+				if (0 < aveScore) {
+					num = n;
+					score = aveScore;
+					break;
+				}
+			}
+			// put
 			FileUtils.writeStringToFile(getFile(repair, Phase.After, Type.Score), Double.toString(score));
 			FileUtils.writeStringToFile(getFile(repair, Phase.After, Type.SplitNum), Integer.toString(num));
+			// end
+			FileUtils.copyFile(repair.getPatchFile(), dstPatchFile);
 		} catch (IOException e) {
-			LOGGER.warn("Failed to store score/split-num into file system: {}", e.getMessage());
+			LOGGER.warn("Failed to evaluate after: {} at {} with {}", repair.getTestCaseFullName(), repair.getCommit().getId(), this.getClass().getName());
 		}
 	}
 
