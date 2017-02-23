@@ -4,16 +4,14 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.text.ParseException;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.apache.maven.shared.invoker.MavenInvocationException;
 import org.dom4j.DocumentException;
@@ -373,7 +371,7 @@ public class CLI {
 				FileUtils.write(new File(file.getParent(), "subjects_by_patterns.txt"), builder.toString());
 			}
 		} else if ("repair".equals(type)) {
-			// Parse
+			// Get records
 			String path_to_file = args[0];
 			File file = new File(path_to_file);
 			String content = FileUtils.readFileToString(file);
@@ -412,6 +410,355 @@ public class CLI {
 				}
 			}
 			FileUtils.write(new File(file.getParent(), "patterns_by_subject.txt"), builder.toString());
+		 } else if ("improved".equals(type)) {
+			// Get records
+			String path_to_file = args[0];
+			File file = new File(path_to_file);
+			String content = FileUtils.readFileToString(file);
+			CSVParser parser = CSVParser.parse(content, CSVFormat.DEFAULT);
+			List<CSVRecord> records = parser.getRecords();
+			// Traverse
+			String fileName = file.getName();
+			String evaluation = file.getParent();
+			StringBuilder builder = new StringBuilder();
+			if (evaluation.endsWith("mutation")) {
+				Map<CSVRecord, Double> improvedRecords = improvedMutationRecords(records);
+				for (Map.Entry<CSVRecord, Double> entry : improvedRecords.entrySet()) {
+					CSVRecord record = entry.getKey();
+					double    rate   = entry.getValue();
+					for (int i = 0; i < 5; i++) { // until Result
+						builder.append(record.get(i)).append(",");
+					}
+					builder.append(rate).append("\n");
+				}
+				FileUtils.write(new File(file.getParent(), "mutation_improve.csv"), builder.toString());
+			} else if (evaluation.endsWith("readability")) {
+				Map<CSVRecord, Double> improvedRecords = improvedReadabilityRecords(records);
+				for (Map.Entry<CSVRecord, Double> entry : improvedRecords.entrySet()) {
+					CSVRecord record = entry.getKey();
+					double    rate   = entry.getValue();
+					for (int i = 0; i < 5; i++) { // until Result
+						builder.append(record.get(i)).append(",");
+					}
+					builder.append(rate).append("\n");
+				}
+				FileUtils.write(new File(file.getParent(), "readability_improve.csv"), builder.toString());
+			} else if (evaluation.endsWith("performance")) {
+				Map<CSVRecord, Pair<Double, Double>> improvedRecords = improvedPerformanceRecords(records);
+				Map<CSVRecord, Pair<Double, Double>> partiallyImprovedRecords = partiallyImprovedPerformanceRecords(records);
+				for (Map.Entry<CSVRecord, Pair<Double, Double>> entry : improvedRecords.entrySet()) {
+					CSVRecord record          = entry.getKey();
+					Pair<Double, Double> pair = entry.getValue();
+					double elapsedTimeImproveRate = pair.getLeft();
+					double usedMemoryImproveRate  = pair.getRight();
+					for (int i = 0; i < 5; i++) { // until Result
+						builder.append(record.get(i)).append(",");
+					}
+					builder.append(elapsedTimeImproveRate).append(",");
+					builder.append(usedMemoryImproveRate).append("\n");
+				}
+				for (Map.Entry<CSVRecord, Pair<Double, Double>> entry : partiallyImprovedRecords.entrySet()) {
+					CSVRecord record          = entry.getKey();
+					Pair<Double, Double> pair = entry.getValue();
+					double elapsedTimeImproveRate = pair.getLeft();
+					double usedMemoryImproveRate  = pair.getRight();
+					for (int i = 0; i < 5; i++) { // until Result
+						builder.append(record.get(i)).append(",");
+					}
+					builder.append(elapsedTimeImproveRate).append(",");
+					builder.append(usedMemoryImproveRate).append("\n");
+				}
+				FileUtils.write(new File(file.getParent(), "performance_improve.csv"), builder.toString());
+				FileUtils.write(new File(file.getParent(), "performance_partially_improve.csv"), builder.toString());
+			} else if (evaluation.endsWith("output")) {
+				if (fileName.endsWith("compile.csv")) {
+					Map<CSVRecord, Double> improvedRecords = improvedCompileOutputRecords(records);
+					for (Map.Entry<CSVRecord, Double> entry : improvedRecords.entrySet()) {
+						CSVRecord record = entry.getKey();
+						double    rate   = entry.getValue();
+						for (int i = 0; i < 5; i++) { // until Result
+							builder.append(record.get(i)).append(",");
+						}
+						builder.append(rate).append("\n");
+					}
+					FileUtils.write(new File(file.getParent(), "compile_improve.csv"), builder.toString());
+				} else if (fileName.endsWith("javadoc.csv")) {
+					Map<CSVRecord, Double> improvedRecords = improvedJavadocOutputRecords(records);
+					for (Map.Entry<CSVRecord, Double> entry : improvedRecords.entrySet()) {
+						CSVRecord record = entry.getKey();
+						double    rate   = entry.getValue();
+						for (int i = 0; i < 5; i++) { // until Result
+							builder.append(record.get(i)).append(",");
+						}
+						builder.append(rate).append("\n");
+					}
+					FileUtils.write(new File(file.getParent(), "javadoc_improve.csv"), builder.toString());
+				} else if (fileName.endsWith("runtime.csv")) {
+					Map<CSVRecord, Double> improvedRecords = improvedRuntimeOutputRecords(records);
+					for (Map.Entry<CSVRecord, Double> entry : improvedRecords.entrySet()) {
+						CSVRecord record = entry.getKey();
+						double    rate   = entry.getValue();
+						for (int i = 0; i < 5; i++) { // until Result
+							builder.append(record.get(i)).append(",");
+						}
+						builder.append(rate).append("\n");
+					}
+					FileUtils.write(new File(file.getParent(), "runtime_improve.csv"), builder.toString());
+				}
+			}
+		} else if ("detect-validate".equals(type)) {
+			// Get records
+			String path_to_detect_file = args[0];
+			String path_to_validate_file = args[1];
+			String subject = args[2];
+			File detect_file = new File(path_to_detect_file);
+			File validate_file = new File(path_to_validate_file);
+			String detect_content = FileUtils.readFileToString(detect_file);
+			String validate_content = FileUtils.readFileToString(validate_file);
+			CSVParser detect_parser = CSVParser.parse(detect_content, CSVFormat.DEFAULT);
+			CSVParser validate_parser = CSVParser.parse(validate_content, CSVFormat.DEFAULT);
+			List<CSVRecord> detect_records = detect_parser.getRecords();
+			List<CSVRecord> validate_records = validate_parser.getRecords();
+			int positive = 0;
+			int negative = 0;
+			int false_positive = 0;
+			int limitation = 0;
+			int detect_num = 0;
+			boolean negative_flag = true;
+			for (CSVRecord detect_record : detect_records) {
+				if (!detect_record.get(0).equals(subject)) {
+					continue;
+				}
+				detect_num++;
+				for (CSVRecord validate_record : validate_records) {
+					if (detect_record.get(2).equals(validate_record.get(2)) &&
+							detect_record.get(3).equals(validate_record.get(3))) {
+						String pattern = patternFromId(detect_record.get(5));
+						if (validate_record.get(6).contains(pattern)) {
+							positive++;
+							negative_flag = false;
+							break;
+						} else if (pattern.equals("FalsePositive")) {
+							false_positive++;
+							negative_flag = false;
+							break;
+						} else if (pattern.equals("Limitation")) {
+							limitation++;
+							negative_flag = false;
+							break;
+						}
+					}
+				}
+				if (negative_flag) {
+					negative++;
+					System.out.println(patternFromId(detect_record.get(5)) + ":"
+							+ "http://mzw.jp/yuta/research/vtr/results/tmp/20161212/visual/html/origin/"
+							+ detect_record.get(0) + ":" + detect_record.get(1)
+							+ ":" + detect_record.get(2) + ":" + detect_record.get(3) + ".html");
+				}
+				negative_flag = true;
+			}
+			//System.out.println("Subject: " + subject);
+			//System.out.println("Positive: " + positive);
+			//System.out.println("Negative: " + negative);
+			//System.out.println("False-Positive: " + false_positive);
+			//System.out.println("Limitation: " + limitation);
+			//System.out.println("Sum: " + (positive + negative + false_positive + limitation));
+			//System.out.println();
+		}
+	}
+
+	private static Map<CSVRecord, Double> improvedMutationRecords(List<CSVRecord> records) {
+		Map<CSVRecord, Double> ret = new HashMap<>();
+		for (CSVRecord record : records) {
+			if (!record.get(4).equals("Improved")) {
+				continue;
+			}
+			double beforeScore = Double.parseDouble(record.get(5));
+			double afterScore = Double.parseDouble(record.get(6));
+			double improveRate;
+			improveRate = (beforeScore != 0) ? (afterScore - beforeScore) / beforeScore * 100 : 100;
+			ret.put(record, improveRate);
+		}
+		return ret;
+	}
+	private static Map<CSVRecord, Double> improvedReadabilityRecords(List<CSVRecord> records) {
+		Map<CSVRecord, Double> ret = new HashMap<>();
+		for (CSVRecord record : records) {
+			if (!record.get(4).equals("Improved")) {
+				continue;
+			}
+			double beforeScore = Double.parseDouble(record.get(5));
+			double afterScore = Double.parseDouble(record.get(7));
+			double improveRate;
+			improveRate = (beforeScore != 0) ? (afterScore - beforeScore) / beforeScore * 100 : 100;
+			ret.put(record, improveRate);
+		}
+		return ret;
+	}
+	private static Map<CSVRecord, Pair<Double, Double>> improvedPerformanceRecords(List<CSVRecord> records) {
+		Map<CSVRecord, Pair<Double, Double>> ret = new HashMap<>();
+		for (CSVRecord record : records) {
+			if (!record.get(4).equals("Improved")) {
+				continue;
+			}
+			double beforeElapsedTime = Double.parseDouble(record.get(5));
+			double afterElapsedTime  = Double.parseDouble(record.get(7));
+			double beforeUsedMemory  = Double.parseDouble(record.get(6));
+			double afterUsedMemory   = Double.parseDouble(record.get(8));
+			double elapsedTimeImproveRate;
+			elapsedTimeImproveRate = (beforeElapsedTime != 0) ? (beforeElapsedTime - afterElapsedTime) / beforeElapsedTime * 100 : 100;
+			double usedMemoryImproveRate;
+			usedMemoryImproveRate = (beforeUsedMemory != 0) ? (beforeUsedMemory - afterUsedMemory) / beforeUsedMemory * 100 : 100;
+			ret.put(record, new ImmutablePair<>(elapsedTimeImproveRate, usedMemoryImproveRate));
+		}
+		return ret;
+	}
+	private static Map<CSVRecord, Pair<Double, Double>> partiallyImprovedPerformanceRecords(List<CSVRecord> records) {
+		Map<CSVRecord, Pair<Double, Double>> ret = new HashMap<>();
+		for (CSVRecord record : records) {
+			if (!record.get(4).equals("PartiallyImproved")) {
+				continue;
+			}
+			double beforeElapsedTime = Double.parseDouble(record.get(5));
+			double afterElapsedTime  = Double.parseDouble(record.get(7));
+			double beforeUsedMemory  = Double.parseDouble(record.get(6));
+			double afterUsedMemory   = Double.parseDouble(record.get(8));
+			double elapsedTimeImproveRate;
+			elapsedTimeImproveRate = (beforeElapsedTime != 0) ? (beforeElapsedTime - afterElapsedTime) / beforeElapsedTime * 100 : 100;
+			double usedMemoryImproveRate;
+			usedMemoryImproveRate = (beforeUsedMemory != 0) ? (beforeUsedMemory - afterUsedMemory) / beforeUsedMemory * 100 : 100;
+			ret.put(record, new ImmutablePair<>(elapsedTimeImproveRate, usedMemoryImproveRate));
+		}
+		return ret;
+	}
+	private static Map<CSVRecord, Double> improvedCompileOutputRecords(List<CSVRecord> records) {
+		Map<CSVRecord, Double> ret = new HashMap<>();
+		for (CSVRecord record : records) {
+			if (!record.get(4).equals("Improved")) {
+				continue;
+			}
+			double beforeScore = Double.parseDouble(record.get(5));
+			double afterScore = Double.parseDouble(record.get(7));
+			double improveRate;
+			improveRate = (beforeScore != 0) ? (beforeScore - afterScore) / beforeScore * 100 : 100;
+			ret.put(record, improveRate);
+		}
+		return ret;
+	}
+	private static Map<CSVRecord, Double> improvedJavadocOutputRecords(List<CSVRecord> records) {
+		Map<CSVRecord, Double> ret = new HashMap<>();
+		for (CSVRecord record : records) {
+			if (!record.get(4).equals("Improved")) {
+				continue;
+			}
+			double beforeScore = Double.parseDouble(record.get(5));
+			double afterScore = Double.parseDouble(record.get(6));
+			double improveRate;
+			improveRate = (beforeScore != 0) ? (beforeScore - afterScore) / beforeScore * 100 : 100;
+			ret.put(record, improveRate);
+		}
+		return ret;
+	}
+	private static Map<CSVRecord, Double> improvedRuntimeOutputRecords(List<CSVRecord> records) {
+		Map<CSVRecord, Double> ret = new HashMap<>();
+		for (CSVRecord record : records) {
+			if (!record.get(4).equals("Improved")) {
+				continue;
+			}
+			double beforeScore = Double.parseDouble(record.get(5));
+			double afterScore = Double.parseDouble(record.get(6));
+			double improveRate;
+			improveRate = (beforeScore != 0) ? (beforeScore - afterScore) / beforeScore * 100 : 100;
+			ret.put(record, improveRate);
+		}
+		return ret;
+	}
+	private static String patternFromId(String patternId) {
+		if (patternId.equals("#1")) {
+			return "AddTestAnnotations";
+		} else if (patternId.equals("#2")) {
+			return "UseAssertArrayEqualsProperly";
+		} else if (patternId.equals("#3")) {
+			return "UseAssertEqualsProperly";
+		} else if (patternId.equals("#4")) {
+			return "UseAssertFalseProperly";
+		} else if (patternId.equals("#5")) {
+			return "UseAssertNotSameProperly";
+		} else if (patternId.equals("#6")) {
+			return "UseAssertNullProperly";
+		} else if (patternId.equals("#7")) {
+			return "UseAssertTrueProperly";
+		} else if (patternId.equals("#8")) {
+			return "UseFailInsteadOfAssertTrueFalse";
+		} else if (patternId.equals("#9")) {
+			return "UseStringContains";
+		} else if (patternId.equals("#10")) {
+			return "SwapActualExpectedValues";
+		} else if (patternId.equals("#11")) {
+			return "AssertNotNullToInstances";
+		} else if (patternId.equals("#12")) {
+			return "ModifyAssertImports";
+		} else if (patternId.equals("#13")) {
+			return "DoNotSwallowTestErrorsSiliently";
+		} else if (patternId.equals("#14")) {
+			return "AddFailStatementsForHandlingExpectedExceptions";
+		} else if (patternId.equals("#15")) {
+			return "HandleExpectedExecptionsProperly";
+		} else if (patternId.equals("#16")) {
+			return "RemoveUnusedExceptions";
+		} else if (patternId.equals("#17")) {
+			return "CloseResources";
+		} else if (patternId.equals("#18")) {
+			return "UseTryWithResources";
+		} else if (patternId.equals("#19")) {
+			return "UseProcessWaitfor";
+		} else if (patternId.equals("#20")) {
+			return "AddSuppressWarnings";
+		} else if (patternId.equals("#21")) {
+			return "DeleteUnnecessaryAssignmenedVariables";
+		} else if (patternId.equals("#22")) {
+			return "IntroduceAutoBoxing";
+		} else if (patternId.equals("#23")) {
+			return "RemoveUnnecessaryCasts";
+		} else if (patternId.equals("#24")) {
+			return "RemovePrintStatements";
+		} else if (patternId.equals("#25")) {
+			return "FixJavadocErrors";
+		} else if (patternId.equals("#26")) {
+			return "ReplaceAtTodoWithTODO";
+		} else if (patternId.equals("#27")) {
+			return "UseCodeAnnotationsAtJavaDoc";
+		} else if (patternId.equals("#28")) {
+			return "FormatCode";
+		} else if (patternId.equals("#29")) {
+			return "ConvertForLoopsToEnhanced";
+		} else if (patternId.equals("#30")) {
+			return "UseFinalModifierWherePossible";
+		} else if (patternId.equals("#31")) {
+			return "AddExplicitBlocks";
+		} else if (patternId.equals("#32")) {
+			return "UseThisIfNecessary";
+		} else if (patternId.equals("#33")) {
+			return "AddSerialVersionUIDs";
+		} else if (patternId.equals("#34")) {
+			return "AddOverrideAnnotation";
+		} else if (patternId.equals("#35")) {
+			return "UseDiamondOperators";
+		} else if (patternId.equals("#36")) {
+			return "UseArithmeticAssignmentOperators";
+		} else if (patternId.equals("#37")) {
+			return "AccessFilesProperly";
+		} else if (patternId.equals("#38")) {
+			return "AddCastToNull";
+		} else if (patternId.equals("#39")) {
+			return "AccessStaticMethodsAtDefinedClasses";
+		} else if (patternId.equals("#40")) {
+			return "AccessStaticFieldsAtDefinedClasses";
+		} else if (patternId.equals("#FP1")) {
+			return "FalsePositive";
+		} else {
+			return "Limitation";
 		}
 	}
 }
