@@ -47,13 +47,9 @@ public class Performance extends EvaluatorBase {
 	@Override
 	public void evaluateBefore(Repair repair) {
 		try {
-			File dstPatchFile = new File(getRepairDir(repair), repair.getPatchFile().getName());
-			if (dstPatchFile.exists()) {
-				if (repair.isSameContent(dstPatchFile)) {
-					LOGGER.info("Patch not changed and already measured: {} at {} by {}", repair.getTestCaseFullName(), repair.getCommit().getId(),
-							this.getClass().getName());
-					return;
-				}
+			File dstPatchFile = measure(repair);
+			if (dstPatchFile == null) {
+				return;
 			}
 
 			int compile = MavenUtils.maven(this.projectDir, Arrays.asList("compile", "test-compile"), mavenHome, mavenOutput);
