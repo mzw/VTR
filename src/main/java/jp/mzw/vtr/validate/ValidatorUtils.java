@@ -155,7 +155,7 @@ public class ValidatorUtils {
 	}
 
 	public static boolean onlyPrintMethodInvocation(ASTNode node) {
-		List<MethodInvocation> methods = new ArrayList<>();
+		final List<MethodInvocation> methods = new ArrayList<>();
 		node.accept(new ASTVisitor() {
 			@Override
 			public boolean visit(MethodInvocation node) {
@@ -171,8 +171,9 @@ public class ValidatorUtils {
 		}
 		return true;
 	}
+
 	public static boolean hasThrowStatements(ASTNode node) {
-		List<ThrowStatement> throwStatements = new ArrayList<>();
+		final List<ThrowStatement> throwStatements = new ArrayList<>();
 		node.accept(new ASTVisitor() {
 			@Override
 			public boolean visit(ThrowStatement node) {
@@ -182,6 +183,7 @@ public class ValidatorUtils {
 		});
 		return !throwStatements.isEmpty();
 	}
+
 	public static boolean thisNodeHasThisComments(ASTNode node, Comment comment) {
 		int startNode = node.getStartPosition();
 		int endNode = startNode + node.getLength();
@@ -189,6 +191,7 @@ public class ValidatorUtils {
 		int endComment = startComment + comment.getLength();
 		return startNode <= startComment && endComment <= endNode;
 	}
+
 	public static String comment(Comment comment, String source) {
 		int start = comment.getStartPosition();
 		int end = start + comment.getLength();
@@ -198,8 +201,8 @@ public class ValidatorUtils {
 	/**
 	 * List of JUnit assert method names
 	 */
-	public static final String[] JUNIT_ASSERT_METHODS = { "assertArrayEquals", "assertEquals", "assertFalse", "assertNotNull", "assertNotSame", "assertNull",
-			"assertSame", "assertThat", "assertTrue", "fail", };
+	public static final String[] JUNIT_ASSERT_METHODS = { "assertArrayEquals", "assertEquals", "assertFalse",
+			"assertNotNull", "assertNotSame", "assertNull", "assertSame", "assertThat", "assertTrue", "fail", };
 
 	/**
 	 * Determine whether given expression is closable
@@ -248,8 +251,8 @@ public class ValidatorUtils {
 			return false;
 		}
 		while (binding != null) {
-			if ("java.lang.RuntimeException".equals(binding.getQualifiedName()) ||
-					"RuntimeException".equals(binding.getQualifiedName())) {
+			if ("java.lang.RuntimeException".equals(binding.getQualifiedName())
+					|| "RuntimeException".equals(binding.getQualifiedName())) {
 				return true;
 			}
 			binding = binding.getSuperclass();
