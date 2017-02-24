@@ -105,8 +105,9 @@ public class Readability extends EvaluatorBase {
 			String content = repair.getOriginalPart();
 			// measure
 			int num = 1;
+			int maxNum = content.length() <= 5 ? content.length() - 1: 5; 
 			double score = 0;
-			for (int n = 1; n < content.length(); n++) {
+			for (int n = 1; n <= maxNum; n++) {
 				double sumScore = 0;
 				int size = content.length() / n;
 				for (int m = 1; m <= n; m++) {
@@ -152,8 +153,9 @@ public class Readability extends EvaluatorBase {
 			String content = repair.getRevisedPart();
 			// measure
 			int num = 1;
+			int maxNum = content.length() <= 5 ? content.length() - 1: 5; 
 			double score = 0;
-			for (int n = 1; n < content.length(); n++) {
+			for (int n = 1; n <= maxNum; n++) {
 				double sumScore = 0;
 				int size = content.length() / n;
 				for (int m = 1; m <= n; m++) {
