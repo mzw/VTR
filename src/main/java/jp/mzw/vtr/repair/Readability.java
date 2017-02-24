@@ -46,7 +46,7 @@ public class Readability extends EvaluatorBase {
 	public Readability(Project project) {
 		super(project);
 	}
-	
+
 	@Override
 	public String getName() {
 		return "readability";
@@ -100,31 +100,41 @@ public class Readability extends EvaluatorBase {
 		if (getFile(repair, Phase.Before, Type.Score).exists() && getFile(repair, Phase.Before, Type.Score).exists()) {
 			return;
 		}
-		// get
-		String content = repair.getOriginalPart();
-		// measure
-		int num = 1;
-		double score = 0;
-		for (int n = 1; n < content.length(); n++) {
-			double sumScore = 0;
-			int size = content.length() / n;
-			for (int m = 1; m <= n; m++) {
-				String subContent = content.substring(size * (m - 1), size * m - 1);
-				double subScore = Main.getReadability(subContent);
-				sumScore += subScore;
-			}
-			double aveScore = sumScore / n;
-			if (0 < aveScore) {
-				num = n;
-				score = aveScore;
-				break;
-			}
-			System.gc();
-		}
-		// put
 		try {
+			// get
+			String content = repair.getOriginalPart();
+			// measure
+			int num = 1;
+			double score = 0;
+			for (int n = 1; n < content.length(); n++) {
+				double sumScore = 0;
+				int size = content.length() / n;
+				for (int m = 1; m <= n; m++) {
+					String subContent = content.substring(size * (m - 1), size * m - 1);
+					double subScore = Main.getReadability(subContent);
+					sumScore += subScore;
+				}
+				double aveScore = sumScore / n;
+				if (0 < aveScore) {
+					num = n;
+					score = aveScore;
+					break;
+				}
+				System.gc();
+			}
+			// put
 			FileUtils.writeStringToFile(getFile(repair, Phase.Before, Type.Score), Double.toString(score));
 			FileUtils.writeStringToFile(getFile(repair, Phase.Before, Type.SplitNum), Integer.toString(num));
+		} catch (OutOfMemoryError e) {
+			System.gc();
+			try {
+				FileUtils.writeStringToFile(getFile(repair, Phase.Before, Type.Score),
+						Double.toString(Double.MIN_VALUE));
+				FileUtils.writeStringToFile(getFile(repair, Phase.Before, Type.SplitNum),
+						Integer.toString(Integer.MAX_VALUE));
+			} catch (IOException ee) {
+				LOGGER.warn("Failed to store score/split-num into file system: {}", ee.getMessage());
+			}
 		} catch (IOException e) {
 			LOGGER.warn("Failed to store score/split-num into file system: {}", e.getMessage());
 		}
@@ -163,8 +173,20 @@ public class Readability extends EvaluatorBase {
 			FileUtils.writeStringToFile(getFile(repair, Phase.After, Type.SplitNum), Integer.toString(num));
 			// end
 			FileUtils.copyFile(repair.getPatchFile(), dstPatchFile);
+		} catch (OutOfMemoryError e) {
+			System.gc();
+			try {
+				FileUtils.writeStringToFile(getFile(repair, Phase.After, Type.Score),
+						Double.toString(Double.MIN_VALUE));
+				FileUtils.writeStringToFile(getFile(repair, Phase.After, Type.SplitNum),
+						Integer.toString(Integer.MAX_VALUE));
+			} catch (IOException ee) {
+				LOGGER.warn("Failed to evaluate after: {} at {} with {}", repair.getTestCaseFullName(),
+						repair.getCommit().getId(), this.getClass().getName());
+			}
 		} catch (IOException e) {
-			LOGGER.warn("Failed to evaluate after: {} at {} with {}", repair.getTestCaseFullName(), repair.getCommit().getId(), this.getClass().getName());
+			LOGGER.warn("Failed to evaluate after: {} at {} with {}", repair.getTestCaseFullName(),
+					repair.getCommit().getId(), this.getClass().getName());
 		}
 	}
 
@@ -255,8 +277,10 @@ public class Readability extends EvaluatorBase {
 			return num;
 		}
 
-		public static Result parse(Readability readability, Repair repair, Phase phase) throws NumberFormatException, IOException {
-			double score = Double.parseDouble(FileUtils.readFileToString(readability.getFile(repair, phase, Type.Score)));
+		public static Result parse(Readability readability, Repair repair, Phase phase)
+				throws NumberFormatException, IOException {
+			double score = Double
+					.parseDouble(FileUtils.readFileToString(readability.getFile(repair, phase, Type.Score)));
 			int num = Integer.parseInt(FileUtils.readFileToString(readability.getFile(repair, phase, Type.SplitNum)));
 			return new Result(score, num);
 		}
