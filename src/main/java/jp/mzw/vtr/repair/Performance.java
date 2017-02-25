@@ -47,6 +47,7 @@ public class Performance extends EvaluatorBase {
 	@Override
 	public void evaluateBefore(Repair repair) {
 		try {
+			LOGGER.info("Start: Performance (Before): {}, {} ", repair.getValidatorName(), repair.getTestCaseFullName());
 			File dstPatchFile = measure(repair);
 			if (dstPatchFile == null) {
 				return;
@@ -70,6 +71,7 @@ public class Performance extends EvaluatorBase {
 
 			FileUtils.writeStringToFile(getFile(repair, Phase.Before, Type.Time), Long.toString(time));
 			FileUtils.writeStringToFile(getFile(repair, Phase.Before, Type.Mem), Long.toString(mem));
+			LOGGER.info("End: Performance (Before): {}, {} ", repair.getValidatorName(), repair.getTestCaseFullName());
 		} catch (MavenInvocationException | IOException | InterruptedException e) {
 			LOGGER.warn("Failed to evaluate before: {} at {} with {}", repair.getTestCaseFullName(), repair.getCommit().getId(), this.getClass().getName());
 		}
@@ -78,6 +80,7 @@ public class Performance extends EvaluatorBase {
 	@Override
 	public void evaluateAfter(Repair repair) {
 		try {
+			LOGGER.info("Start: Performance (After): {}, {} ", repair.getValidatorName(), repair.getTestCaseFullName());
 			File dstPatchFile = measure(repair);
 			if (dstPatchFile == null) {
 				return;
@@ -105,6 +108,7 @@ public class Performance extends EvaluatorBase {
 			
 			// end
 			FileUtils.copyFile(repair.getPatchFile(), dstPatchFile);
+			LOGGER.info("End: Performance (After): {}, {} ", repair.getValidatorName(), repair.getTestCaseFullName());
 		} catch (MavenInvocationException | IOException | InterruptedException e) {
 			LOGGER.warn("Failed to evaluate after: {} at {} with {}", repair.getTestCaseFullName(), repair.getCommit().getId(), this.getClass().getName());
 		}

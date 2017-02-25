@@ -93,6 +93,13 @@ abstract public class EvaluatorBase {
 		return new File(dir, getFileName(phase, type));
 	}
 
+	/**
+	 * 
+	 * 
+	 * @param repair
+	 * @return
+	 * @throws IOException
+	 */
 	public File measure(Repair repair) throws IOException {
 		File dstPatchFile = new File(getRepairDir(repair), repair.getPatchFile().getName());
 		if (!dstPatchFile.exists()) {
@@ -101,9 +108,10 @@ abstract public class EvaluatorBase {
 		if (repair.isSameContent(dstPatchFile)) {
 			LOGGER.info("Patch not changed and already measured: {} at {} by {}", repair.getTestCaseFullName(), repair.getCommit().getId(),
 					getClass().getName());
+			return null;
+		} else {
 			return dstPatchFile;
 		}
-		return null;
 	}
 
 	// TODO Add evaluators from resources
@@ -112,9 +120,9 @@ abstract public class EvaluatorBase {
 		ret.add(new Readability(project));
 		ret.add(new MutationAnalysis(project));
 		ret.add(new Performance(project));
-		ret.add(new RuntimeOutput(project));
-		ret.add(new JavadocOutput(project));
-		ret.add(new CompileOutput(project));
+//		ret.add(new RuntimeOutput(project));
+//		ret.add(new JavadocOutput(project));
+//		ret.add(new CompileOutput(project));
 		return ret;
 	}
 

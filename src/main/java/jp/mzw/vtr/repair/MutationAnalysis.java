@@ -70,6 +70,7 @@ public class MutationAnalysis extends EvaluatorBase {
 	@Override
 	public void evaluateBefore(Repair repair) {
 		try {
+			LOGGER.info("Start: Mutation Analysis (Before): {}, {} ", repair.getValidatorName(), repair.getTestCaseFullName());
 			pi = new PitInstrumenter(projectDir, classesUnderTest, repair.getTestCaseClassName());
 			modified = pi.instrument();
 
@@ -93,6 +94,7 @@ public class MutationAnalysis extends EvaluatorBase {
 					LOGGER.info("Found PIT results: {}", resultDir.getPath());
 				}
 			}
+			LOGGER.info("Start: Mutation Analysis (Before): {}, {} ", repair.getValidatorName(), repair.getTestCaseFullName());
 		} catch (IOException | DocumentException | MavenInvocationException e) {
 			LOGGER.warn("Failed to invoke PIT mutation testing: {} at {}", repair.getTestCaseClassName(), repair.getCommit().getId());
 		}
@@ -105,6 +107,7 @@ public class MutationAnalysis extends EvaluatorBase {
 			return;
 		}
 		try {
+			LOGGER.info("Start: Mutation Analysis (After): {}, {} ", repair.getValidatorName(), repair.getTestCaseFullName());
 			File dstPatchFile = new File(getAfterDir(repair), repair.getPatchFile().getName());
 			if (dstPatchFile.exists()) {
 				if (repair.isSameContent(dstPatchFile)) {
@@ -133,6 +136,7 @@ public class MutationAnalysis extends EvaluatorBase {
 			if (modified) {
 				pi.revert();
 			}
+			LOGGER.info("End: Mutation Analysis (After): {}, {} ", repair.getValidatorName(), repair.getTestCaseFullName());
 		} catch (IOException | MavenInvocationException e) {
 			LOGGER.warn("Failed to invoke PIT mutation testing: {} at {}", repair.getTestCaseClassName(), repair.getCommit().getId());
 		}

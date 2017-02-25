@@ -101,6 +101,7 @@ public class Readability extends EvaluatorBase {
 			return;
 		}
 		try {
+			LOGGER.info("Start: Readability (Before): {}, {} ", repair.getValidatorName(), repair.getTestCaseFullName());
 			// get
 			String content = repair.getOriginalPart();
 			// measure
@@ -126,6 +127,7 @@ public class Readability extends EvaluatorBase {
 			// put
 			FileUtils.writeStringToFile(getFile(repair, Phase.Before, Type.Score), Double.toString(score));
 			FileUtils.writeStringToFile(getFile(repair, Phase.Before, Type.SplitNum), Integer.toString(num));
+			LOGGER.info("End: Readability (Before): {}, {} ", repair.getValidatorName(), repair.getTestCaseFullName());
 		} catch (OutOfMemoryError e) {
 			System.gc();
 			try {
@@ -143,6 +145,7 @@ public class Readability extends EvaluatorBase {
 
 	@Override
 	public void evaluateAfter(Repair repair) {
+		LOGGER.info("Start: Readability (After): {}, {} ", repair.getValidatorName(), repair.getTestCaseFullName());
 		try {
 			File dstPatchFile = measure(repair);
 			if (dstPatchFile == null) {
@@ -175,6 +178,7 @@ public class Readability extends EvaluatorBase {
 			FileUtils.writeStringToFile(getFile(repair, Phase.After, Type.SplitNum), Integer.toString(num));
 			// end
 			FileUtils.copyFile(repair.getPatchFile(), dstPatchFile);
+			LOGGER.info("End: Readability (After): {}, {} ", repair.getValidatorName(), repair.getTestCaseFullName());
 		} catch (OutOfMemoryError e) {
 			System.gc();
 			try {
