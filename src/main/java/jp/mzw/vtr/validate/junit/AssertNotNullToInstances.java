@@ -1,20 +1,11 @@
 package jp.mzw.vtr.validate.junit;
 
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.eclipse.jdt.core.dom.AST;
-import org.eclipse.jdt.core.dom.ASTNode;
-import org.eclipse.jdt.core.dom.ASTVisitor;
-import org.eclipse.jdt.core.dom.Assignment;
-import org.eclipse.jdt.core.dom.Block;
-import org.eclipse.jdt.core.dom.ClassInstanceCreation;
-import org.eclipse.jdt.core.dom.CompilationUnit;
-import org.eclipse.jdt.core.dom.ImportDeclaration;
-import org.eclipse.jdt.core.dom.MethodInvocation;
-import org.eclipse.jdt.core.dom.SingleMemberAnnotation;
-import org.eclipse.jdt.core.dom.VariableDeclarationStatement;
+import org.eclipse.jdt.core.dom.*;
 import org.eclipse.jdt.core.dom.rewrite.ASTRewrite;
 import org.eclipse.jdt.core.dom.rewrite.ListRewrite;
 import org.eclipse.jface.text.BadLocationException;
@@ -52,27 +43,27 @@ public class AssertNotNullToInstances extends SimpleValidatorBase {
 				// Check whether unused
 				// TODO from compile results
 				if ("SuppressWarnings".equals(type) && "unused".equals(member)) {
-					testcase.getMethodDeclaration().accept(new ASTVisitor() {
-						@Override
-						public boolean visit(ClassInstanceCreation node) {
-							ASTNode parent = node.getParent();
-							while (!parent.equals(testcase.getMethodDeclaration())) {
-								// Ignore those assigned to variables or invoked from methods
-								// TODO other cases?
-								if (parent instanceof Assignment) {
-									break;
-								} else if (parent instanceof MethodInvocation) {
-									break;
-								} else if (parent instanceof Block) {
-									if (!ret.contains(node)) {
-										ret.add(node);
+				    if ((node.getParent() instanceof VariableDeclarationStatement)) {
+						VariableDeclarationStatement statement = (VariableDeclarationStatement) node.getParent();
+						for (VariableDeclarationFragment fragment : (List<VariableDeclarationFragment>) statement.fragments()) {
+							ret.add(fragment);
+						}
+					} else if ((node.getParent()) instanceof MethodDeclaration) {
+						MethodDeclaration method = (MethodDeclaration) node.getParent();
+						for (Statement statement : (List<Statement>) method.getBody().statements()) {
+							if (statement instanceof ExpressionStatement) {
+								Expression expression = ((ExpressionStatement) statement).getExpression();
+								if (expression instanceof ClassInstanceCreation) {
+									ClassInstanceCreation creation = (ClassInstanceCreation) expression;
+									if (creation.getExpression() == null) {
+										// add ClassInstanceCreation without assignment, e.g. 'new PoolUtils();'
+										ret.add(creation);
 									}
 								}
-								parent = parent.getParent();
+
 							}
-							return super.visit(node);
 						}
-					});
+					}
 				}
 				return super.visit(node);
 			}
@@ -89,14 +80,14 @@ public class AssertNotNullToInstances extends SimpleValidatorBase {
 		final ASTRewrite rewrite = ASTRewrite.create(ast);
 		// detect
 		for (ASTNode detect : detect(commit, testcase, results)) {
-			ClassInstanceCreation node = (ClassInstanceCreation) detect;
-			MethodInvocation method = (MethodInvocation) rewrite.createStringPlaceholder("Assert.assertNotNull(" + node.toString() + ");", ASTNode.METHOD_INVOCATION);
-			// From: Class var = new Class();
-			// To:   AssertNotNull(new Class();
-			if (node.getParent().getParent() instanceof VariableDeclarationStatement) {
-				rewrite.replace(node.getParent().getParent(), method, null);
-			} else {
-				rewrite.replace(node, method, null);
+			if (detect instanceof VariableDeclarationFragment) {
+				VariableDeclarationFragment node = (VariableDeclarationFragment) detect;
+				MethodInvocation method = (MethodInvocation) rewrite.createStringPlaceholder("Assert.assertNotNull(" + node.getInitializer().toString() + ");", ASTNode.METHOD_INVOCATION);
+				rewrite.replace(node.getParent(), method, null);
+			} else if (detect instanceof ClassInstanceCreation) {
+				ClassInstanceCreation node = (ClassInstanceCreation) detect;
+				MethodInvocation method = (MethodInvocation) rewrite.createStringPlaceholder("Assert.assertNotNull(" + node.toString() + ");", ASTNode.METHOD_INVOCATION);
+				rewrite.replace(node.getParent(), method, null);
 			}
 		}
 		// import
