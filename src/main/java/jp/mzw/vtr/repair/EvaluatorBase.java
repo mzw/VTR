@@ -120,9 +120,9 @@ abstract public class EvaluatorBase {
 		ret.add(new Readability(project));
 		ret.add(new MutationAnalysis(project));
 		ret.add(new Performance(project));
-//		ret.add(new RuntimeOutput(project));
-//		ret.add(new JavadocOutput(project));
-//		ret.add(new CompileOutput(project));
+		ret.add(new RuntimeOutput(project));
+		ret.add(new JavadocOutput(project));
+		ret.add(new CompileOutput(project));
 		return ret;
 	}
 
