@@ -10,7 +10,7 @@
             <param>TEST-CLASS</param>
         </targetTests>
         <mutators>
-            <mutator>DEFAULTS</mutator>
+            <mutator>ALL</mutator>
         </mutators>
         <threads>100</threads>
         <timeoutConstant>300</timeoutConstant>
