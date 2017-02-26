@@ -155,6 +155,14 @@ public class Dictionary extends DictionaryBase {
 		return null;
 	}
 
+	public Tag getTagBy(String tagId) {
+		for (Tag tag : this.contents.keySet()) {
+			if (tag.getId().equals("refs/tags/" + tagId)) {
+				return tag;
+			}
+		}
+		return null;
+	}
 	/**
 	 * Create previous commit by given commit ID
 	 * 

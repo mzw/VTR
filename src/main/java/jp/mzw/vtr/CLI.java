@@ -3,9 +3,13 @@ package jp.mzw.vtr;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.text.DateFormat;
 import java.text.ParseException;
 import java.util.*;
 
+import jp.mzw.vtr.dict.*;
+import jp.mzw.vtr.dict.Dictionary;
+import jp.mzw.vtr.git.*;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
@@ -22,6 +26,11 @@ import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.jsoup.parser.Parser;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 import difflib.PatchFailedException;
 import jp.mzw.vtr.cluster.HCluster;
@@ -31,11 +40,6 @@ import jp.mzw.vtr.cluster.visualize.VisualizerBase;
 import jp.mzw.vtr.core.Project;
 import jp.mzw.vtr.detect.Detector;
 import jp.mzw.vtr.detect.TestCaseModification;
-import jp.mzw.vtr.dict.DictionaryMaker;
-import jp.mzw.vtr.git.CheckoutConductor;
-import jp.mzw.vtr.git.CheckoutListener;
-import jp.mzw.vtr.git.Commit;
-import jp.mzw.vtr.git.GitUtils;
 import jp.mzw.vtr.maven.MavenUtils;
 import jp.mzw.vtr.maven.TestRunner;
 import jp.mzw.vtr.maven.TestSuite;
@@ -508,11 +512,11 @@ public class CLI {
 			}
 		} else if ("detect-validate".equals(type)) {
 			// Get records
-			String path_to_detect_file = args[0];
-			String path_to_validate_file = args[1];
-			String subject = args[2];
+			String path_to_detect_file = args[0];;
+			String projectId = args[1];
+			Project project = new Project(projectId).setConfig(CONFIG_FILENAME);
 			File detect_file = new File(path_to_detect_file);
-			File validate_file = new File(path_to_validate_file);
+			File validate_file = new File(new File(project.getOutputDir(), projectId), "improve.csv");
 			String detect_content = FileUtils.readFileToString(detect_file);
 			String validate_content = FileUtils.readFileToString(validate_file);
 			CSVParser detect_parser = CSVParser.parse(detect_content, CSVFormat.DEFAULT);
@@ -523,18 +527,59 @@ public class CLI {
 			int negative = 0;
 			int false_positive = 0;
 			int limitation = 0;
-			int detect_num = 0;
 			boolean negative_flag = true;
+			Map<String, Boolean> beforeReleaseResults = new HashMap<>();
+			Map<String, Long>    elapsedDaysResults = new HashMap<>();
+			// read
 			for (CSVRecord detect_record : detect_records) {
-				if (!detect_record.get(0).equals(subject)) {
+				if (!detect_record.get(1).equals(projectId)) {
 					continue;
 				}
-				detect_num++;
+				String commitId = detect_record.get(2);
+				String clazz = detect_record.get(3);
+				String method = detect_record.get(4);
+
 				for (CSVRecord validate_record : validate_records) {
-					if (detect_record.get(2).equals(validate_record.get(2)) &&
-							detect_record.get(3).equals(validate_record.get(3))) {
-						String pattern = patternFromId(detect_record.get(5));
-						if (validate_record.get(6).contains(pattern)) {
+					if (validate_record.size() < 2) {
+						continue;
+					}
+					if (clazz.equals(validate_record.get(2)) &&
+							method.equals(validate_record.get(3))) {
+						String pattern = patternFromId(detect_record.get(13));
+						if (validate_record.get(1).contains(pattern)) {
+							String detectHtml = "origin/" + projectId + ":" + commitId + ":" + clazz + ":" + method + ".html";
+							List<String> tags = getCoveredLinesLatestTag(new File(detectHtml));
+							jp.mzw.vtr.dict.Dictionary dictionary = new Dictionary(project.getOutputDir(), project.getProjectId()).parse();
+							Date latest = DictionaryBase.SDF.parse("1970-01-01 00:00:00 -0800");
+							Tag latestCoveredTag = null;
+							for (String tagId : tags) {
+								Tag tag = dictionary.getTagBy(tagId);
+								if (tag.getDate().after(latest)) {
+									latest = tag.getDate();
+									latestCoveredTag = tag;
+								}
+							}
+							String detectCommitId = detect_record.get(2);
+							Commit detectCommit = dictionary.getCommitBy(detectCommitId);
+							long detectCommitTime = detectCommit.getDate().getTime();
+							String validateCommitId = validate_record.get(0);
+							Commit validateCommit = dictionary.getCommitBy(validateCommitId);
+							long validateCommitTime = validateCommit.getDate().getTime();
+							boolean beforeRelease;
+							if (latestCoveredTag == null) {
+								beforeRelease = false;
+							} else {
+								System.out.println("detect commit date: " + detectCommit.getDate());
+								System.out.println("detect commit id: " + detectCommit.getId());
+								System.out.println("validate commit date: " + validateCommit.getDate());
+								System.out.println("validate commit id: " + validateCommit.getId());
+								System.out.println("latest covered tag date: " + latestCoveredTag.getDate());
+								System.out.println("latest covered tag id: " + latestCoveredTag.getId());
+								beforeRelease = validateCommit.getDate().before(latestCoveredTag.getDate());
+							}
+							long elapsedDays = (detectCommitTime - validateCommitTime) / (1000 * 60 * 60 * 24);
+							beforeReleaseResults.put(detectHtml, beforeRelease);
+							elapsedDaysResults.put(detectHtml, elapsedDays);
 							positive++;
 							negative_flag = false;
 							break;
@@ -551,20 +596,27 @@ public class CLI {
 				}
 				if (negative_flag) {
 					negative++;
-					System.out.println(patternFromId(detect_record.get(5)) + ":"
-							+ "http://mzw.jp/yuta/research/vtr/results/tmp/20161212/visual/html/origin/"
-							+ detect_record.get(0) + ":" + detect_record.get(1)
-							+ ":" + detect_record.get(2) + ":" + detect_record.get(3) + ".html");
 				}
 				negative_flag = true;
 			}
-			//System.out.println("Subject: " + subject);
-			//System.out.println("Positive: " + positive);
-			//System.out.println("Negative: " + negative);
-			//System.out.println("False-Positive: " + false_positive);
-			//System.out.println("Limitation: " + limitation);
-			//System.out.println("Sum: " + (positive + negative + false_positive + limitation));
-			//System.out.println();
+			// write
+			StringBuilder builder = new StringBuilder();
+			builder.append("BeforeRelease").append(",");
+			builder.append("ElapsedDays").append("\n");
+			for (String key : beforeReleaseResults.keySet()) {
+				boolean beforeRelease = beforeReleaseResults.get(key);
+				long elapsedDays = elapsedDaysResults.get(key);
+				builder.append(beforeRelease).append(",");
+				builder.append(elapsedDays).append("\n");
+				System.out.println("Output!");
+			}
+			FileUtils.write(new File(new File(project.getOutputDir(), projectId), "detect_validate_compare.csv"), builder.toString());
+			System.out.println("Subject: " + projectId);
+			System.out.println("Positive: " + positive);
+			System.out.println("Negative: " + negative);
+			System.out.println("False-Positive: " + false_positive);
+			System.out.println("Limitation: " + limitation);
+			System.out.println("Sum: " + (positive + negative + false_positive + limitation));
 		}
 	}
 
@@ -759,6 +811,34 @@ public class CLI {
 			return "FalsePositive";
 		} else {
 			return "Limitation";
+		}
+	}
+	private static List<String> getCoveredLinesLatestTag(File file) throws IOException {
+		String content = FileUtils.readFileToString(file);
+		List<String> ret = new ArrayList<>();
+		Document document = Jsoup.parse(content, "", Parser.xmlParser());
+		Elements tbodys = document.select("tbody");
+		Elements trs = new Elements();
+		for (int i = 1; i < tbodys.size(); i++) {
+			trs.addAll(tbodys.get(i).select("tr.target"));
+		}
+		Elements tds = new Elements();
+		for (Element tr : trs) {
+			tds.add(tr.select("td").first());
+		}
+		Elements hrefs = tds.select("a[href]");
+		for (Element href : hrefs) {
+			ret.add((href.text()));
+		}
+		return ret;
+	}
+
+	class DetectValidateResult {
+		boolean beforeRelease;
+		long elapsedTime;
+		DetectValidateResult(boolean beforeRelease, long elapsedTime) {
+			this.beforeRelease = beforeRelease;
+			this.elapsedTime = elapsedTime;
 		}
 	}
 }
