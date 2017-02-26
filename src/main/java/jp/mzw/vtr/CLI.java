@@ -617,6 +617,153 @@ public class CLI {
 			System.out.println("False-Positive: " + false_positive);
 			System.out.println("Limitation: " + limitation);
 			System.out.println("Sum: " + (positive + negative + false_positive + limitation));
+		} else if ("improved-version2".equals(type)) {
+			// Get records
+			String path_to_file = args[0];
+			String subject = args[1];
+			File file = new File(path_to_file);
+			String content = FileUtils.readFileToString(file);
+			CSVParser parser = CSVParser.parse(content, CSVFormat.DEFAULT);
+			List<CSVRecord> records = parser.getRecords();
+			// Traverse
+			String fileName = file.getName();
+			String evaluation = file.getParent();
+			StringBuilder builder = new StringBuilder();
+			if (evaluation.endsWith("mutation")) {
+				Map<CSVRecord, Double> improvedRecords = improvedMutationRecords(records);
+				DescriptiveStatistics stats1 = new DescriptiveStatistics();
+				DescriptiveStatistics stats2 = new DescriptiveStatistics();
+				for (Map.Entry<CSVRecord, Double> entry : improvedRecords.entrySet()) {
+					CSVRecord record = entry.getKey();
+					double    num   = entry.getValue();
+					if (patternIdFromValidatorName(record.get(1)).equals("#1")) {
+						stats1.addValue(num);
+					} else if (patternIdFromValidatorName(record.get(1)).equals("#2")) {
+						stats2.addValue(num);
+					}
+				}
+				builder.append("#1").append(",").append("N").append(",").append("Average").append(",").append("StandardDeviation").append("\n");
+				builder.append(",").append(stats1.getN()).append(",").append(stats1.getSum() / stats1.getN()).append(",").append(stats1.getStandardDeviation()).append("\n");
+				builder.append("#2").append(",").append("N").append(",").append("Average").append(",").append("StandardDeviation").append("\n");
+				builder.append(",").append(stats2.getN()).append(",").append(stats2.getSum() / stats2.getN()).append(",").append(stats2.getStandardDeviation()).append("\n");
+				FileUtils.write(new File("/Users/yuta/Desktop/output/" + subject, "mutation_improve.csv"), builder.toString());
+			} else if (evaluation.endsWith("performance")) {
+				Map<CSVRecord, Pair<Double, Double>> improvedRecords = improvedPerformanceRecords(records);
+				Map<CSVRecord, Pair<Double, Double>> partiallyImprovedRecords = partiallyImprovedPerformanceRecords(records);
+				DescriptiveStatistics stats3 = new DescriptiveStatistics();
+				DescriptiveStatistics stats4 = new DescriptiveStatistics();
+				for (Map.Entry<CSVRecord, Pair<Double, Double>> entry : improvedRecords.entrySet()) {
+					CSVRecord record          = entry.getKey();
+					Pair<Double, Double> pair = entry.getValue();
+					double elapsedTimeImproveRate = pair.getLeft();
+					double usedMemoryImproveRate  = pair.getRight();
+					if (patternIdFromValidatorName(record.get(1)).equals("#3")) {
+						stats3.addValue(elapsedTimeImproveRate);
+					} else if (patternIdFromValidatorName(record.get(1)).equals("#4")) {
+						stats4.addValue(usedMemoryImproveRate);
+					}			
+				}
+				builder.append("#3").append(",").append("N").append(",").append("Average").append(",").append("StandardDeviation").append("\n");
+				builder.append(",").append(stats3.getN()).append(",").append(stats3.getSum() / stats3.getN()).append(",").append(stats3.getStandardDeviation()).append("\n");
+				builder.append("#4").append(",").append("N").append(",").append("Average").append(",").append("StandardDeviation").append("\n");
+				builder.append(",").append(stats4.getN()).append(",").append(stats4.getSum() / stats4.getN()).append(",").append(stats4.getStandardDeviation()).append("\n");
+				FileUtils.write(new File("/Users/yuta/Desktop/output/" + subject, "performance_improve.csv"), builder.toString());
+			} else if (evaluation.endsWith("output")) {
+				if (fileName.endsWith("compile.csv")) {
+					Map<CSVRecord, Double> improvedRecords = improvedCompileOutputRecords(records);
+					DescriptiveStatistics stats5 = new DescriptiveStatistics();
+					for (Map.Entry<CSVRecord, Double> entry : improvedRecords.entrySet()) {
+						CSVRecord record = entry.getKey();
+						double    rate   = entry.getValue();
+						if (patternIdFromValidatorName(record.get(1)).equals("#5")) {
+							stats5.addValue(rate);
+						}
+					}
+					builder.append("#5").append(",").append("N").append(",").append("Average").append(",").append("StandardDeviation").append("\n");
+					builder.append(",").append(stats5.getN()).append(",").append(stats5.getSum() / stats5.getN()).append(",").append(stats5.getStandardDeviation()).append("\n");
+					FileUtils.write(new File("/Users/yuta/Desktop/output/" + subject, "compile_improve.csv"), builder.toString());
+				
+				} else if (fileName.endsWith("runtime.csv")) {
+					Map<CSVRecord, Double> improvedRecords = improvedRuntimeOutputRecords(records);
+					DescriptiveStatistics stats6 = new DescriptiveStatistics();
+					for (Map.Entry<CSVRecord, Double> entry : improvedRecords.entrySet()) {
+						CSVRecord record = entry.getKey();
+						double    rate   = entry.getValue();
+						if (patternIdFromValidatorName(record.get(1)).equals("#6")) {
+							stats6.addValue(rate);
+						}
+					}
+					builder.append("#6").append(",").append("N").append(",").append("Average").append(",").append("StandardDeviation").append("\n");
+					builder.append(",").append(stats6.getN()).append(",").append(stats6.getSum() / stats6.getN()).append(",").append(stats6.getStandardDeviation()).append("\n");
+					FileUtils.write(new File("/Users/yuta/Desktop/output/" + subject, "runtime_improve.csv"), builder.toString());
+				} else if (fileName.endsWith("javadoc.csv")) {
+					Map<CSVRecord, Double> improvedRecords = improvedJavadocOutputRecords(records);
+					DescriptiveStatistics stats7 = new DescriptiveStatistics();
+					for (Map.Entry<CSVRecord, Double> entry : improvedRecords.entrySet()) {
+						CSVRecord record = entry.getKey();
+						double    rate   = entry.getValue();
+						if (patternIdFromValidatorName(record.get(1)).equals("#7")) {
+							stats7.addValue(rate);
+						}
+					}
+					builder.append("#7").append(",").append("N").append(",").append("Average").append(",").append("StandardDeviation").append("\n");
+					builder.append(",").append(stats7.getN()).append(",").append(stats7.getSum() / stats7.getN()).append(",").append(stats7.getStandardDeviation()).append("\n");
+					FileUtils.write(new File("/Users/yuta/Desktop/output/" + subject, "javadoc_improve.csv"), builder.toString());
+				}
+			} else if (evaluation.endsWith("readability")) {
+				Map<CSVRecord, Double> improvedRecords = improvedReadabilityRecords(records);
+				DescriptiveStatistics stats8 = new DescriptiveStatistics();
+				DescriptiveStatistics stats9 = new DescriptiveStatistics();
+				DescriptiveStatistics stats10 = new DescriptiveStatistics();
+				DescriptiveStatistics stats11 = new DescriptiveStatistics();
+				DescriptiveStatistics stats12 = new DescriptiveStatistics();
+				DescriptiveStatistics stats13 = new DescriptiveStatistics();
+				DescriptiveStatistics stats14 = new DescriptiveStatistics();
+				DescriptiveStatistics stats15 = new DescriptiveStatistics();
+				DescriptiveStatistics stats16 = new DescriptiveStatistics();
+				for (Map.Entry<CSVRecord, Double> entry : improvedRecords.entrySet()) {
+					CSVRecord record = entry.getKey();
+					double    rate   = entry.getValue();
+					if (patternIdFromValidatorName(record.get(1)).equals("#8")) {
+						stats8.addValue(rate);
+					} else if (patternIdFromValidatorName(record.get(1)).equals("#9")) {
+						stats9.addValue(rate);
+					} else if (patternIdFromValidatorName(record.get(1)).equals("#10")) {
+						stats10.addValue(rate);
+					} else if (patternIdFromValidatorName(record.get(1)).equals("#11")) {
+						stats11.addValue(rate);
+					} else if (patternIdFromValidatorName(record.get(1)).equals("#12")) {
+						stats12.addValue(rate);
+					} else if (patternIdFromValidatorName(record.get(1)).equals("#13")) {
+						stats13.addValue(rate);
+					} else if (patternIdFromValidatorName(record.get(1)).equals("#14")) {
+						stats14.addValue(rate);
+					} else if (patternIdFromValidatorName(record.get(1)).equals("#15")) {
+						stats15.addValue(rate);
+					} else if (patternIdFromValidatorName(record.get(1)).equals("#16")) {
+						stats16.addValue(rate);
+					}
+				}
+				builder.append("#8").append(",").append("N").append(",").append("Average").append(",").append("StandardDeviation").append("\n");
+				builder.append(",").append(stats8.getN()).append(",").append(stats8.getSum() / stats8.getN()).append(",").append(stats8.getStandardDeviation()).append("\n");
+				builder.append("#9").append(",").append("N").append(",").append("Average").append(",").append("StandardDeviation").append("\n");
+				builder.append(",").append(stats9.getN()).append(",").append(stats9.getSum() / stats9.getN()).append(",").append(stats9.getStandardDeviation()).append("\n");
+				builder.append("#10").append(",").append("N").append(",").append("Average").append(",").append("StandardDeviation").append("\n");
+				builder.append(",").append(stats10.getN()).append(",").append(stats10.getSum() / stats10.getN()).append(",").append(stats10.getStandardDeviation()).append("\n");
+				builder.append("#11").append(",").append("N").append(",").append("Average").append(",").append("StandardDeviation").append("\n");
+				builder.append(",").append(stats11.getN()).append(",").append(stats11.getSum() / stats11.getN()).append(",").append(stats11.getStandardDeviation()).append("\n");
+				builder.append("#12").append(",").append("N").append(",").append("Average").append(",").append("StandardDeviation").append("\n");
+				builder.append(",").append(stats12.getN()).append(",").append(stats12.getSum() / stats12.getN()).append(",").append(stats12.getStandardDeviation()).append("\n");
+				builder.append("#13").append(",").append("N").append(",").append("Average").append(",").append("StandardDeviation").append("\n");
+				builder.append(",").append(stats13.getN()).append(",").append(stats13.getSum() / stats13.getN()).append(",").append(stats13.getStandardDeviation()).append("\n");
+				builder.append("#14").append(",").append("N").append(",").append("Average").append(",").append("StandardDeviation").append("\n");
+				builder.append(",").append(stats14.getN()).append(",").append(stats14.getSum() / stats14.getN()).append(",").append(stats14.getStandardDeviation()).append("\n");
+				builder.append("#15").append(",").append("N").append(",").append("Average").append(",").append("StandardDeviation").append("\n");
+				builder.append(",").append(stats15.getN()).append(",").append(stats15.getSum() / stats15.getN()).append(",").append(stats15.getStandardDeviation()).append("\n");
+				builder.append("#16").append(",").append("N").append(",").append("Average").append(",").append("StandardDeviation").append("\n");
+				builder.append(",").append(stats16.getN()).append(",").append(stats16.getSum() / stats16.getN()).append(",").append(stats16.getStandardDeviation()).append("\n");
+				FileUtils.write(new File("/Users/yuta/Desktop/output/" + subject, "readability_improve.csv"), builder.toString());
+			}
 		}
 	}
 
@@ -629,7 +776,8 @@ public class CLI {
 			double beforeScore = Double.parseDouble(record.get(5));
 			double afterScore = Double.parseDouble(record.get(6));
 			double improveRate;
-			improveRate = (beforeScore != 0) ? (afterScore - beforeScore) / beforeScore * 100 : 100;
+			//improveRate = (beforeScore != 0) ? (afterScore - beforeScore) / beforeScore * 100 : 100;
+			improveRate = afterScore - beforeScore;
 			ret.put(record, improveRate);
 		}
 		return ret;
@@ -651,7 +799,7 @@ public class CLI {
 	private static Map<CSVRecord, Pair<Double, Double>> improvedPerformanceRecords(List<CSVRecord> records) {
 		Map<CSVRecord, Pair<Double, Double>> ret = new HashMap<>();
 		for (CSVRecord record : records) {
-			if (!record.get(4).equals("Improved")) {
+			if (!(record.get(4).equals("Improved") || record.get(4).equals("PartiallyImproved"))) {
 				continue;
 			}
 			double beforeElapsedTime = Double.parseDouble(record.get(5));
@@ -811,6 +959,53 @@ public class CLI {
 			return "FalsePositive";
 		} else {
 			return "Limitation";
+		}
+	}
+	private static String patternIdFromValidatorName(String validatorName) {
+		if (validatorName.endsWith("DoNotSwallowTestErrorsSilently") || validatorName.endsWith("AddFailStatementsForHandlingExpectedExceptions") ||
+				validatorName.endsWith("UseFailInsteadOfAssertTrueFalse")) {
+			return "#1";
+		} else if (validatorName.endsWith("AssertNotNullToInstances")) {
+			return "UseAssertArrayEqualsProperly";
+		} else if (validatorName.endsWith("UseProcessWaitfor")) {
+			return "#3";
+		} else if (validatorName.endsWith("CloseResources") || validatorName.endsWith("UseTryWithResources")) {
+			return "#4";
+		} else if (validatorName.endsWith("DeleteUnnecessaryAssignmenedVariables") || validatorName.endsWith("RemoveUnnecessaryCasts") ||
+				validatorName.endsWith("IntroduceAutoBoxing") || validatorName.endsWith("AddOverrideAnnotationToMethodsInConstructors") ||
+				validatorName.endsWith("AddOverrideAnnotationToTestCase") || validatorName.endsWith("AddSerialVersionUids") || validatorName.endsWith("AddSuppressWarningsDeprecationAnnotation") ||
+				validatorName.endsWith("AddSuppressWarningsRawtypesAnnotation") || validatorName.endsWith("AddSuppressWarningsUncheckedAnnotation")) {
+			return "#5";
+		} else if (validatorName.endsWith("RemovePrintStatements")) {
+			return "#6";
+		} else if (validatorName.endsWith("FixJavadocErrors") || validatorName.endsWith("ReplaceAtTodoWithTODO") || 
+				validatorName.endsWith("UseCodeAnnotationsAtJavaDoc")) {
+			return "#7";
+		} else if (validatorName.endsWith("AddTestAnnotations")) {
+			return "#8";
+		} else if (validatorName.endsWith("ModifyAssertImports")) {
+			return "#9";
+		} else if (validatorName.endsWith("UseAssertArrayEqualsProperly") || validatorName.endsWith("UseAssertEqualsProperly") ||
+				validatorName.endsWith("UseAssertFalseProperly") || validatorName.endsWith("UseAssertNotSameProperly") ||
+				validatorName.endsWith("UseAssertNullProperly") || validatorName.endsWith("UseAssertTrueProperly")) {
+			return "#10";
+		} else if (validatorName.endsWith("SwapActualExpectedValues")) {
+			return "#11";
+		} else if (validatorName.endsWith("HandleExpectedExecptionsProperly")) {
+			return "#12";
+		} else if (validatorName.endsWith("FormatCode") || validatorName.endsWith("ConvertForLoopsToEnhanced") ||
+				validatorName.endsWith("UseModifierFinalWherePossible") || validatorName.endsWith("AddExplicitBlocks") ||
+				validatorName.endsWith("UseThisIfNecessary") || validatorName.endsWith("UseDiamondOperators") ||
+				validatorName.endsWith("UseArithmeticAssignmentOperators") || validatorName.endsWith("RemoveUnusedExceptions")) {
+			return "#13";
+		} else if (validatorName.endsWith("AccessStaticFieldsAtDefinedSuperClass") || validatorName.endsWith("AccessStaticMethodsAtDefinedSuperClass")) {
+			return "#14";
+		} else if (validatorName.endsWith("AccessFilesProperly")) {
+			return "#15";
+		} else if (validatorName.endsWith("AddCastToNull")) {
+			return "#16";
+		} else {
+			return "#20";
 		}
 	}
 	private static List<String> getCoveredLinesLatestTag(File file) throws IOException {
