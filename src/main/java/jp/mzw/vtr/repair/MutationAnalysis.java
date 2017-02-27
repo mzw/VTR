@@ -29,9 +29,6 @@ import jp.mzw.vtr.validate.junit.AssertNotNullToInstances;
 public class MutationAnalysis extends EvaluatorBase {
 	protected static Logger LOGGER = LoggerFactory.getLogger(MutationAnalysis.class);
 
-	protected PitInstrumenter pi;
-	protected boolean modified;
-
 	String classesUnderTest;
 
 	Map<Repair, Result> results;
@@ -70,8 +67,8 @@ public class MutationAnalysis extends EvaluatorBase {
 	@Override
 	public void evaluateBefore(Repair repair) {
 		try {
-			pi = new PitInstrumenter(projectDir, classesUnderTest, repair.getTestCaseClassName());
-			modified = pi.instrument();
+			PitInstrumenter pi = new PitInstrumenter(projectDir, classesUnderTest, repair.getTestCaseClassName());
+			boolean modified = pi.instrument();
 
 			File dir = getBeforeDir(repair);
 			if (dir.exists()) {
@@ -81,6 +78,9 @@ public class MutationAnalysis extends EvaluatorBase {
 				int compile = MavenUtils.maven(this.projectDir, Arrays.asList("compile", "test-compile"), mavenHome, mavenOutput);
 				if (compile != 0) {
 					LOGGER.warn("Failed to compile: {} at {}", repair.getTestCaseFullName(), repair.getCommit().getId());
+					if (modified) {
+						pi.revert();
+					}
 					return;
 				}
 				MavenUtils.maven(this.projectDir, Arrays.asList("org.pitest:pitest-maven:mutationCoverage"), mavenHome, mavenOutput);
@@ -92,6 +92,9 @@ public class MutationAnalysis extends EvaluatorBase {
 					org.codehaus.plexus.util.FileUtils.deleteDirectory(resultDir);
 					LOGGER.info("Found PIT results: {}", resultDir.getPath());
 				}
+			}
+			if (modified) {
+				pi.revert();
 			}
 		} catch (IOException | DocumentException | MavenInvocationException e) {
 			LOGGER.warn("Failed to invoke PIT mutation testing: {} at {}", repair.getTestCaseClassName(), repair.getCommit().getId());
@@ -105,6 +108,8 @@ public class MutationAnalysis extends EvaluatorBase {
 			return;
 		}
 		try {
+			PitInstrumenter pi = new PitInstrumenter(projectDir, classesUnderTest, repair.getTestCaseClassName());
+			boolean modified = pi.instrument();
 			File dstPatchFile = new File(getAfterDir(repair), repair.getPatchFile().getName());
 			if (dstPatchFile.exists()) {
 				if (repair.isSameContent(dstPatchFile)) {
@@ -120,6 +125,9 @@ public class MutationAnalysis extends EvaluatorBase {
 			int compile = MavenUtils.maven(this.projectDir, Arrays.asList("compile", "test-compile"), mavenHome, mavenOutput);
 			if (compile != 0) {
 				LOGGER.warn("Failed to compile: {} at {}", repair.getTestCaseFullName(), repair.getCommit().getId());
+				if (modified) {
+					pi.revert();
+				}
 				return;
 			}
 			MavenUtils.maven(this.projectDir, Arrays.asList("org.pitest:pitest-maven:mutationCoverage"), mavenHome, mavenOutput);
@@ -133,7 +141,7 @@ public class MutationAnalysis extends EvaluatorBase {
 			if (modified) {
 				pi.revert();
 			}
-		} catch (IOException | MavenInvocationException e) {
+		} catch (IOException | DocumentException | MavenInvocationException e) {
 			LOGGER.warn("Failed to invoke PIT mutation testing: {} at {}", repair.getTestCaseClassName(), repair.getCommit().getId());
 		}
 	}
