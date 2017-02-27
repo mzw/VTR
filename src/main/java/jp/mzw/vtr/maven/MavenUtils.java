@@ -33,6 +33,7 @@ public class MavenUtils {
 	static Logger LOGGER = LoggerFactory.getLogger(MavenUtils.class);
 
 	public static final String FILENAME_POM = "pom.xml";
+	public static final int FAIL_TEST_WITHOUT_MUTATION = 10;
 
 	public static String getPomContent(File projectDir) throws IOException {
 		File pom = new File(projectDir, FILENAME_POM);
@@ -51,6 +52,8 @@ public class MavenUtils {
 	 * @throws MavenInvocationException
 	 */
 	public static int maven(File subject, List<String> goals, File mavenHome, final boolean logger) throws MavenInvocationException {
+		// TODO: quick implementation for fse17
+		final List<Boolean> failTestWithoutMutation = new ArrayList<>();
 		InvocationRequest request = new DefaultInvocationRequest();
 		request.setPomFile(new File(subject, FILENAME_POM));
 		request.setGoals(goals);
@@ -62,6 +65,9 @@ public class MavenUtils {
 				if (logger) {
 					LOGGER.info(line);
 				}
+				if (line.contains("did not pass without mutation.")) {
+					failTestWithoutMutation.add(true);
+				}
 			}
 		});
 		invoker.setErrorHandler(new InvocationOutputHandler() {
@@ -70,9 +76,15 @@ public class MavenUtils {
 				if (logger) {
 					LOGGER.warn(line);
 				}
+				if (line.contains("did not pass without mutation.")) {
+					failTestWithoutMutation.add(true);
+				}
 			}
 		});
 		InvocationResult result = invoker.execute(request);
+		if (!failTestWithoutMutation.isEmpty()) {
+			return FAIL_TEST_WITHOUT_MUTATION;
+		}
 		return result.getExitCode();
 	}
 

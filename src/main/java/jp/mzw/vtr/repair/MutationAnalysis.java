@@ -130,7 +130,15 @@ public class MutationAnalysis extends EvaluatorBase {
 				}
 				return;
 			}
-			MavenUtils.maven(this.projectDir, Arrays.asList("org.pitest:pitest-maven:mutationCoverage"), mavenHome, mavenOutput);
+			int pit = MavenUtils.maven(this.projectDir, Arrays.asList("org.pitest:pitest-maven:mutationCoverage"), mavenHome, mavenOutput);
+			if (pit == MavenUtils.FAIL_TEST_WITHOUT_MUTATION) {
+				FileUtils.writeStringToFile(new File(getAfterDir(repair), "vtr_report.txt"), Integer.toString(MavenUtils.FAIL_TEST_WITHOUT_MUTATION));
+				FileUtils.copyFile(repair.getPatchFile(), dstPatchFile);
+				if (modified) {
+					pi.revert();
+				}
+				return;
+			}
 			for (File resultDir : PitInstrumenter.getPitResultsDir(this.projectDir)) {
 				org.codehaus.plexus.util.FileUtils.copyDirectoryStructure(resultDir, getAfterDir(repair));
 				org.codehaus.plexus.util.FileUtils.deleteDirectory(resultDir);
@@ -150,26 +158,37 @@ public class MutationAnalysis extends EvaluatorBase {
 	public void compare(Repair repair) {
 		File beforeFile = new File(getBeforeDir(repair), "index.html");
 		File afterFile = new File(getAfterDir(repair), "index.html");
-		if (!beforeFile.exists() || !afterFile.exists()) {
+		if (!beforeFile.exists()) {
 			repair.setStatus(this, Repair.Status.Broken);
 			results.put(repair, new Result(-1, -1));
 			return;
 		}
-		try {
-			int before = getNumOfKilledMutants(beforeFile);
-			int after = getNumOfKilledMutants(afterFile);
-			if (before < after) {
-				repair.setStatus(this, Repair.Status.Improved);
-			} else if (before > after) {
-				repair.setStatus(this, Repair.Status.Degraded);
-			} else {
-				repair.setStatus(this, Repair.Status.Stay);
+		if (afterFile.exists()) {
+			try {
+				int before = getNumOfKilledMutants(beforeFile);
+				int after = getNumOfKilledMutants(afterFile);
+				if (before < after) {
+					repair.setStatus(this, Repair.Status.Improved);
+				} else if (before > after) {
+					repair.setStatus(this, Repair.Status.Degraded);
+				} else {
+					repair.setStatus(this, Repair.Status.Stay);
+				}
+				results.put(repair, new Result(before, after));
+			} catch (IOException e) {
+				LOGGER.warn("Failed to read files: {}", e.getMessage());
+				repair.setStatus(this, Repair.Status.Broken);
+				results.put(repair, new Result(-1, -1));
 			}
-			results.put(repair, new Result(before, after));
-		} catch (IOException e) {
-			LOGGER.warn("Failed to read files: {}", e.getMessage());
-			repair.setStatus(this, Repair.Status.Broken);
-			results.put(repair, new Result(-1, -1));
+		} else {
+			afterFile = new File(getAfterDir(repair), "vtr_report.txt");
+			if (afterFile.exists()) {
+				repair.setStatus(this, Repair.Status.Improved);
+				results.put(repair, new Result(-100, -100));
+			} else {
+				repair.setStatus(this, Repair.Status.Broken);
+				results.put(repair, new Result(-1, -1));
+			}
 		}
 	}
 
