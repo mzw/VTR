@@ -84,7 +84,6 @@ public class DoNotSwallowTestErrorsSilently extends SimpleValidatorBase {
 		for (ASTNode detect : detect(commit, tc, results)) {
 			TryStatement node = (TryStatement) detect;
 			// skip if try-with-resource
-            System.out.println("Here!");
 			if (!node.resources().isEmpty()) {
 				return origin;
 			}
@@ -96,7 +95,6 @@ public class DoNotSwallowTestErrorsSilently extends SimpleValidatorBase {
 			if (node.catchClauses() == null) {
 				return origin;
 			}
-			System.out.println("Here?");
 			for (CatchClause cc : (List<CatchClause>) node.catchClauses()) {
 				for (Comment comment : tc.getComments()) {
 					// no statements in this catch clauses

@@ -29,9 +29,6 @@ import jp.mzw.vtr.validate.junit.AssertNotNullToInstances;
 public class MutationAnalysis extends EvaluatorBase {
 	protected static Logger LOGGER = LoggerFactory.getLogger(MutationAnalysis.class);
 
-	protected PitInstrumenter pi;
-	protected boolean modified;
-
 	String classesUnderTest;
 
 	Map<Repair, Result> results;
@@ -70,8 +67,8 @@ public class MutationAnalysis extends EvaluatorBase {
 	@Override
 	public void evaluateBefore(Repair repair) {
 		try {
-			pi = new PitInstrumenter(projectDir, classesUnderTest, repair.getTestCaseClassName());
-			modified = pi.instrument();
+			PitInstrumenter pi = new PitInstrumenter(projectDir, classesUnderTest, repair.getTestCaseClassName());
+			boolean modified = pi.instrument();
 
 			File dir = getBeforeDir(repair);
 			if (dir.exists()) {
@@ -81,6 +78,9 @@ public class MutationAnalysis extends EvaluatorBase {
 				int compile = MavenUtils.maven(this.projectDir, Arrays.asList("compile", "test-compile"), mavenHome, mavenOutput);
 				if (compile != 0) {
 					LOGGER.warn("Failed to compile: {} at {}", repair.getTestCaseFullName(), repair.getCommit().getId());
+					if (modified) {
+						pi.revert();
+					}
 					return;
 				}
 				MavenUtils.maven(this.projectDir, Arrays.asList("org.pitest:pitest-maven:mutationCoverage"), mavenHome, mavenOutput);
@@ -92,6 +92,9 @@ public class MutationAnalysis extends EvaluatorBase {
 					org.codehaus.plexus.util.FileUtils.deleteDirectory(resultDir);
 					LOGGER.info("Found PIT results: {}", resultDir.getPath());
 				}
+			}
+			if (modified) {
+				pi.revert();
 			}
 		} catch (IOException | DocumentException | MavenInvocationException e) {
 			LOGGER.warn("Failed to invoke PIT mutation testing: {} at {}", repair.getTestCaseClassName(), repair.getCommit().getId());
@@ -105,6 +108,8 @@ public class MutationAnalysis extends EvaluatorBase {
 			return;
 		}
 		try {
+			PitInstrumenter pi = new PitInstrumenter(projectDir, classesUnderTest, repair.getTestCaseClassName());
+			boolean modified = pi.instrument();
 			File dstPatchFile = new File(getAfterDir(repair), repair.getPatchFile().getName());
 			if (dstPatchFile.exists()) {
 				if (repair.isSameContent(dstPatchFile)) {
@@ -120,9 +125,20 @@ public class MutationAnalysis extends EvaluatorBase {
 			int compile = MavenUtils.maven(this.projectDir, Arrays.asList("compile", "test-compile"), mavenHome, mavenOutput);
 			if (compile != 0) {
 				LOGGER.warn("Failed to compile: {} at {}", repair.getTestCaseFullName(), repair.getCommit().getId());
+				if (modified) {
+					pi.revert();
+				}
 				return;
 			}
-			MavenUtils.maven(this.projectDir, Arrays.asList("org.pitest:pitest-maven:mutationCoverage"), mavenHome, mavenOutput);
+			int pit = MavenUtils.maven(this.projectDir, Arrays.asList("org.pitest:pitest-maven:mutationCoverage"), mavenHome, mavenOutput);
+			if (pit == MavenUtils.FAIL_TEST_WITHOUT_MUTATION) {
+				FileUtils.writeStringToFile(new File(getAfterDir(repair), "vtr_report.txt"), Integer.toString(MavenUtils.FAIL_TEST_WITHOUT_MUTATION));
+				FileUtils.copyFile(repair.getPatchFile(), dstPatchFile);
+				if (modified) {
+					pi.revert();
+				}
+				return;
+			}
 			for (File resultDir : PitInstrumenter.getPitResultsDir(this.projectDir)) {
 				org.codehaus.plexus.util.FileUtils.copyDirectoryStructure(resultDir, getAfterDir(repair));
 				org.codehaus.plexus.util.FileUtils.deleteDirectory(resultDir);
@@ -133,7 +149,7 @@ public class MutationAnalysis extends EvaluatorBase {
 			if (modified) {
 				pi.revert();
 			}
-		} catch (IOException | MavenInvocationException e) {
+		} catch (IOException | DocumentException | MavenInvocationException e) {
 			LOGGER.warn("Failed to invoke PIT mutation testing: {} at {}", repair.getTestCaseClassName(), repair.getCommit().getId());
 		}
 	}
@@ -142,26 +158,37 @@ public class MutationAnalysis extends EvaluatorBase {
 	public void compare(Repair repair) {
 		File beforeFile = new File(getBeforeDir(repair), "index.html");
 		File afterFile = new File(getAfterDir(repair), "index.html");
-		if (!beforeFile.exists() || !afterFile.exists()) {
+		if (!beforeFile.exists()) {
 			repair.setStatus(this, Repair.Status.Broken);
 			results.put(repair, new Result(-1, -1));
 			return;
 		}
-		try {
-			int before = getNumOfKilledMutants(beforeFile);
-			int after = getNumOfKilledMutants(afterFile);
-			if (before < after) {
-				repair.setStatus(this, Repair.Status.Improved);
-			} else if (before > after) {
-				repair.setStatus(this, Repair.Status.Degraded);
-			} else {
-				repair.setStatus(this, Repair.Status.Stay);
+		if (afterFile.exists()) {
+			try {
+				int before = getNumOfKilledMutants(beforeFile);
+				int after = getNumOfKilledMutants(afterFile);
+				if (before < after) {
+					repair.setStatus(this, Repair.Status.Improved);
+				} else if (before > after) {
+					repair.setStatus(this, Repair.Status.Degraded);
+				} else {
+					repair.setStatus(this, Repair.Status.Stay);
+				}
+				results.put(repair, new Result(before, after));
+			} catch (IOException e) {
+				LOGGER.warn("Failed to read files: {}", e.getMessage());
+				repair.setStatus(this, Repair.Status.Broken);
+				results.put(repair, new Result(-1, -1));
 			}
-			results.put(repair, new Result(before, after));
-		} catch (IOException e) {
-			LOGGER.warn("Failed to read files: {}", e.getMessage());
-			repair.setStatus(this, Repair.Status.Broken);
-			results.put(repair, new Result(-1, -1));
+		} else {
+			afterFile = new File(getAfterDir(repair), "vtr_report.txt");
+			if (afterFile.exists()) {
+				repair.setStatus(this, Repair.Status.Improved);
+				results.put(repair, new Result(-100, -100));
+			} else {
+				repair.setStatus(this, Repair.Status.Broken);
+				results.put(repair, new Result(-1, -1));
+			}
 		}
 	}
 
