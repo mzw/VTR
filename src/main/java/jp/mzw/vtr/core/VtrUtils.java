@@ -13,6 +13,7 @@ import org.apache.commons.lang3.tuple.Pair;
 
 public class VtrUtils {
 
+	private static List<String> fse17Subjects;
 	/**
 	 * Make Collection corresponding to given Iterable
 	 * 
@@ -103,6 +104,48 @@ public class VtrUtils {
 		}
 		br.close();
 		return ret;
+	}
+
+	public static List<String> getFse17Subjects() {
+		if (fse17Subjects != null) {
+			return fse17Subjects;
+		} else {
+			fse17Subjects = new ArrayList<>();
+			fse17Subjects.add("commons-bcel");
+			fse17Subjects.add("commons-beanutils");
+			fse17Subjects.add("commons-bsf");
+			fse17Subjects.add("commons-chain");
+			fse17Subjects.add("commons-cli");
+			fse17Subjects.add("commons-codec");
+			fse17Subjects.add("commons-collections");
+			fse17Subjects.add("commons-compress");
+			fse17Subjects.add("commons-configuration");
+			fse17Subjects.add("commons-crypto");
+			fse17Subjects.add("commons-csv");
+			fse17Subjects.add("commons-dbcp");
+			fse17Subjects.add("commons-dbutils");
+			fse17Subjects.add("commons-digester");
+			fse17Subjects.add("commons-discovery");
+			fse17Subjects.add("commons-email");
+			fse17Subjects.add("commons-exec");
+			fse17Subjects.add("commons-fileupload");
+			fse17Subjects.add("commons-functor");
+			fse17Subjects.add("commons-imaging");
+			fse17Subjects.add("commons-io");
+			fse17Subjects.add("commons-jcs");
+			fse17Subjects.add("commons-jexl");
+			fse17Subjects.add("commons-jxpath");
+			fse17Subjects.add("commons-lang");
+			fse17Subjects.add("commons-logging");
+			fse17Subjects.add("commons-math");
+			fse17Subjects.add("commons-net");
+			fse17Subjects.add("commons-pool");
+			fse17Subjects.add("commons-proxy");
+			fse17Subjects.add("commons-rng");
+			fse17Subjects.add("commons-scxml");
+			fse17Subjects.add("commons-validator");
+		}
+		return fse17Subjects;
 	}
 	
 	public static final long Timeout = 3000;
