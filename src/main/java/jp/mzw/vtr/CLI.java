@@ -12,6 +12,7 @@ import jp.mzw.vtr.dict.*;
 import jp.mzw.vtr.dict.Dictionary;
 import jp.mzw.vtr.git.*;
 import jp.mzw.vtr.repair.Repair;
+import jp.mzw.vtr.repair.SimpleRepairEvaluator;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
@@ -259,7 +260,7 @@ public class CLI {
 	private static void repair(Project project)
 			throws IOException, ParseException, GitAPIException, MavenInvocationException, DocumentException, PatchFailedException {
 		// prepare
-		RepairEvaluator evaluator = new RepairEvaluator(project).parse();
+		RepairEvaluator evaluator = new SimpleRepairEvaluator(project).parse();
 		List<EvaluatorBase> evaluators = EvaluatorBase.getEvaluators(project);
 		// evaluate
 		evaluator.evaluate(evaluators);

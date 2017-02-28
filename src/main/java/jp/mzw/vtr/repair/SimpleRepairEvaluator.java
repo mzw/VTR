@@ -1,0 +1,88 @@
+package jp.mzw.vtr.repair;
+
+import java.io.File;
+import java.io.IOException;
+import java.text.ParseException;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.eclipse.jgit.api.errors.GitAPIException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import difflib.PatchFailedException;
+import jp.mzw.vtr.core.Project;
+import jp.mzw.vtr.git.CheckoutConductor;
+import jp.mzw.vtr.git.Commit;
+import jp.mzw.vtr.validate.ValidatorBase;
+
+public class SimpleRepairEvaluator extends RepairEvaluator {
+    protected static Logger LOGGER = LoggerFactory.getLogger(SimpleRepairEvaluator.class);
+
+    public SimpleRepairEvaluator(Project project) {
+        super(project);
+    }
+
+    public RepairEvaluator parse() throws IOException {
+        File projectDir = new File(this.outputDir, this.projectId);
+        File validateDir = new File(projectDir, ValidatorBase.VALIDATOR_DIRNAME);
+        if (!validateDir.exists()) {
+            LOGGER.info("Run Validator/PatchGenerator in advance");
+            return this;
+        }
+        for (File commitDir : validateDir.listFiles()) {
+            if (commitDir.isFile()) {
+                continue;
+            }
+            if ("results".equals(commitDir.getName())) {
+                continue;
+            }
+            String commitId = commitDir.getName();
+            for (File validatorDir : commitDir.listFiles()) {
+                String validatorName = validatorDir.getName();
+                for (File patch : validatorDir.listFiles()) {
+                    if (!patch.getName().endsWith(".patch")) {
+                        continue;
+                    }
+                    String[] name = patch.getName().replace(".patch", "").split("#");
+                    String clazz = name[0];
+                    String method = name[1];
+
+                    Repair repair = new Repair(new Commit(commitId, null), validatorName, patch);
+                    repair.setTestCaseNames(clazz, method);
+                    repairs.add(repair);
+                }
+            }
+        }
+        return this;
+    }
+
+    public void evaluate(List<EvaluatorBase> evaluators) throws GitAPIException, IOException, PatchFailedException, ParseException {
+        if (repairs.isEmpty()) {
+            parse();
+        }
+        for (Repair repair : repairs) {
+            repair.parse(projectDir);
+            for (EvaluatorBase each : evaluators) {
+                if (!include(each, repair)) {
+                    continue;
+                }
+                each.compare(repair);
+            }
+        }
+        // output
+        for (EvaluatorBase each : evaluators) {
+            each.output(repairs);
+        }
+    }
+
+    public static boolean include(EvaluatorBase evaluator, Repair repair) {
+        for (Class<? extends ValidatorBase> validator : evaluator.includeValidators()) {
+            String validatorName = validator.getName();
+            if (validatorName.equals(repair.getValidatorName())) {
+                return true;
+            }
+        }
+        return false;
+    }
+}
