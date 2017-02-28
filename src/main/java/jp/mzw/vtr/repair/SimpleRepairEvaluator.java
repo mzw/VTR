@@ -61,7 +61,19 @@ public class SimpleRepairEvaluator extends RepairEvaluator {
         if (repairs.isEmpty()) {
             parse();
         }
+        CheckoutConductor cc = new CheckoutConductor(projectId, projectDir, outputDir);
+        String curCommitId = null;
         for (Repair repair : repairs) {
+            Commit commit = repair.getCommit();
+            if (curCommitId == null) {
+                cc.checkout(commit);
+                curCommitId = commit.getId();
+            } else {
+                if (!curCommitId.equals(commit.getId())) {
+                    cc.checkout(commit);
+                    curCommitId = commit.getId();
+                }
+            }
             repair.parse(projectDir);
             for (EvaluatorBase each : evaluators) {
                 if (!include(each, repair)) {
@@ -69,6 +81,7 @@ public class SimpleRepairEvaluator extends RepairEvaluator {
                 }
                 each.compare(repair);
             }
+            repair.revert();
         }
         // output
         for (EvaluatorBase each : evaluators) {
