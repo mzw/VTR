@@ -3,7 +3,6 @@ package jp.mzw.vtr.repair;
 import java.io.File;
 import java.io.IOException;
 import java.text.ParseException;
-import java.util.ArrayList;
 import java.util.List;
 
 import org.eclipse.jgit.api.errors.GitAPIException;
@@ -16,6 +15,9 @@ import jp.mzw.vtr.git.CheckoutConductor;
 import jp.mzw.vtr.git.Commit;
 import jp.mzw.vtr.validate.ValidatorBase;
 
+/**
+ * Evaluate without compiling and test execution.
+ */
 public class SimpleRepairEvaluator extends RepairEvaluator {
     protected static Logger LOGGER = LoggerFactory.getLogger(SimpleRepairEvaluator.class);
 
