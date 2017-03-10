@@ -44,20 +44,7 @@ public class CLI {
 			SecurityException, ClassNotFoundException, InterruptedException {
 
 		if (args.length < 1) { // Invalid usage
-			LOGGER.info("$ java -cp=<class-path> jp.mzw.vtr.CLI dict      <subject-id>");
-			LOGGER.info("$ java -cp=<class-path> jp.mzw.vtr.CLI cov       <subject-id>");
-			LOGGER.info("$ java -cp=<class-path> jp.mzw.vtr.CLI cov       <subject-id> At    <commit-id>");
-			LOGGER.info("$ java -cp=<class-path> jp.mzw.vtr.CLI cov       <subject-id> After <commit-id>");
-			LOGGER.info("$ java -cp=<class-path> jp.mzw.vtr.CLI detect    <subject-id>");
-			LOGGER.info("$ java -cp=<class-path> jp.mzw.vtr.CLI detect    <subject-id> At    <commit-id>");
-			LOGGER.info("$ java -cp=<class-path> jp.mzw.vtr.CLI detect    <subject-id> After <commit-id>");
-			LOGGER.info("$ java -cp=<class-path> jp.mzw.vtr.CLI cluster   <similarity> <cluster-method> <threshold>");
-			LOGGER.info("$ java -cp=<class-path> jp.mzw.vtr.CLI visualize <method>");
-			LOGGER.info("$ java -cp=<class-path> jp.mzw.vtr.CLI validate  <subject-id>");
-			LOGGER.info("$ java -cp=<class-path> jp.mzw.vtr.CLI validate  <subject-id> At    <commit-id>");
-			LOGGER.info("$ java -cp=<class-path> jp.mzw.vtr.CLI validate  <subject-id> After <commit-id>");
-			LOGGER.info("$ java -cp=<class-path> jp.mzw.vtr.CLI gen       <subject-id>");
-			LOGGER.info("$ java -cp=<class-path> jp.mzw.vtr.CLI repair    <subject-id>");
+			help();
 			return;
 		}
 
@@ -83,6 +70,27 @@ public class CLI {
 		else if ("eval".equals(command)) {
 			EvalCommand.command(Arrays.copyOfRange(args, 1, args.length));
 		}
+		else {
+			help();
+			return;
+		}
 		LOGGER.info("Finished: {}", command);
+	}
+
+	private static void help() {
+		System.out.println("$ java -cp=<class-path> jp.mzw.vtr.CLI dict      <subject-id>");
+		System.out.println("$ java -cp=<class-path> jp.mzw.vtr.CLI cov       <subject-id>");
+		System.out.println("$ java -cp=<class-path> jp.mzw.vtr.CLI cov       <subject-id> At    <commit-id>");
+		System.out.println("$ java -cp=<class-path> jp.mzw.vtr.CLI cov       <subject-id> After <commit-id>");
+		System.out.println("$ java -cp=<class-path> jp.mzw.vtr.CLI detect    <subject-id>");
+		System.out.println("$ java -cp=<class-path> jp.mzw.vtr.CLI detect    <subject-id> At    <commit-id>");
+		System.out.println("$ java -cp=<class-path> jp.mzw.vtr.CLI detect    <subject-id> After <commit-id>");
+		System.out.println("$ java -cp=<class-path> jp.mzw.vtr.CLI cluster   <similarity> <cluster-method> <threshold>");
+		System.out.println("$ java -cp=<class-path> jp.mzw.vtr.CLI visualize <method>");
+		System.out.println("$ java -cp=<class-path> jp.mzw.vtr.CLI validate  <subject-id>");
+		System.out.println("$ java -cp=<class-path> jp.mzw.vtr.CLI validate  <subject-id> At    <commit-id>");
+		System.out.println("$ java -cp=<class-path> jp.mzw.vtr.CLI validate  <subject-id> After <commit-id>");
+		System.out.println("$ java -cp=<class-path> jp.mzw.vtr.CLI gen       <subject-id>");
+		System.out.println("$ java -cp=<class-path> jp.mzw.vtr.CLI repair    <subject-id>");
 	}
 }
