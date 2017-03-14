@@ -1,4 +1,4 @@
-package jp.mzw.vtr.eval;
+package jp.mzw.vtr.command.eval;
 
 import java.io.File;
 import java.io.IOException;
@@ -17,12 +17,20 @@ import jp.mzw.vtr.repair.Repair;
 
 public class PatchImprovement extends EvalBase {
 
-	public static final String OUTPUT_DIR = "/Users/yuta/Desktop/output-for-validator/20170220-repair";
-	public static final String OUTPUT_REPAIR_DIR = "/Users/yuta/Desktop/output-for-validator/20170230-repair";
-	public static final String PATH_TO_OUTPUT = "/Users/yuta/Dropbox/research/mypaper/draft/fse17vtr/tex/table/results-repair-content.tex";
-	public static final String PATH_TO_OUTPUT_SUMMARY = "/Users/yuta/Dropbox/research/mypaper/draft/fse17vtr/tex/table/results-repair-content-summary.tex";
+	public static final String RESULTS_REPAIR_CONTENT_FILENAME = "results-repair-content.tex";
+	public static final String RESULTS_REPAIR_CONTENT_SUMMARY_FILENAME = "results-repair-content.tex";
 
-	public static void main(String[] args) throws IOException {
+	/**
+	 * 
+	 * 
+	 * @param src
+	 *            path to output directory
+	 * @param dst
+	 *            path to directory where this method outputs results in LaTeX
+	 *            format
+	 * @throws IOException
+	 */
+	public static void evalPatchImprovement(String src, String dst) throws IOException {
 		StringBuilder builder = new StringBuilder();
 
 		int Nf = 0;
@@ -32,11 +40,11 @@ public class PatchImprovement extends EvalBase {
 		DescriptiveStatistics R = new DescriptiveStatistics();
 
 		for (Subject subject : subjects) {
-			Map<Pattern, Integer> adequacyWhenFail = evalAdequacyForFailingTestCase(subject);
-			Map<Pattern, List<Double>> adequacy = evalAdequacy(subject);
-			Map<Pattern, List<Double>> performance = evalPerformance(subject);
-			Map<Pattern, List<Double>> outputs = evalConciseOutputs(subject);
-			Map<Pattern, List<Double>> readability = evalReadability(subject);
+			Map<Pattern, Integer> adequacyWhenFail = evalAdequacyForFailingTestCase(subject, src);
+			Map<Pattern, List<Double>> adequacy = evalAdequacy(subject, src);
+			Map<Pattern, List<Double>> performance = evalPerformance(subject, src);
+			Map<Pattern, List<Double>> outputs = evalConciseOutputs(subject, src);
+			Map<Pattern, List<Double>> readability = evalReadability(subject, src);
 
 			builder.append(subject.getName()).append(" & ");
 			for (int p = 1; p <= 16; p++) {
@@ -51,9 +59,7 @@ public class PatchImprovement extends EvalBase {
 						}
 					}
 					if (all == 0) {
-//						builder.append("--").append(" & ");
 					} else {
-//						builder.append(all).append(" & ");
 						Nf += all;
 					}
 				}
@@ -73,11 +79,9 @@ public class PatchImprovement extends EvalBase {
 						A.addValue(elm);
 					}
 					if (stat.getN() == 0 || stat.getMean() == 0) {
-//						builder.append("--").append(" & ").append("--").append(" & ").append("--").append(" & ");
 						builder.append("--").append(" & ").append("--").append(" & ");
 					} else {
-						builder.append(stat.getN()).append(" & ").append(String.format("%.1f", stat.getMean() * 100)).append("\\% & ");//(")
-//						.append(String.format("%.1f", stat.getStandardDeviation() * 100)).append("\\%)").append(" & ");
+						builder.append(stat.getN()).append(" & ").append(String.format("%.1f", stat.getMean() * 100)).append("\\% & ");
 					}
 				}
 
@@ -96,11 +100,9 @@ public class PatchImprovement extends EvalBase {
 						P.addValue(elm);
 					}
 					if (stat.getN() == 0 || stat.getMean() == 0) {
-//						builder.append("--").append(" & ").append("--").append(" & ").append("--").append(" & ");
 						builder.append("--").append(" & ").append("--").append(" & ");
 					} else {
-						builder.append(stat.getN()).append(" & ").append(String.format("%.1f", stat.getMean() * 100)).append("\\% & ");//(")
-//						.append(String.format("%.1f", stat.getStandardDeviation() * 100)).append("\\%)").append(" & ");
+						builder.append(stat.getN()).append(" & ").append(String.format("%.1f", stat.getMean() * 100)).append("\\% & ");
 					}
 				}
 
@@ -119,11 +121,9 @@ public class PatchImprovement extends EvalBase {
 						O.addValue(elm);
 					}
 					if (stat.getN() == 0 || stat.getMean() == 0) {
-//						builder.append("--").append(" & ").append("--").append(" & ").append("--").append(" & ");
 						builder.append("--").append(" & ").append("--").append(" & ");
 					} else {
-						builder.append(stat.getN()).append(" & ").append(String.format("%.1f", stat.getMean() * 100)).append("\\% & ");//(")
-//						.append(String.format("%.1f", stat.getStandardDeviation() * 100)).append("\\%)").append(" & ");
+						builder.append(stat.getN()).append(" & ").append(String.format("%.1f", stat.getMean() * 100)).append("\\% & ");
 					}
 				}
 
@@ -142,11 +142,9 @@ public class PatchImprovement extends EvalBase {
 						R.addValue(elm);
 					}
 					if (stat.getN() == 0 || stat.getMean() == 0) {
-//						builder.append("--").append(" & ").append("--").append(" & ").append("--").append(" & ");
 						builder.append("--").append(" & ").append("--").append(" & ");
 					} else {
-						builder.append(stat.getN()).append(" & ").append(String.format("%.1f", stat.getMean() * 100)).append("\\% & ");//(")
-//								.append(String.format("%.1f", stat.getStandardDeviation() * 100)).append("\\%)").append(" & ");
+						builder.append(stat.getN()).append(" & ").append(String.format("%.1f", stat.getMean() * 100)).append("\\% & ");
 					}
 				}
 
@@ -154,7 +152,7 @@ public class PatchImprovement extends EvalBase {
 			builder.append(" \\\\\n");
 		}
 
-		FileUtils.writeStringToFile(new File(PATH_TO_OUTPUT), builder.toString());
+		FileUtils.writeStringToFile(new File(dst, RESULTS_REPAIR_CONTENT_FILENAME), builder.toString());
 
 		StringBuilder summary = new StringBuilder();
 		summary.append("& \\multicolumn{4}{c|}{sum($N$) = ").append(A.getN()).append("}\n");
@@ -166,14 +164,15 @@ public class PatchImprovement extends EvalBase {
 		summary.append("& \\multicolumn{4}{c|}{ave($P$) = ").append(String.format("%.1f", P.getMean() * 100)).append("\\%}\n");
 		summary.append("& \\multicolumn{6}{c|}{ave($O$) = ").append(String.format("%.1f", O.getMean() * 100)).append("\\%}\n");
 		summary.append("& \\multicolumn{18}{c}{ave($R$) = ").append(String.format("%.1f", R.getMean() * 100)).append("\\%}\n");
-		FileUtils.writeStringToFile(new File(PATH_TO_OUTPUT_SUMMARY), summary.toString());
+		FileUtils.writeStringToFile(new File(dst, RESULTS_REPAIR_CONTENT_SUMMARY_FILENAME), summary.toString());
 
+		System.out.println("Nf: " + Nf);
 	}
 
-	public static Map<Pattern, List<Double>> evalAdequacy(Subject subject) throws IOException {
+	private static Map<Pattern, List<Double>> evalAdequacy(Subject subject, String outputDir) throws IOException {
 		Map<Pattern, List<Double>> ret = new HashMap<>();
 
-		File subjectDir = new File(OUTPUT_REPAIR_DIR, subject.getId());
+		File subjectDir = new File(outputDir, subject.getId());
 		File repairDir = new File(subjectDir, "repair");
 		File dir = new File(repairDir, "mutation");
 		File file = new File(dir, "results.csv");
@@ -214,10 +213,10 @@ public class PatchImprovement extends EvalBase {
 		return ret;
 	}
 
-	public static Map<Pattern, Integer> evalAdequacyForFailingTestCase(Subject subject) throws IOException {
+	private static Map<Pattern, Integer> evalAdequacyForFailingTestCase(Subject subject, String outputDir) throws IOException {
 		Map<Pattern, Integer> ret = new HashMap<>();
 
-		File subjectDir = new File(OUTPUT_REPAIR_DIR, subject.getId());
+		File subjectDir = new File(outputDir, subject.getId());
 		File repairDir = new File(subjectDir, "repair");
 		File dir = new File(repairDir, "mutation");
 		File file = new File(dir, "results.csv");
@@ -252,10 +251,10 @@ public class PatchImprovement extends EvalBase {
 		return ret;
 	}
 
-	public static Map<Pattern, List<Double>> evalPerformance(Subject subject) throws IOException {
+	private static Map<Pattern, List<Double>> evalPerformance(Subject subject, String outputDir) throws IOException {
 		Map<Pattern, List<Double>> ret = new HashMap<>();
 
-		File subjectDir = new File(OUTPUT_DIR, subject.getId());
+		File subjectDir = new File(outputDir, subject.getId());
 		File repairDir = new File(subjectDir, "repair");
 		File dir = new File(repairDir, "performance");
 		File file = new File(dir, "results.csv");
@@ -303,10 +302,10 @@ public class PatchImprovement extends EvalBase {
 		return ret;
 	}
 
-	public static Map<Pattern, List<Double>> evalConciseOutputs(Subject subject) throws IOException {
+	private static Map<Pattern, List<Double>> evalConciseOutputs(Subject subject, String outputDir) throws IOException {
 		Map<Pattern, List<Double>> ret = new HashMap<>();
 
-		File subjectDir = new File(OUTPUT_DIR, subject.getId());
+		File subjectDir = new File(outputDir, subject.getId());
 		File repairDir = new File(subjectDir, "repair");
 		File dir = new File(repairDir, "output");
 
@@ -404,10 +403,10 @@ public class PatchImprovement extends EvalBase {
 		return ret;
 	}
 
-	public static Map<Pattern, List<Double>> evalReadability(Subject subject) throws IOException {
+	private static Map<Pattern, List<Double>> evalReadability(Subject subject, String outputDir) throws IOException {
 		Map<Pattern, List<Double>> ret = new HashMap<>();
 
-		File subjectDir = new File(OUTPUT_DIR, subject.getId());
+		File subjectDir = new File(outputDir, subject.getId());
 		File repairDir = new File(subjectDir, "repair");
 		File dir = new File(repairDir, "readability");
 		File file = new File(dir, "results.csv");

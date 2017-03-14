@@ -1,7 +1,6 @@
 package jp.mzw.vtr.validate.junit;
 
 import java.io.IOException;
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,7 +29,8 @@ public class AssertNotNullToInstances extends SimpleValidatorBase {
 	}
 
 	@Override
-	protected List<ASTNode> detect(final Commit commit, final TestCase testcase, final Results results) throws IOException, MalformedTreeException, BadLocationException {
+	protected List<ASTNode> detect(final Commit commit, final TestCase testcase, final Results results)
+			throws IOException, MalformedTreeException, BadLocationException {
 		final List<ASTNode> ret = new ArrayList<>();
 		if (Version.parse("4").compareTo(ValidatorBase.getJunitVersion(projectDir)) < 0) {
 			return ret;
@@ -43,20 +43,23 @@ public class AssertNotNullToInstances extends SimpleValidatorBase {
 				// Check whether unused
 				// TODO from compile results
 				if ("SuppressWarnings".equals(type) && "unused".equals(member)) {
-				    if ((node.getParent() instanceof VariableDeclarationStatement)) {
+					if ((node.getParent() instanceof VariableDeclarationStatement)) {
 						VariableDeclarationStatement statement = (VariableDeclarationStatement) node.getParent();
-						for (VariableDeclarationFragment fragment : (List<VariableDeclarationFragment>) statement.fragments()) {
+						for (Object object : statement.fragments()) {
+							VariableDeclarationFragment fragment = (VariableDeclarationFragment) object;
 							ret.add(fragment);
 						}
 					} else if ((node.getParent()) instanceof MethodDeclaration) {
 						MethodDeclaration method = (MethodDeclaration) node.getParent();
-						for (Statement statement : (List<Statement>) method.getBody().statements()) {
+						for (Object object : method.getBody().statements()) {
+							Statement statement = (Statement) object;
 							if (statement instanceof ExpressionStatement) {
 								Expression expression = ((ExpressionStatement) statement).getExpression();
 								if (expression instanceof ClassInstanceCreation) {
 									ClassInstanceCreation creation = (ClassInstanceCreation) expression;
 									if (creation.getExpression() == null) {
-										// add ClassInstanceCreation without assignment, e.g. 'new PoolUtils();'
+										// add ClassInstanceCreation without
+										// assignment, e.g. 'new PoolUtils();'
 										ret.add(creation);
 									}
 								}
@@ -82,11 +85,13 @@ public class AssertNotNullToInstances extends SimpleValidatorBase {
 		for (ASTNode detect : detect(commit, testcase, results)) {
 			if (detect instanceof VariableDeclarationFragment) {
 				VariableDeclarationFragment node = (VariableDeclarationFragment) detect;
-				MethodInvocation method = (MethodInvocation) rewrite.createStringPlaceholder("Assert.assertNotNull(" + node.getInitializer().toString() + ");", ASTNode.METHOD_INVOCATION);
+				MethodInvocation method = (MethodInvocation) rewrite.createStringPlaceholder("Assert.assertNotNull(" + node.getInitializer().toString() + ");",
+						ASTNode.METHOD_INVOCATION);
 				rewrite.replace(node.getParent(), method, null);
 			} else if (detect instanceof ClassInstanceCreation) {
 				ClassInstanceCreation node = (ClassInstanceCreation) detect;
-				MethodInvocation method = (MethodInvocation) rewrite.createStringPlaceholder("Assert.assertNotNull(" + node.toString() + ");", ASTNode.METHOD_INVOCATION);
+				MethodInvocation method = (MethodInvocation) rewrite.createStringPlaceholder("Assert.assertNotNull(" + node.toString() + ");",
+						ASTNode.METHOD_INVOCATION);
 				rewrite.replace(node.getParent(), method, null);
 			}
 		}

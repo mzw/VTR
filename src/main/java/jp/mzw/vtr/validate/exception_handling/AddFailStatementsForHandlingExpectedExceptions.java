@@ -30,7 +30,8 @@ public class AddFailStatementsForHandlingExpectedExceptions extends SimpleValida
 	}
 
 	@Override
-	protected List<ASTNode> detect(final Commit commit, final TestCase tc, final Results results) throws IOException, MalformedTreeException, BadLocationException {
+	protected List<ASTNode> detect(final Commit commit, final TestCase tc, final Results results)
+			throws IOException, MalformedTreeException, BadLocationException {
 		final List<ASTNode> ret = new ArrayList<>();
 		if (Version.parse("4").compareTo(ValidatorBase.getJunitVersion(projectDir)) < 0) {
 			return ret;
@@ -118,7 +119,8 @@ public class AddFailStatementsForHandlingExpectedExceptions extends SimpleValida
 
 	@SuppressWarnings("unchecked")
 	@Override
-	protected String getModified(String origin, final Commit commit, final TestCase tc, final Results results) throws IOException, MalformedTreeException, BadLocationException {
+	protected String getModified(String origin, final Commit commit, final TestCase tc, final Results results)
+			throws IOException, MalformedTreeException, BadLocationException {
 		// prepare
 		CompilationUnit cu = tc.getCompilationUnit();
 		AST ast = cu.getAST();
@@ -160,7 +162,8 @@ public class AddFailStatementsForHandlingExpectedExceptions extends SimpleValida
 		if (node.catchClauses() == null) {
 			return false;
 		}
-		for (CatchClause cc : (List<CatchClause>) node.catchClauses()) {
+		for (Object object : node.catchClauses()) {
+			CatchClause cc = (CatchClause) object;
 			// catch clauses have only "return;"
 			if (cc.getBody().statements().size() == 1 && cc.getBody().statements().get(0) instanceof ReturnStatement
 					&& ((ReturnStatement) cc.getBody().statements().get(0)).getExpression() == null) {
@@ -174,11 +177,11 @@ public class AddFailStatementsForHandlingExpectedExceptions extends SimpleValida
 		if (target.catchClauses() == null) {
 			return false;
 		}
-		for (CatchClause cc : (List<CatchClause>) target.catchClauses()) {
+		for (Object object : target.catchClauses()) {
+			CatchClause cc = (CatchClause) object;
 			for (Comment comment : comments) {
 				// catch clauses have exception expecting comment.
-				if (ValidatorUtils.thisNodeHasThisComments(cc, comment) &&
-						expectExceptionComment(ValidatorUtils.comment(comment, source))) {
+				if (ValidatorUtils.thisNodeHasThisComments(cc, comment) && expectExceptionComment(ValidatorUtils.comment(comment, source))) {
 					return true;
 				}
 			}
@@ -189,11 +192,11 @@ public class AddFailStatementsForHandlingExpectedExceptions extends SimpleValida
 	public boolean target(TryStatement target, List<Comment> comments, String source) {
 		return onlyReturnCatchClause(target) || expectExceptionComment(target, comments, source);
 	}
+
 	public static boolean expectExceptionComment(String comment) {
 		String content = comment.toLowerCase();
-		return content.contains("expect") || content.contains("ignore") || content.contains("ok") ||
-				content.contains("should happen") || content.contains("do nothing") || content.contains("want") ||
-				content.contains("skip") || content.contains("should fail") || content.contains("good") ||
-				content.contains("success") || content.contains("should be") || content.contains("supported");
+		return content.contains("expect") || content.contains("ignore") || content.contains("ok") || content.contains("should happen")
+				|| content.contains("do nothing") || content.contains("want") || content.contains("skip") || content.contains("should fail")
+				|| content.contains("good") || content.contains("success") || content.contains("should be") || content.contains("supported");
 	}
 }

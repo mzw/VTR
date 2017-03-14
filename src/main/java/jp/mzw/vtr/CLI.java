@@ -1,38 +1,27 @@
 package jp.mzw.vtr;
 
-import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.text.ParseException;
-import java.util.*;
+import java.util.Arrays;
 
-import jp.mzw.vtr.command.*;
-import jp.mzw.vtr.dict.Dictionary;
-import jp.mzw.vtr.git.*;
-import jp.mzw.vtr.repair.Repair;
-import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVParser;
-import org.apache.commons.csv.CSVRecord;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Pair;
-import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.apache.maven.shared.invoker.MavenInvocationException;
 import org.dom4j.DocumentException;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.api.errors.NoHeadException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.jsoup.parser.Parser;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 
 import difflib.PatchFailedException;
-import jp.mzw.vtr.core.Project;
-import jp.mzw.vtr.maven.MavenUtils;
-import jp.mzw.vtr.maven.TestSuite;
+import jp.mzw.vtr.command.ClusterCommand;
+import jp.mzw.vtr.command.CovCommand;
+import jp.mzw.vtr.command.DetectCommand;
+import jp.mzw.vtr.command.DictCommand;
+import jp.mzw.vtr.command.EvalCommand;
+import jp.mzw.vtr.command.GenCommand;
+import jp.mzw.vtr.command.RepairCommand;
+import jp.mzw.vtr.command.ValidateCommand;
+import jp.mzw.vtr.command.VisualizeCommand;
 
 public class CLI {
 	static Logger LOGGER = LoggerFactory.getLogger(CLI.class);

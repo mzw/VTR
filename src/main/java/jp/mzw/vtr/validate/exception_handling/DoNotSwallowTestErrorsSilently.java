@@ -42,7 +42,8 @@ public class DoNotSwallowTestErrorsSilently extends SimpleValidatorBase {
 	}
 
 	@Override
-	protected List<ASTNode> detect(final Commit commit, final TestCase tc, final Results results) throws IOException, MalformedTreeException, BadLocationException {
+	protected List<ASTNode> detect(final Commit commit, final TestCase tc, final Results results)
+			throws IOException, MalformedTreeException, BadLocationException {
 		final List<ASTNode> ret = new ArrayList<>();
 		if (Version.parse("4").compareTo(ValidatorBase.getJunitVersion(projectDir)) < 0) {
 			return ret;
@@ -74,7 +75,8 @@ public class DoNotSwallowTestErrorsSilently extends SimpleValidatorBase {
 	}
 
 	@Override
-	protected String getModified(String origin, final Commit commit, final TestCase tc, final Results results) throws IOException, MalformedTreeException, BadLocationException {
+	protected String getModified(String origin, final Commit commit, final TestCase tc, final Results results)
+			throws IOException, MalformedTreeException, BadLocationException {
 		// prepare
 		CompilationUnit cu = tc.getCompilationUnit();
 		AST ast = cu.getAST();
@@ -95,11 +97,13 @@ public class DoNotSwallowTestErrorsSilently extends SimpleValidatorBase {
 			if (node.catchClauses() == null) {
 				return origin;
 			}
-			for (CatchClause cc : (List<CatchClause>) node.catchClauses()) {
+			for (Object object : node.catchClauses()) {
+				CatchClause cc = (CatchClause) object;
 				for (Comment comment : tc.getComments()) {
 					// no statements in this catch clauses
 					if (!(cc.getBody().statements() != null ||
-							// there are some statements in this catch clause, but all of them are print statement
+					// there are some statements in this catch clause, but all
+					// of them are print statement
 							(!cc.getBody().statements().isEmpty() && ValidatorUtils.onlyPrintMethodInvocation(cc)) ||
 							// catch clauses have exception expecting comment.
 							(ValidatorUtils.thisNodeHasThisComments(cc, comment) && todoComment(ValidatorUtils.comment(comment, origin))))) {
@@ -201,6 +205,7 @@ public class DoNotSwallowTestErrorsSilently extends SimpleValidatorBase {
 		}
 		return null;
 	}
+
 	public boolean todoComment(String comment) {
 		String content = comment.toLowerCase();
 		return content.contains("todo") || comment.contains("fix");
