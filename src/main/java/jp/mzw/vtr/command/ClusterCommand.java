@@ -19,10 +19,10 @@ import static jp.mzw.vtr.CLI.CONFIG_FILENAME;
  */
 public class ClusterCommand {
     public static void command(String... args) throws IOException, ParseException, NoHeadException, GitAPIException {
-        if (args.length == 4) {
-            String analyzer = args[1];
-            String strategy = args[2];
-            double threshold = Double.parseDouble(args[3]);
+        if (args.length == 3) {
+            String analyzer = args[0];
+            String strategy = args[1];
+            double threshold = Double.parseDouble(args[2]);
             cluster(new Project(null).setConfig(CONFIG_FILENAME), analyzer, strategy, threshold);
         } else {
             System.out.println("$ java -cp=<class-path> jp.mzw.vtr.CLI cluster <similarity> <cluster-method> <threshold>");
