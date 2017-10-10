@@ -95,6 +95,41 @@ abstract public class DistAnalyzer {
 		}
 		return ret;
 	}
+	
+	public static List<TestCaseModification> parseTestCaseModifications(final File outputDir, final List<String> skipProjectIdList) throws IOException {
+		List<TestCaseModification> ret = new ArrayList<>();
+		for (File outputProjectDir : outputDir.listFiles()) {
+			if (!outputProjectDir.isDirectory()) {
+				continue;
+			}
+			String projectId = outputProjectDir.getName();
+			if (skipProjectIdList.contains(projectId)) {
+				continue;
+			}
+			File outputDetectDir = new File(outputProjectDir, Detector.DETECT_DIR);
+			if (outputDetectDir.exists()) {
+				for (File outputCommitDir : outputDetectDir.listFiles()) {
+					if (!outputCommitDir.isDirectory()) {
+						continue;
+					}
+					String commitId = outputCommitDir.getName();
+					for (File file : outputCommitDir.listFiles()) {
+						if (!file.isFile()) {
+							continue;
+						}
+						String fullname = file.getName().replace(".xml", "");
+						String[] split = fullname.split("#");
+						String clazz = split[0];
+						String method = split[1];
+						// new and add
+						TestCaseModification tcm = new TestCaseModification(file, projectId, commitId, clazz, method);
+						ret.add(tcm);
+					}
+				}
+			}
+		}
+		return ret;
+	}
 
 	/**
 	 * Analyze similarity distance among test-case modifications

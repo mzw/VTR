@@ -19,6 +19,7 @@ import jp.mzw.vtr.command.DetectCommand;
 import jp.mzw.vtr.command.DictCommand;
 import jp.mzw.vtr.command.EvalCommand;
 import jp.mzw.vtr.command.GenCommand;
+import jp.mzw.vtr.command.MLCommand;
 import jp.mzw.vtr.command.RepairCommand;
 import jp.mzw.vtr.command.ValidateCommand;
 import jp.mzw.vtr.command.VisualizeCommand;
@@ -46,6 +47,8 @@ public class CLI {
 			DetectCommand.command(Arrays.copyOfRange(args, 1, args.length));
 		} else if ("cluster".equals(command)) {
 			ClusterCommand.command(Arrays.copyOfRange(args, 1, args.length));
+		} else if ("ml".equals(command)) {
+			MLCommand.command(Arrays.copyOfRange(args, 1, args.length));
 		} else if ("visualize".equals(command)) {
 			VisualizeCommand.command(Arrays.copyOfRange(args, 1, args.length));
 		} else if ("validate".equals(command)) {

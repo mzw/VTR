@@ -11,8 +11,12 @@ import java.util.Map;
 import org.apache.commons.io.FileUtils;
 import org.eclipse.jdt.core.dom.ASTNode;
 import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.errors.CheckoutConflictException;
 import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.api.errors.InvalidRefNameException;
 import org.eclipse.jgit.api.errors.NoHeadException;
+import org.eclipse.jgit.api.errors.RefAlreadyExistsException;
+import org.eclipse.jgit.api.errors.RefNotFoundException;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -71,6 +75,9 @@ public class TestCaseModification {
 	private String clazz;
 	private String method;
 	
+
+	private String commitAuthorName;
+	private String commitAuthorEmailAddress;
 	private String commitMessage;
 
 	public TestCaseModification(File file, String projectId, String commitId, String clazz, String method) throws IOException {
@@ -120,6 +127,42 @@ public class TestCaseModification {
 
 	public List<String> getOriginalNodeClasses() {
 		return this.originalNodeClasses;
+	}
+	
+	public TestCaseModification identifyCommit() throws IOException, RefAlreadyExistsException, RefNotFoundException, InvalidRefNameException, CheckoutConflictException, GitAPIException {
+		// TODO cache function
+		
+		Project project = new Project(this.projectId).setConfig(CLI.CONFIG_FILENAME);
+		Git git = GitUtils.getGit(project.getProjectDir());
+		git.checkout().setName(GitUtils.getRefToCompareBranch(git)).call();
+		Iterable<RevCommit> commits = git.log().call();
+		for (RevCommit commit : commits) {
+			if (commit.getId().name().equals(this.commitId)) {
+				this.commitAuthorName = commit.getAuthorIdent().getName();
+				this.commitAuthorEmailAddress = commit.getAuthorIdent().getEmailAddress();
+				this.commitMessage = commit.getFullMessage();
+				break;
+			}
+		}
+		return this;
+	}
+	
+	public String getCsvLineHeader() {
+		StringBuilder line = new StringBuilder();
+		line.append(this.projectId);
+		line.append(",");
+		line.append(this.commitId);
+		line.append(",");
+		line.append(this.clazz);
+		line.append(",");
+		line.append(this.method);
+		line.append(",");
+		
+		line.append(this.commitAuthorName);
+		line.append(",");
+		line.append(this.commitAuthorEmailAddress);
+		line.append(",");
+		return line.toString();
 	}
 	
 	public ProjectCommitPair parseCommitMessage(Map<ProjectCommitPair, String> parsed) throws IOException, NoHeadException, GitAPIException {
