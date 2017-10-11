@@ -1,18 +1,10 @@
 package jp.mzw.vtr;
 
-import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.text.ParseException;
 import java.util.Arrays;
 
-import org.apache.maven.shared.invoker.MavenInvocationException;
-import org.dom4j.DocumentException;
-import org.eclipse.jgit.api.errors.GitAPIException;
-import org.eclipse.jgit.api.errors.NoHeadException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import difflib.PatchFailedException;
 import jp.mzw.vtr.command.ClusterCommand;
 import jp.mzw.vtr.command.CovCommand;
 import jp.mzw.vtr.command.DetectCommand;
@@ -29,9 +21,7 @@ public class CLI {
 
 	public static final String CONFIG_FILENAME = "config.properties";
 
-	public static void main(String[] args) throws IOException, NoHeadException, GitAPIException, ParseException, MavenInvocationException, DocumentException,
-			PatchFailedException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException, NoSuchMethodException,
-			SecurityException, ClassNotFoundException, InterruptedException {
+	public static void main(String[] args) throws Exception {
 
 		if (args.length < 1) { // Invalid usage
 			help();
@@ -61,8 +51,7 @@ public class CLI {
 		// For us
 		else if ("eval".equals(command)) {
 			EvalCommand.command(Arrays.copyOfRange(args, 1, args.length));
-		}
-		else {
+		} else {
 			help();
 			return;
 		}

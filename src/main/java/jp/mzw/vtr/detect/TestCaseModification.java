@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -129,8 +130,21 @@ public class TestCaseModification {
 		return this.originalNodeClasses;
 	}
 	
+	private static final Map<String, Map<String, RevCommit>> commitCache = new HashMap<>();
 	public TestCaseModification identifyCommit() throws IOException, RefAlreadyExistsException, RefNotFoundException, InvalidRefNameException, CheckoutConflictException, GitAPIException {
 		// TODO cache function
+		Map<String, RevCommit> mapIdCommit = commitCache.get(this.projectId);
+		if (mapIdCommit == null) {
+			mapIdCommit = new HashMap<>();
+			commitCache.put(this.projectId, mapIdCommit);
+		}
+		RevCommit cachedCommit = mapIdCommit.get(this.commitId);
+		if (cachedCommit != null) {
+			this.commitAuthorName = cachedCommit.getAuthorIdent().getName();
+			this.commitAuthorEmailAddress = cachedCommit.getAuthorIdent().getEmailAddress();
+			this.commitMessage = cachedCommit.getFullMessage();
+			return this;
+		}
 		
 		Project project = new Project(this.projectId).setConfig(CLI.CONFIG_FILENAME);
 		Git git = GitUtils.getGit(project.getProjectDir());
@@ -141,6 +155,8 @@ public class TestCaseModification {
 				this.commitAuthorName = commit.getAuthorIdent().getName();
 				this.commitAuthorEmailAddress = commit.getAuthorIdent().getEmailAddress();
 				this.commitMessage = commit.getFullMessage();
+				// caching
+				mapIdCommit.put(this.commitId, commit);
 				break;
 			}
 		}

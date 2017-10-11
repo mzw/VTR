@@ -2,16 +2,12 @@ package jp.mzw.vtr.command;
 
 import static jp.mzw.vtr.CLI.CONFIG_FILENAME;
 
-import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.text.ParseException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
@@ -22,36 +18,38 @@ import org.apache.commons.lang3.StringEscapeUtils;
 import org.eclipse.jgit.api.errors.CheckoutConflictException;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.api.errors.InvalidRefNameException;
-import org.eclipse.jgit.api.errors.NoHeadException;
 import org.eclipse.jgit.api.errors.RefAlreadyExistsException;
 import org.eclipse.jgit.api.errors.RefNotFoundException;
 
+import jp.mzw.vtr.cluster.machine_larning.MachineLearning;
 import jp.mzw.vtr.cluster.similarity.DistAnalyzer;
 import jp.mzw.vtr.core.Project;
 import jp.mzw.vtr.detect.TestCaseModification;
 
 public class MLCommand {
 
-	public static void command(String... args) throws IOException, ParseException, NoHeadException, GitAPIException {
+	public static void command(String... args) throws Exception {
 		if (args.length == 1) {
 			String mode = args[0];
 			Project dummyProject = new Project(null).setConfig(CONFIG_FILENAME);
 
-			if ("csv".equals(mode)) {
+			if ("mkCsv".equals(mode)) {
 				List<TrainingData> data = readTrainingData();
 				String csv = makeCsv(dummyProject.getOutputDir(), data);
 				FileUtils.writeStringToFile(new File(dummyProject.getOutputDir(), "weka.csv"), csv);
 			} else if ("learn".equals(mode)) {
-				// TODO to be implemented
+				MachineLearning ml = new MachineLearning();
+				ml.learn(new FileInputStream(new File(dummyProject.getOutputDir(), "weka.csv")),
+						new FileInputStream(new File(dummyProject.getOutputDir(), "weka.csv")));
 			}
 		} else {
-			System.out.println("$ java -cp=<class-path> jp.mzw.vtr.CLI ml <mode: csv or learn>");
+			System.out.println("$ java -cp=<class-path> jp.mzw.vtr.CLI ml <mode: mkCsv or learn>");
 		}
 	}
 
 	private static List<TrainingData> readTrainingData() throws IOException {
 		List<TrainingData> ret = new ArrayList<>();
-		
+
 		InputStream is = MLCommand.class.getClassLoader().getResourceAsStream("training-data.csv");
 		String content = IOUtils.toString(is);
 		CSVParser parser = CSVParser.parse(content, CSVFormat.DEFAULT);
@@ -62,21 +60,21 @@ public class MLCommand {
 			String className = record.get(3);
 			String methodName = record.get(4);
 			String answer = record.get(5);
-			
+
 			TrainingData data = new TrainingData(projectId, commitId, className, methodName, answer);
 			ret.add(data);
 		}
-		
+
 		return ret;
 	}
-	
+
 	private static class TrainingData {
 		private final String projectId;
 		private final String commitId;
 		private final String className;
 		private final String methodName;
 		private final String answer;
-		
+
 		private TrainingData(final String projectId, final String commitId, final String className, final String methodName, final String answer) {
 			this.projectId = projectId;
 			this.commitId = commitId;
@@ -84,12 +82,10 @@ public class MLCommand {
 			this.methodName = methodName;
 			this.answer = answer;
 		}
-		
+
 		private boolean isSame(TestCaseModification tcm) {
-			if (tcm.getProjectId().equals(this.projectId) &&
-					tcm.getCommitId().equals(this.commitId) &&
-					tcm.getClassName().equals(this.className) &&
-					tcm.getMethodName().equals(this.methodName)) {
+			if (tcm.getProjectId().equals(this.projectId) && tcm.getCommitId().equals(this.commitId) && tcm.getClassName().equals(this.className)
+					&& tcm.getMethodName().equals(this.methodName)) {
 				return true;
 			}
 			return false;
@@ -102,45 +98,51 @@ public class MLCommand {
 		for (TestCaseModification tcm : tcmList) {
 			tcm.parse().identifyCommit();
 		}
-		Map<String, TestCaseModification> words = new HashMap<>();
-		Map<String, TestCaseModification> originalSyntaxes = new HashMap<>();
-		Map<String, TestCaseModification> revisedSyntaxes = new HashMap<>();
+		List<String> words = new ArrayList<>();
+		List<String> originalSyntaxes = new ArrayList<>();
+		List<String> revisedSyntaxes = new ArrayList<>();
 		for (TestCaseModification tcm : tcmList) {
-			for (String word : tcm.getCommitMessage().split(" ")) {
-				if ("\n".equals(word)) {
-					continue;
+			for (String word : makeWords(tcm.getCommitMessage())) {
+				if (!words.contains(word)) {
+					words.add(word);
 				}
-				words.put(word.trim().replace("\n", ""), tcm);
 			}
 			for (String syntax : tcm.getOriginalNodeClasses()) {
-				originalSyntaxes.put(syntax, tcm);
+				if (!originalSyntaxes.contains(syntax)) {
+					originalSyntaxes.add(syntax);
+				}
 			}
 			for (String syntax : tcm.getRevisedNodeClasses()) {
-				revisedSyntaxes.put(syntax, tcm);
+				if (!revisedSyntaxes.contains(syntax)) {
+					revisedSyntaxes.add(syntax);
+				}
 			}
 		}
 
 		StringBuilder csv = new StringBuilder();
-		csv.append("Subject").append(",");
-		csv.append("Commit").append(",");
-		csv.append("Class").append(",");
-		csv.append("Method").append(",");
-		csv.append("Answer").append(",");
-		
+		csv.append("VTR: Subject").append(",");
+		csv.append("VTR: Commit").append(",");
+		csv.append("VTR: Class").append(",");
+		csv.append("VTR: Method").append(",");
+		csv.append("VTR: AuthorName").append(",");
+		csv.append("VTR: AuthorEmailAddress").append(",");
+		csv.append("VTR: Answer").append(",");
+
 		// From counting data
-		for (String word : words.keySet()) {
-			csv.append(StringEscapeUtils.escapeCsv(word)).append(",");
+		for (String word : words) {
+			csv.append("word: " + StringEscapeUtils.escapeCsv(word)).append(",");
 		}
-		
-		for (String syntax : originalSyntaxes.keySet()) {
+
+		for (String syntax : originalSyntaxes) {
 			csv.append("origin: ").append(syntax).append(",");
 		}
 
-		for (String syntax : revisedSyntaxes.keySet()) {
+		for (String syntax : revisedSyntaxes) {
 			csv.append("revised: ").append(syntax).append(",");
 		}
-		csv.append("dummy");
-		
+		csv.append("VTR: dummy");
+		csv.append("\n");
+
 		String delim = "";
 		for (TestCaseModification tcm : tcmList) {
 			StringBuilder line = new StringBuilder();
@@ -152,11 +154,10 @@ public class MLCommand {
 				}
 			}
 
-			String[] myWords = tcm.getCommitMessage().split(" ");
-			for (String word : words.keySet()) {
+			for (String word : words) {
 				int count = 0;
-				for (String myWord : myWords) {
-					if (word.equals(myWord)) {
+				for (String mine : makeWords(tcm.getCommitMessage())) {
+					if (word.equals(mine)) {
 						count++;
 					}
 				}
@@ -164,7 +165,7 @@ public class MLCommand {
 				line.append(",");
 			}
 
-			for (String syntax : originalSyntaxes.keySet()) {
+			for (String syntax : originalSyntaxes) {
 				int count = 0;
 				for (String mine : tcm.getOriginalNodeClasses()) {
 					if (syntax.equals(mine)) {
@@ -173,7 +174,7 @@ public class MLCommand {
 				}
 				line.append(count).append(",");
 			}
-			for (String syntax : revisedSyntaxes.keySet()) {
+			for (String syntax : revisedSyntaxes) {
 				int count = 0;
 				for (String mine : tcm.getRevisedNodeClasses()) {
 					if (syntax.equals(mine)) {
@@ -182,14 +183,21 @@ public class MLCommand {
 				}
 				line.append(count).append(",");
 			}
-			line.append("dummy");
-			
+			line.append("VTR: dummy");
 
-			csv.append(line).append(delim);
+			csv.append(delim).append(line);
 			delim = "\n";
 		}
 
 		return csv.toString();
 	}
 
+	private static String[] makeWords(final String sentences) {
+		String[] candidates = sentences.split("\\s+");
+		String[] ret = new String[candidates.length];
+		for (int i = 0; i < candidates.length; i++) {
+			ret[i] = candidates[i].replaceAll("[^\\w]", "");
+		}
+		return ret;
+	}
 }
