@@ -27,6 +27,8 @@ import jp.mzw.vtr.core.Project;
 import jp.mzw.vtr.detect.TestCaseModification;
 
 public class MLCommand {
+	
+	public static final String FILENAME = "data.csv";
 
 	public static void command(String... args) throws Exception {
 		if (args.length == 1) {
@@ -36,11 +38,11 @@ public class MLCommand {
 			if ("mkCsv".equals(mode)) {
 				List<TrainingData> data = readTrainingData();
 				String csv = makeCsv(dummyProject.getOutputDir(), data);
-				FileUtils.writeStringToFile(new File(dummyProject.getOutputDir(), "weka.csv"), csv);
+				FileUtils.writeStringToFile(new File(dummyProject.getOutputDir(), FILENAME), csv);
 			} else if ("learn".equals(mode)) {
 				MachineLearning ml = new MachineLearning();
-				ml.learn(new FileInputStream(new File(dummyProject.getOutputDir(), "weka.csv")),
-						new FileInputStream(new File(dummyProject.getOutputDir(), "weka.csv")));
+				ml.learn(new FileInputStream(new File(dummyProject.getOutputDir(), FILENAME)),
+						new FileInputStream(new File(dummyProject.getOutputDir(), FILENAME)));
 			}
 		} else {
 			System.out.println("$ java -cp=<class-path> jp.mzw.vtr.CLI ml <mode: mkCsv or learn>");
@@ -137,13 +139,14 @@ public class MLCommand {
 			csv.append("origin: ").append(syntax).append(",");
 		}
 
+		String delim = "";
 		for (String syntax : revisedSyntaxes) {
-			csv.append("revised: ").append(syntax).append(",");
+			csv.append(delim).append("revised: ").append(syntax);
+			delim = ",";
 		}
-		csv.append("VTR: dummy");
 		csv.append("\n");
 
-		String delim = "";
+		delim = "";
 		for (TestCaseModification tcm : tcmList) {
 			StringBuilder line = new StringBuilder();
 			line.append(tcm.getCsvLineHeader());
@@ -174,6 +177,7 @@ public class MLCommand {
 				}
 				line.append(count).append(",");
 			}
+			String _delim = "";
 			for (String syntax : revisedSyntaxes) {
 				int count = 0;
 				for (String mine : tcm.getRevisedNodeClasses()) {
@@ -181,9 +185,9 @@ public class MLCommand {
 						count++;
 					}
 				}
-				line.append(count).append(",");
+				line.append(_delim).append(count);
+				_delim = ",";
 			}
-			line.append("VTR: dummy");
 
 			csv.append(delim).append(line);
 			delim = "\n";
