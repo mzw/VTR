@@ -70,6 +70,8 @@ public class TestCaseModification {
 	private File file;
 	private List<String> revisedNodeClasses;
 	private List<String> originalNodeClasses;
+	private List<String> revisedNodeClassesWithText;
+	private List<String> originalNodeClassesWithText;
 	
 	private String projectId;
 	private String commitId;
@@ -88,7 +90,9 @@ public class TestCaseModification {
 		this.clazz = clazz;
 		this.method = method;
 		this.revisedNodeClasses = new ArrayList<>();
+		this.revisedNodeClassesWithText = new ArrayList<>();
 		this.originalNodeClasses = new ArrayList<>();
+		this.originalNodeClassesWithText = new ArrayList<>();
 		parse();
 	}
 	
@@ -113,11 +117,15 @@ public class TestCaseModification {
 		Document document = Jsoup.parse(content, "", Parser.xmlParser());
 		for (Element element : document.select("RevisedNodes Node")) {
 			String clazz = element.attr("class");
+			String text = element.text();
 			revisedNodeClasses.add(clazz);
+			revisedNodeClassesWithText.add(clazz + ":" + text);
 		}
 		for (Element element : document.select("OriginalNodes Node")) {
 			String clazz = element.attr("class");
+			String text = element.text();
 			originalNodeClasses.add(clazz);
+			originalNodeClassesWithText.add(clazz + ":" + text);
 		}
 		return this;
 	}
@@ -126,8 +134,16 @@ public class TestCaseModification {
 		return this.revisedNodeClasses;
 	}
 
+	public List<String> getRevisedNodeClassesWithText() {
+		return this.revisedNodeClassesWithText;
+	}
+
 	public List<String> getOriginalNodeClasses() {
 		return this.originalNodeClasses;
+	}
+
+	public List<String> getOriginalNodeClassesWithText() {
+		return this.originalNodeClassesWithText;
 	}
 	
 	private static final Map<String, Map<String, RevCommit>> commitCache = new HashMap<>();

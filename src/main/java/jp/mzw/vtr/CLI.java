@@ -5,6 +5,7 @@ import java.util.Arrays;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import jp.mzw.vtr.command.ClassifyCommand;
 import jp.mzw.vtr.command.ClusterCommand;
 import jp.mzw.vtr.command.CovCommand;
 import jp.mzw.vtr.command.DetectCommand;
@@ -47,6 +48,8 @@ public class CLI {
 			GenCommand.command(Arrays.copyOfRange(args, 1, args.length));
 		} else if ("repair".equals(command)) {
 			RepairCommand.command(Arrays.copyOfRange(args, 1, args.length));
+		} else if ("classify".equals(command)) {
+			ClassifyCommand.command(Arrays.copyOfRange(args, 1, args.length));
 		}
 		// For us
 		else if ("eval".equals(command)) {
