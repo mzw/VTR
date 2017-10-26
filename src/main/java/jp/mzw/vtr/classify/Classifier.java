@@ -1,5 +1,6 @@
 package jp.mzw.vtr.classify;
 
+import jp.mzw.vtr.classify.pattern.UpgradeJUnit;
 import jp.mzw.vtr.classify.pattern.limitation.ReorganizeTestCases;
 import jp.mzw.vtr.cluster.similarity.LcsAnalyzer;
 import jp.mzw.vtr.core.Project;
@@ -44,6 +45,9 @@ public class Classifier {
     }
 
     private String filter(TestCaseModification testCaseModification) {
+        if (UpgradeJUnit.match(testCaseModification)) {
+            return "#1";
+        }
         if (FormatSourceCode.match(testCaseModification)) {
             return "#28";
         }
