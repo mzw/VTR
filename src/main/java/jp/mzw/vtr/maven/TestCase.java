@@ -24,11 +24,11 @@ public class TestCase {
 	TestSuite testSuite;
 
 	public TestCase(String name, String classname, MethodDeclaration method, CompilationUnit cu, TestSuite testSuite) {
-		this.name = name;
-		this.className = classname;
+		this.name        = name;
+		this.className   = classname;
 
 		this.method = method;
-		this.cu = cu;
+		this.cu     = cu;
 
 		this.testSuite = testSuite;
 	}
