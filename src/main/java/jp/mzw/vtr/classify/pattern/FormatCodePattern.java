@@ -1,16 +1,15 @@
 package jp.mzw.vtr.classify.pattern;
 
 import jp.mzw.vtr.detect.TestCaseModification;
-import org.eclipse.jdt.core.dom.ASTNode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
-public class FormatSourceCode {
-    static Logger LOGGER = LoggerFactory.getLogger(FormatSourceCode.class);
+public class FormatCodePattern {
+    static Logger LOGGER = LoggerFactory.getLogger(FormatCodePattern.class);
 
-    public FormatSourceCode() {}
+    public FormatCodePattern() {}
 
     static public boolean match(TestCaseModification testCaseModification) {
         // It doesn't affect AST structures at all to format source code.

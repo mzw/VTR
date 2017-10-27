@@ -1,11 +1,12 @@
 package jp.mzw.vtr.classify;
 
-import jp.mzw.vtr.classify.pattern.UpgradeJUnit;
+import jp.mzw.vtr.classify.pattern.AddTestAnnotationPattern;
+import jp.mzw.vtr.classify.pattern.FixJavadocErrorsPattern;
 import jp.mzw.vtr.classify.pattern.limitation.ReorganizeTestCases;
 import jp.mzw.vtr.cluster.similarity.LcsAnalyzer;
 import jp.mzw.vtr.core.Project;
 import jp.mzw.vtr.detect.TestCaseModification;
-import jp.mzw.vtr.classify.pattern.FormatSourceCode;
+import jp.mzw.vtr.classify.pattern.FormatCodePattern;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,10 +46,13 @@ public class Classifier {
     }
 
     private String filter(TestCaseModification testCaseModification) {
-        if (UpgradeJUnit.match(testCaseModification)) {
+        if (AddTestAnnotationPattern.match(testCaseModification)) {
             return "#1";
         }
-        if (FormatSourceCode.match(testCaseModification)) {
+        if (FixJavadocErrorsPattern.match(testCaseModification)) {
+            return "#25";
+        }
+        if (FormatCodePattern.match(testCaseModification)) {
             return "#28";
         }
         if (ReorganizeTestCases.match(testCaseModification)) {

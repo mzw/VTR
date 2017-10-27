@@ -13,7 +13,7 @@ public class ClassifyCommand {
     public static void command(String... args) throws IOException, GitAPIException {
         if (args.length == 0) {
             classify(new Project(null).setConfig(CLI.CONFIG_FILENAME));
-        } else if (args.length == 1) {
+        } else if (args.length == 1 && args[0].equals("true")) {
             classify(new Project(null).setConfig(CLI.CONFIG_FILENAME), true);
         } else {
             System.out.println("$ java -cp=<class-path> jp.mzw.vtr.CLI classify <isPrintScore>");

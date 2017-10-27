@@ -2,7 +2,7 @@ package jp.mzw.vtr.classify.pattern;
 
 import jp.mzw.vtr.detect.TestCaseModification;
 
-public class UpgradeJUnit {
+public class AddTestAnnotationPattern {
     static public boolean match(TestCaseModification testCaseModification) {
         for (String keyword : KEYWORDS) {
             if (testCaseModification.getCommitMessage().toLowerCase().contains(keyword)) {
