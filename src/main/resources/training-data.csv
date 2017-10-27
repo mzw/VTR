@@ -980,7 +980,7 @@ ID,Subject,Commit,Class,Method,Item
 979,commons-email,b2440c91decc5abd1488ae38a961d9c3d567ccd4,org.apache.commons.mail.EmailTest,testSetContentEmptyMimeMultipart,#L3
 980,commons-email,b2440c91decc5abd1488ae38a961d9c3d567ccd4,org.apache.commons.mail.EmailTest,testSetContentMimeMultipart,#L3
 981,commons-email,b2440c91decc5abd1488ae38a961d9c3d567ccd4,org.apache.commons.mail.EmailTest,testSetContentNull,#L3
-982,commons-email,b2fc643b9ddc509e526dce0fdc39245b8481554a,org.apache.commons.mail.EmailTest,testSetFromBadEncoding,#18
+982,commons-email,b2fc643b9ddc509e526dce0fdc39245b8481554a,org.apache.commons.mail.EmailTest,testSetFromBadEncoding,#15
 983,commons-email,b7aa82165023fd304e1970238decb5f583717484,org.apache.commons.mail.EmailTest,testAddBcc,#29
 984,commons-email,b7aa82165023fd304e1970238decb5f583717484,org.apache.commons.mail.EmailTest,testAddCc,#29
 985,commons-email,b7aa82165023fd304e1970238decb5f583717484,org.apache.commons.mail.EmailTest,testAddHeader,#29
