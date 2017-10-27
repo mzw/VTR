@@ -2,6 +2,7 @@ package jp.mzw.vtr.classify;
 
 import jp.mzw.vtr.classify.pattern.AddTestAnnotationPattern;
 import jp.mzw.vtr.classify.pattern.FixJavadocErrorsPattern;
+import jp.mzw.vtr.classify.pattern.UseStringContainsPattern;
 import jp.mzw.vtr.classify.pattern.limitation.ReorganizeTestCases;
 import jp.mzw.vtr.cluster.similarity.LcsAnalyzer;
 import jp.mzw.vtr.core.Project;
@@ -48,6 +49,9 @@ public class Classifier {
     private String filter(TestCaseModification testCaseModification) {
         if (AddTestAnnotationPattern.match(testCaseModification)) {
             return "#1";
+        }
+        if (UseStringContainsPattern.match(testCaseModification)) {
+            return "#9";
         }
         if (FixJavadocErrorsPattern.match(testCaseModification)) {
             return "#25";

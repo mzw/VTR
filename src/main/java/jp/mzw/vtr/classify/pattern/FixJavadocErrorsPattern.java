@@ -9,18 +9,6 @@ public class FixJavadocErrorsPattern {
                 return true;
             }
         }
-
-//        System.out.println("commit message");
-//        System.out.println(testCaseModification.getCommitMessage());
-//        System.out.println("original nodes");
-//        for (String originalNode : testCaseModification.getOriginalNodeClassesWithText()) {
-//            System.out.println(originalNode);
-//        }
-//        System.out.println("revised nodes");
-//        for (String revisedNode : testCaseModification.getRevisedNodeClassesWithText()) {
-//            System.out.println(revisedNode);
-//        }
-
         return false;
     }
 
