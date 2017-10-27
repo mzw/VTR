@@ -754,7 +754,7 @@ ID,Subject,Commit,Class,Method,Item
 753,commons-email,39c27d90f62a704f73dd8625fc7fd44b4eaf35d8,org.apache.commons.mail.EmailTest,testSetTo,#L3
 754,commons-email,39c27d90f62a704f73dd8625fc7fd44b4eaf35d8,org.apache.commons.mail.EmailTest,testSetToEmpty,#L3
 755,commons-email,39c27d90f62a704f73dd8625fc7fd44b4eaf35d8,org.apache.commons.mail.EmailTest,testSetToNull,#L3
-756,commons-email,3bac5d983bf630cda81aedb458027c0a538ecdd3,org.apache.commons.mail.EmailTest,testAddToBadEncoding,#15
+756,commons-email,3bac5d983bf630cda81aedb458027c0a538ecdd3,org.apache.commons.mail.EmailTest,testAddToBadEncoding,#L3
 757,commons-email,400c34347bc7c71af587abb09b03f0bddb935fa0,org.apache.commons.mail.EmailLiveTest,testSendingEmailsInBatch,#28
 758,commons-email,4435520d2b06b445202551185d9bbd8161d80c73,org.apache.commons.mail.EmailTest,testSetContentObject,#L3
 759,commons-email,4982e22131946845ecf3de868a0203cf4b8b6a8e,org.apache.commons.mail.EmailTest,testSetFrom2,#L6
