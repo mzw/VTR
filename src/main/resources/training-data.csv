@@ -797,7 +797,7 @@ ID,Subject,Commit,Class,Method,Item
 796,commons-email,79ef0bae7e8b999cfce3da784720ecfdc0d7e230,org.apache.commons.mail.HtmlEmailTest,testSend,#L1
 797,commons-email,8428304e652911c103e6273dc5b1f5704402a46e,org.apache.commons.mail.EmailLiveTest,testImageHtmlEmailRemote,#28
 798,commons-email,8b9aad8d106f7445495c4d3188424f2bd98294cb,org.apache.commons.mail.EmailTest,testFoldingHeaders,#FP1
-799,commons-email,9ece37f23ca9b2bb84ea1bfd662440f7791aee9a,org.apache.commons.mail.resolver.DataSourceCompositeResolverTest,testResolvingFilesNonLenient,#13
+799,commons-email,9ece37f23ca9b2bb84ea1bfd662440f7791aee9a,org.apache.commons.mail.resolver.DataSourceCompositeResolverTest,testResolvingFilesNonLenient,#15
 800,commons-email,a1521dba21d4ac2ea3150156ff7919a07266f1a3,org.apache.commons.mail.EmailTest,testAddBcc,#32
 801,commons-email,a1521dba21d4ac2ea3150156ff7919a07266f1a3,org.apache.commons.mail.EmailTest,testAddBcc2,#32
 802,commons-email,a1521dba21d4ac2ea3150156ff7919a07266f1a3,org.apache.commons.mail.EmailTest,testAddBccArray,#32
