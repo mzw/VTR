@@ -742,7 +742,7 @@ ID,Subject,Commit,Class,Method,Item
 741,commons-email,39c27d90f62a704f73dd8625fc7fd44b4eaf35d8,org.apache.commons.mail.EmailTest,testAddHeaderNullName,#L3
 742,commons-email,39c27d90f62a704f73dd8625fc7fd44b4eaf35d8,org.apache.commons.mail.EmailTest,testAddHeaderNullValue,#L3
 743,commons-email,39c27d90f62a704f73dd8625fc7fd44b4eaf35d8,org.apache.commons.mail.EmailTest,testAddReplyToBadEncoding,#L3
-744,commons-email,39c27d90f62a704f73dd8625fc7fd44b4eaf35d8,org.apache.commons.mail.EmailTest,testGetSetSmtpPort,#L3
+744,commons-email,39c27d90f62a704f73dd8625fc7fd44b4eaf35d8,org.apache.commons.mail.EmailTest,testGetSetSmtpPort,#28
 745,commons-email,39c27d90f62a704f73dd8625fc7fd44b4eaf35d8,org.apache.commons.mail.EmailTest,testSetBccEmpty,#L3
 746,commons-email,39c27d90f62a704f73dd8625fc7fd44b4eaf35d8,org.apache.commons.mail.EmailTest,testSetBccNull,#L3
 747,commons-email,39c27d90f62a704f73dd8625fc7fd44b4eaf35d8,org.apache.commons.mail.EmailTest,testSetCcEmpty,#L3
