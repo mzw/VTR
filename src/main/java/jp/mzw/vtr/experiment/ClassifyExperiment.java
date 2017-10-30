@@ -77,12 +77,12 @@ public class ClassifyExperiment {
 
             StringBuilder sb = new StringBuilder();
             sb.append("Pattern: ").append(pattern)
-                    .append(", Precision: ").append(precision)
-                    .append(", Recall: ").append(recall)
-                    .append(", F-Measure: ").append(Fmeasure)
-                    .append(", True positive: ").append(cntTP)
-                    .append(", False positive: ").append(cntFP)
-                    .append(", False negative: ").append(cntFN);
+                    .append(", Precision: ").append(String.format("%.2f", precision))
+                    .append(", Recall: ").append(String.format("%.2f", recall))
+                    .append(", F-Measure: ").append(String.format("%.2f", Fmeasure))
+                    .append(", True positive: ").append(String.format("%2d", cntTP))
+                    .append(", False positive: ").append(String.format("%2d", cntFP))
+                    .append(", False negative: ").append(String.format("%2d", cntFN));
             System.out.println(sb.toString());
         }
     }
