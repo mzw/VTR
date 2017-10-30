@@ -4,6 +4,7 @@ import jp.mzw.vtr.classify.pattern.AddTestAnnotationPattern;
 import jp.mzw.vtr.classify.pattern.DoNotSwallowTestErrorsSilientlyPattern;
 import jp.mzw.vtr.classify.pattern.FixJavadocErrorsPattern;
 import jp.mzw.vtr.classify.pattern.HandleExpectedExceptionsProperlyPatrern;
+import jp.mzw.vtr.classify.pattern.RemoveThisQualifierPattern;
 import jp.mzw.vtr.classify.pattern.RemoveUnusedExceptionsPattern;
 import jp.mzw.vtr.classify.pattern.ReplaceAtTodoWithTODOPattern;
 import jp.mzw.vtr.classify.pattern.UseEnhancedForLoopPattern;
@@ -82,6 +83,9 @@ public class Classifier {
         }
         if (UseFinalModifierPattern.match(testCaseModification)) {
             return "#30";
+        }
+        if (RemoveThisQualifierPattern.match(testCaseModification)) {
+            return "#32";
         }
         if (ReorganizeTestCases.match(testCaseModification)) {
             return "L3";
