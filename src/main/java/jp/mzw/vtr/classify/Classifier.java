@@ -4,6 +4,7 @@ import jp.mzw.vtr.classify.pattern.AddTestAnnotationPattern;
 import jp.mzw.vtr.classify.pattern.DoNotSwallowTestErrorsSilientlyPattern;
 import jp.mzw.vtr.classify.pattern.FixJavadocErrorsPattern;
 import jp.mzw.vtr.classify.pattern.HandleExpectedExceptionsProperlyPatrern;
+import jp.mzw.vtr.classify.pattern.RemoveObsoleteVariableAssignmentPattern;
 import jp.mzw.vtr.classify.pattern.RemoveThisQualifierPattern;
 import jp.mzw.vtr.classify.pattern.RemoveUnusedExceptionsPattern;
 import jp.mzw.vtr.classify.pattern.ReplaceAtTodoWithTODOPattern;
@@ -54,6 +55,14 @@ public class Classifier {
     }
 
     private String filter(TestCaseModification testCaseModification) {
+        if (testCaseModification.getOriginalNodeClassesWithText() == null
+                || testCaseModification.getRevisedNodeClassesWithText() == null) {
+            return "NullAst";
+        }
+        if (testCaseModification.getCommitId() == null
+                || testCaseModification.getCommitMessage() == null) {
+            return "NullCommit";
+        }
         if (AddTestAnnotationPattern.match(testCaseModification)) {
             return "#1";
         }
@@ -68,6 +77,9 @@ public class Classifier {
         }
         if (DoNotSwallowTestErrorsSilientlyPattern.match(testCaseModification)) {
             return "#18";
+        }
+        if (RemoveObsoleteVariableAssignmentPattern.match(testCaseModification)) {
+            return "#21";
         }
         if (FixJavadocErrorsPattern.match(testCaseModification)) {
             return "#25";
@@ -84,6 +96,7 @@ public class Classifier {
         if (UseFinalModifierPattern.match(testCaseModification)) {
             return "#30";
         }
+
         if (RemoveThisQualifierPattern.match(testCaseModification)) {
             return "#32";
         }
