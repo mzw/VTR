@@ -6,6 +6,7 @@ import jp.mzw.vtr.classify.pattern.FixJavadocErrorsPattern;
 import jp.mzw.vtr.classify.pattern.HandleExpectedExceptionsProperlyPatrern;
 import jp.mzw.vtr.classify.pattern.RemoveObsoleteVariableAssignmentPattern;
 import jp.mzw.vtr.classify.pattern.RemoveThisQualifierPattern;
+import jp.mzw.vtr.classify.pattern.RemoveUnnecessaryCastPattern;
 import jp.mzw.vtr.classify.pattern.RemoveUnusedExceptionsPattern;
 import jp.mzw.vtr.classify.pattern.ReplaceAtTodoWithTODOPattern;
 import jp.mzw.vtr.classify.pattern.UseEnhancedForLoopPattern;
@@ -80,6 +81,9 @@ public class Classifier {
         }
         if (RemoveObsoleteVariableAssignmentPattern.match(testCaseModification)) {
             return "#21";
+        }
+        if (RemoveUnnecessaryCastPattern.match(testCaseModification)) {
+            return "#23";
         }
         if (FixJavadocErrorsPattern.match(testCaseModification)) {
             return "#25";
