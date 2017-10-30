@@ -1,6 +1,7 @@
 package jp.mzw.vtr.classify;
 
 import jp.mzw.vtr.classify.pattern.AddTestAnnotationPattern;
+import jp.mzw.vtr.classify.pattern.ConvertControlStatementToBlockPattern;
 import jp.mzw.vtr.classify.pattern.DoNotSwallowTestErrorsSilientlyPattern;
 import jp.mzw.vtr.classify.pattern.FixJavadocErrorsPattern;
 import jp.mzw.vtr.classify.pattern.HandleExpectedExceptionsProperlyPatrern;
@@ -100,7 +101,9 @@ public class Classifier {
         if (UseFinalModifierPattern.match(testCaseModification)) {
             return "#30";
         }
-
+        if (ConvertControlStatementToBlockPattern.match(testCaseModification)) {
+            return "#31";
+        }
         if (RemoveThisQualifierPattern.match(testCaseModification)) {
             return "#32";
         }

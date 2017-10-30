@@ -2,6 +2,8 @@ package jp.mzw.vtr.classify.pattern;
 
 import jp.mzw.vtr.detect.TestCaseModification;
 
+import java.util.List;
+
 public class PatternUtils {
     public static void printForDebug(TestCaseModification testCaseModification) {
         System.out.println("================== test case modification name ==================");
@@ -17,4 +19,19 @@ public class PatternUtils {
             System.out.println(originNode);
         }
     }
+
+    static protected boolean sameAstNodes(List<String> originalNodes, List<String> revisedNodes) {
+        if (originalNodes.size() != revisedNodes.size()) {
+            return false;
+        }
+        for (int i = 0; i < originalNodes.size(); i++) {
+            String originalNode = originalNodes.get(i);
+            String revisedNode = revisedNodes.get(i);
+            if (!originalNode.equals(revisedNode)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
 }
