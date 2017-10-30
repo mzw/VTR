@@ -20,14 +20,4 @@ public class UseFinalModifierPattern {
         }
         return cnt;
     }
-
-    static private int countNumOfSingleVariableDeclaration(List<String> nodes) {
-        int cnt = 0;
-        for (String node : nodes) {
-            if (node.contains("org.eclipse.jdt.core.dom.SingleVariableDeclaration:")) {
-                cnt++;
-            }
-        }
-        return cnt;
-    }
 }
