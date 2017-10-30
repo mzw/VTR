@@ -7,6 +7,7 @@ import jp.mzw.vtr.classify.pattern.HandleExpectedExceptionsProperlyPatrern;
 import jp.mzw.vtr.classify.pattern.RemoveUnusedExceptionsPattern;
 import jp.mzw.vtr.classify.pattern.ReplaceAtTodoWithTODOPattern;
 import jp.mzw.vtr.classify.pattern.UseEnhancedForLoopPattern;
+import jp.mzw.vtr.classify.pattern.UseFinalModifierPattern;
 import jp.mzw.vtr.classify.pattern.UseStringContainsPattern;
 import jp.mzw.vtr.classify.pattern.limitation.ReorganizeTestCases;
 import jp.mzw.vtr.cluster.similarity.LcsAnalyzer;
@@ -78,6 +79,9 @@ public class Classifier {
         }
         if (UseEnhancedForLoopPattern.match(testCaseModification)) {
             return "#29";
+        }
+        if (UseFinalModifierPattern.match(testCaseModification)) {
+            return "#30";
         }
         if (ReorganizeTestCases.match(testCaseModification)) {
             return "L3";
