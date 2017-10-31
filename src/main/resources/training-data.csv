@@ -976,7 +976,7 @@ ID,Subject,Commit,Class,Method,Item
 975,commons-email,a54e5d7387495d09521aedc26e5a72d9cbdad7a5,org.apache.commons.mail.util.MimeMessageParserTest,testParseSimpleEmail,#1
 976,commons-email,a54e5d7387495d09521aedc26e5a72d9cbdad7a5,org.apache.commons.mail.util.MimeMessageParserTest,testParseSimpleReplyEmail,#1
 977,commons-email,a56ac51c8246b352b762295cccdec99c260c0c4a,org.apache.commons.mail.resolver.DataSourceUrlResolverTest,testResolvingHttpNonLenient,#15
-978,commons-email,addc61dee9caa1a651a2aa8a9cfd2644b6b66a0d,org.apache.commons.mail.EmailAttachmentTest,testGetSetURL,#18
+978,commons-email,addc61dee9caa1a651a2aa8a9cfd2644b6b66a0d,org.apache.commons.mail.EmailAttachmentTest,testGetSetURL,#13
 979,commons-email,b2440c91decc5abd1488ae38a961d9c3d567ccd4,org.apache.commons.mail.EmailTest,testSetContentEmptyMimeMultipart,#L3
 980,commons-email,b2440c91decc5abd1488ae38a961d9c3d567ccd4,org.apache.commons.mail.EmailTest,testSetContentMimeMultipart,#L3
 981,commons-email,b2440c91decc5abd1488ae38a961d9c3d567ccd4,org.apache.commons.mail.EmailTest,testSetContentNull,#L3
