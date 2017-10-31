@@ -12,10 +12,6 @@ public class DoNotSwallowTestErrorsSilientlyPattern {
         // https://github.com/apache/commons-dbutils/commit/bdf0b337ea209c7e3fd7de52f4da3b1afa0678aa
         // https://github.com/apache/commons-email/commit/addc61dee9caa1a651a2aa8a9cfd2644b6b66a0d
 
-        if (testCaseModification.getCommitId().equals("bdf0b337ea209c7e3fd7de52f4da3b1afa0678aa")) {
-            PatternUtils.printForDebug(testCaseModification);
-        }
-
         boolean catchClause = false;
         for (String originalNode : testCaseModification.getOriginalNodeClassesWithText()) {
             if (originalNode.contains("org.eclipse.jdt.core.dom.CatchClause")) {

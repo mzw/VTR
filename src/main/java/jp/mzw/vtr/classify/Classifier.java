@@ -1,5 +1,6 @@
 package jp.mzw.vtr.classify;
 
+import jp.mzw.vtr.classify.pattern.AddFailStatementsForExpectedExceptionPattern;
 import jp.mzw.vtr.classify.pattern.AddOverrideAnnotaionPattern;
 import jp.mzw.vtr.classify.pattern.AddSuppressAnnotationPattern;
 import jp.mzw.vtr.classify.pattern.AddTestAnnotationPattern;
@@ -83,6 +84,9 @@ public class Classifier {
         }
         if (DoNotSwallowTestErrorsSilientlyPattern.match(testCaseModification)) {
             return "#13";
+        }
+        if (AddFailStatementsForExpectedExceptionPattern.match(testCaseModification)) {
+            return "#14";
         }
         if (HandleExpectedExceptionsProperlyPatrern.match(testCaseModification)) {
             return "#15";
