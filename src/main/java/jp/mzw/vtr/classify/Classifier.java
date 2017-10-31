@@ -81,14 +81,14 @@ public class Classifier {
         if (SwapActualExpectedValuePattern.match(testCaseModification)) {
             return "#10";
         }
+        if (DoNotSwallowTestErrorsSilientlyPattern.match(testCaseModification)) {
+            return "#13";
+        }
         if (HandleExpectedExceptionsProperlyPatrern.match(testCaseModification)) {
             return "#15";
         }
         if (RemoveUnusedExceptionsPattern.match(testCaseModification)) {
             return "#16";
-        }
-        if (DoNotSwallowTestErrorsSilientlyPattern.match(testCaseModification)) {
-            return "#18";
         }
         if (AddSuppressAnnotationPattern.match(testCaseModification)) {
             return "#20";
