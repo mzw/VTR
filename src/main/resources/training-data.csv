@@ -2862,8 +2862,8 @@ ID,Subject,Commit,Class,Method,Item
 2861,commons-scxml,d27208b3bee1dd4d42c22e4963613a953186830d,org.apache.commons.scxml2.BuiltinTest,testIsMemberEmptySet,#FP1
 2862,commons-scxml,d27208b3bee1dd4d42c22e4963613a953186830d,org.apache.commons.scxml2.env.groovy.StaticMethodTest,mytest,#L1
 2863,commons-scxml,d27208b3bee1dd4d42c22e4963613a953186830d,org.apache.commons.scxml2.SCXMLHelperTest,testGetAncestorClosureEmptySet,#FP1
-2864,commons-scxml,dd37ad7575b889c92eab736703f8ba409b2ec4ca,org.apache.commons.scxml2.TriggerEventTest,testTriggerEventEquals,#10
-2865,commons-scxml,dd37ad7575b889c92eab736703f8ba409b2ec4ca,org.apache.commons.scxml2.TriggerEventTest,testTriggerEventGetters,#3
+2864,commons-scxml,dd37ad7575b889c92eab736703f8ba409b2ec4ca,org.apache.commons.scxml2.TriggerEventTest,testTriggerEventEquals,#3
+2865,commons-scxml,dd37ad7575b889c92eab736703f8ba409b2ec4ca,org.apache.commons.scxml2.TriggerEventTest,testTriggerEventGetters,#10
 2866,commons-scxml,e1e2c7dd9545f2ad27e8ef04dd19b0cec8236abb,org.apache.commons.scxml2.model.HistoryTest,testSetTypeDeep,#L3
 2867,commons-scxml,e1e2c7dd9545f2ad27e8ef04dd19b0cec8236abb,org.apache.commons.scxml2.model.HistoryTest,testSetTypeNotDeep,#L3
 2868,commons-scxml,e1e2c7dd9545f2ad27e8ef04dd19b0cec8236abb,org.apache.commons.scxml2.model.StateTest,testAddTransitionContainKey,#L3
