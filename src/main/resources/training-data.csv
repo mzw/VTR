@@ -2610,7 +2610,7 @@ ID,Subject,Commit,Class,Method,Item
 2609,commons-net,cb17db7ce76142641138ac7000821324550a69a4,org.apache.commons.net.time.TimeTCPClientTest,testCompareTimes,#L6
 2610,commons-net,ddd40b701b587c73c51d6b25e5a7422e622ff765,org.apache.commons.net.ftp.parser.UnixFTPEntryParserTest,testNameWIthPunctuation,#28
 2611,commons-net,ddd40b701b587c73c51d6b25e5a7422e622ff765,org.apache.commons.net.ftp.parser.UnixFTPEntryParserTest,testNoSpacesBeforeFileSize,#L1
-2612,commons-net,e771cac9982f083e3d9c2d4c827f6f03e88f67aa,org.apache.commons.net.tftp.TFTPTest,testASCIIDownloads,#24
+2612,commons-net,e771cac9982f083e3d9c2d4c827f6f03e88f67aa,org.apache.commons.net.tftp.TFTPTest,testASCIIDownloads,#14
 2613,commons-net,f2aeaa84a8f2c5a8cc309972a7c3e4739c7592fc,org.apache.commons.net.ftp.FTPClientConfigTest,testGetDateFormatSymbols,#28
 2614,commons-net,f2aeaa84a8f2c5a8cc309972a7c3e4739c7592fc,org.apache.commons.net.ftp.FTPClientConfigTest,testLookupDateFormatSymbols,#28
 2615,commons-pool,01b74fc8045d204ed2de5f5a955cf33f733b3398,org.apache.commons.pool2.TestPoolUtils,testJavaBeanInstantiation,#20
