@@ -2,9 +2,6 @@ package jp.mzw.vtr.classify.pattern;
 
 import jp.mzw.vtr.detect.TestCaseModification;
 
-import java.util.List;
-
-
 public class DoNotSwallowTestErrorsSilientlyPattern {
     static public boolean match(TestCaseModification testCaseModification) {
         // In this pattern, developers fix test cases that don't throw exception at proper timing.

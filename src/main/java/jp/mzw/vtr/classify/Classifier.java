@@ -4,6 +4,7 @@ import jp.mzw.vtr.classify.pattern.AddFailStatementsForExpectedExceptionPattern;
 import jp.mzw.vtr.classify.pattern.AddOverrideAnnotaionPattern;
 import jp.mzw.vtr.classify.pattern.AddSuppressAnnotationPattern;
 import jp.mzw.vtr.classify.pattern.AddTestAnnotationPattern;
+import jp.mzw.vtr.classify.pattern.CloseResourcesPattern;
 import jp.mzw.vtr.classify.pattern.ConvertControlStatementToBlockPattern;
 import jp.mzw.vtr.classify.pattern.DoNotSwallowTestErrorsSilientlyPattern;
 import jp.mzw.vtr.classify.pattern.FixJavadocErrorsPattern;
@@ -93,6 +94,9 @@ public class Classifier {
         }
         if (RemoveUnusedExceptionsPattern.match(testCaseModification)) {
             return "#16";
+        }
+        if (CloseResourcesPattern.match(testCaseModification)) {
+            return "#17";
         }
         if (AddSuppressAnnotationPattern.match(testCaseModification)) {
             return "#20";

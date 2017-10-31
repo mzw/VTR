@@ -7,10 +7,6 @@ import java.util.List;
 public class AddFailStatementsForExpectedExceptionPattern {
 
     static public boolean match(TestCaseModification testCaseModification) {
-        if (testCaseModification.getCommitId().equals("5e34e05fd8e4ce1204e19eaf34e55aa95df4c5c0")) {
-            PatternUtils.printForDebug(testCaseModification);
-        }
-
         if (!testCaseModification.getCommitMessage().toLowerCase().contains("fail")) {
             return false;
         }
