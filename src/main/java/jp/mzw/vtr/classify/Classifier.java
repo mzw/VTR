@@ -1,6 +1,7 @@
 package jp.mzw.vtr.classify;
 
 import jp.mzw.vtr.classify.pattern.AddOverrideAnnotaionPattern;
+import jp.mzw.vtr.classify.pattern.AddSuppressAnnotationPattern;
 import jp.mzw.vtr.classify.pattern.AddTestAnnotationPattern;
 import jp.mzw.vtr.classify.pattern.ConvertControlStatementToBlockPattern;
 import jp.mzw.vtr.classify.pattern.DoNotSwallowTestErrorsSilientlyPattern;
@@ -80,6 +81,9 @@ public class Classifier {
         }
         if (DoNotSwallowTestErrorsSilientlyPattern.match(testCaseModification)) {
             return "#18";
+        }
+        if (AddSuppressAnnotationPattern.match(testCaseModification)) {
+            return "#20";
         }
         if (RemoveObsoleteVariableAssignmentPattern.match(testCaseModification)) {
             return "#21";
