@@ -12,6 +12,8 @@ import jp.mzw.vtr.classify.pattern.RemoveThisQualifierPattern;
 import jp.mzw.vtr.classify.pattern.RemoveUnnecessaryCastPattern;
 import jp.mzw.vtr.classify.pattern.RemoveUnusedExceptionsPattern;
 import jp.mzw.vtr.classify.pattern.ReplaceAtTodoWithTODOPattern;
+import jp.mzw.vtr.classify.pattern.SwapActualExpectedValuePattern;
+import jp.mzw.vtr.classify.pattern.UseAssertEqualsProperlyPattern;
 import jp.mzw.vtr.classify.pattern.UseEnhancedForLoopPattern;
 import jp.mzw.vtr.classify.pattern.UseFinalModifierPattern;
 import jp.mzw.vtr.classify.pattern.UseStringContainsPattern;
@@ -70,8 +72,14 @@ public class Classifier {
         if (AddTestAnnotationPattern.match(testCaseModification)) {
             return "#1";
         }
+        if (UseAssertEqualsProperlyPattern.match(testCaseModification)) {
+            return "#3";
+        }
         if (UseStringContainsPattern.match(testCaseModification)) {
             return "#9";
+        }
+        if (SwapActualExpectedValuePattern.match(testCaseModification)) {
+            return "#10";
         }
         if (HandleExpectedExceptionsProperlyPatrern.match(testCaseModification)) {
             return "#15";
