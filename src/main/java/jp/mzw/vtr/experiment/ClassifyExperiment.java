@@ -76,13 +76,13 @@ public class ClassifyExperiment {
             double Fmeasure  = 2 * precision * recall / (precision + recall);
 
             StringBuilder sb = new StringBuilder();
-            sb.append("Pattern: ").append(pattern)
-                    .append(", Precision: ").append(String.format("%.2f", precision))
-                    .append(", Recall: ").append(String.format("%.2f", recall))
-                    .append(", F-Measure: ").append(String.format("%.2f", Fmeasure))
-                    .append(", True positive: ").append(String.format("%2d", cntTP))
-                    .append(", False positive: ").append(String.format("%2d", cntFP))
-                    .append(", False negative: ").append(String.format("%2d", cntFN));
+            sb.append("Pattern: ").append(String.format("%-10s", pattern))
+                    .append(", Precision: ").append(String.format("%4s", String.format("%.2f", precision)))
+                    .append(", Recall: ").append(String.format("%4s", String.format("%.2f", recall)))
+                    .append(", F-Measure: ").append(String.format("%4s", String.format("%.2f", Fmeasure)))
+                    .append(", True positive: ").append(String.format("%3s", String.format("%2d", cntTP)))
+                    .append(", False positive: ").append(String.format("%3s", String.format("%2d", cntFP)))
+                    .append(", False negative: ").append(String.format("%3s", String.format("%2d", cntFN)));
             System.out.println(sb.toString());
         }
     }
