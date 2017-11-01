@@ -9,6 +9,7 @@ import jp.mzw.vtr.classify.pattern.ConvertControlStatementToBlockPattern;
 import jp.mzw.vtr.classify.pattern.DoNotSwallowTestErrorsSilientlyPattern;
 import jp.mzw.vtr.classify.pattern.FixJavadocErrorsPattern;
 import jp.mzw.vtr.classify.pattern.HandleExpectedExceptionsProperlyPatrern;
+import jp.mzw.vtr.classify.pattern.OutputForDebugPattern;
 import jp.mzw.vtr.classify.pattern.RemoveObsoleteVariableAssignmentPattern;
 import jp.mzw.vtr.classify.pattern.RemoveThisQualifierPattern;
 import jp.mzw.vtr.classify.pattern.RemoveUnnecessaryCastPattern;
@@ -110,6 +111,9 @@ public class Classifier {
         }
         if (RemoveUnnecessaryCastPattern.match(testCaseModification)) {
             return "#23";
+        }
+        if (OutputForDebugPattern.match(testCaseModification)) {
+            return "#24";
         }
         if (FixJavadocErrorsPattern.match(testCaseModification)) {
             return "#25";
