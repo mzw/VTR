@@ -20,6 +20,7 @@ import jp.mzw.vtr.classify.pattern.UseAssertEqualsProperlyPattern;
 import jp.mzw.vtr.classify.pattern.UseDiamondOperatorPattern;
 import jp.mzw.vtr.classify.pattern.UseEnhancedForLoopPattern;
 import jp.mzw.vtr.classify.pattern.UseFinalModifierPattern;
+import jp.mzw.vtr.classify.pattern.UseProcessWaitForPattern;
 import jp.mzw.vtr.classify.pattern.UseStringContainsPattern;
 import jp.mzw.vtr.classify.pattern.UseTryWithResourcesPattern;
 import jp.mzw.vtr.classify.pattern.limitation.ReorganizeTestCases;
@@ -103,6 +104,9 @@ public class Classifier {
         }
         if (UseTryWithResourcesPattern.match(testCaseModification)) {
             return "#18";
+        }
+        if (UseProcessWaitForPattern.match(testCaseModification)) {
+            return "#19";
         }
         if (AddSuppressAnnotationPattern.match(testCaseModification)) {
             return "#20";
