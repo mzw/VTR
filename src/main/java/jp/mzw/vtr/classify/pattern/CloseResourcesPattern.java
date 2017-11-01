@@ -2,7 +2,7 @@ package jp.mzw.vtr.classify.pattern;
 
 import jp.mzw.vtr.detect.TestCaseModification;
 
-import java.util.List;
+import static jp.mzw.vtr.classify.pattern.PatternUtils.countNumOfCloseMethodInvocation;
 
 public class CloseResourcesPattern {
     static public boolean match(TestCaseModification testCaseModification) {
@@ -12,15 +12,5 @@ public class CloseResourcesPattern {
 
         return ((countNumOfCloseMethodInvocation(testCaseModification.getOriginalNodeClassesWithText()) == 0)
                     && (0 < countNumOfCloseMethodInvocation(testCaseModification.getRevisedNodeClassesWithText())));
-    }
-
-    static private int countNumOfCloseMethodInvocation(List<String> nodes) {
-        int cnt = 0;
-        for (String node : nodes) {
-            if (node.startsWith("org.eclipse.jdt.core.dom.MethodInvocation:") && node.endsWith("close()")) {
-                cnt++;
-            }
-        }
-        return cnt;
     }
 }

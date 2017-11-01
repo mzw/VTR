@@ -19,6 +19,7 @@ import jp.mzw.vtr.classify.pattern.UseAssertEqualsProperlyPattern;
 import jp.mzw.vtr.classify.pattern.UseEnhancedForLoopPattern;
 import jp.mzw.vtr.classify.pattern.UseFinalModifierPattern;
 import jp.mzw.vtr.classify.pattern.UseStringContainsPattern;
+import jp.mzw.vtr.classify.pattern.UseTryWithResourcesPattern;
 import jp.mzw.vtr.classify.pattern.limitation.ReorganizeTestCases;
 import jp.mzw.vtr.cluster.similarity.LcsAnalyzer;
 import jp.mzw.vtr.core.Project;
@@ -98,6 +99,9 @@ public class Classifier {
         if (CloseResourcesPattern.match(testCaseModification)) {
             return "#17";
         }
+        if (UseTryWithResourcesPattern.match(testCaseModification)) {
+            return "#18";
+        }
         if (AddSuppressAnnotationPattern.match(testCaseModification)) {
             return "#20";
         }
@@ -132,7 +136,7 @@ public class Classifier {
             return "#34";
         }
         if (ReorganizeTestCases.match(testCaseModification)) {
-            return "L3";
+            return "#L3";
         }
         return "Nan";
     }

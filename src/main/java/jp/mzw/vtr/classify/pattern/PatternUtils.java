@@ -34,4 +34,14 @@ public class PatternUtils {
         return true;
     }
 
+    static protected int countNumOfCloseMethodInvocation(List<String> nodes) {
+        int cnt = 0;
+        for (String node : nodes) {
+            if (node.startsWith("org.eclipse.jdt.core.dom.MethodInvocation:") && node.endsWith("close()")) {
+                cnt++;
+            }
+        }
+        return cnt;
+    }
+
 }
