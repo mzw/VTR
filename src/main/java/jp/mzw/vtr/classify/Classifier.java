@@ -2,6 +2,7 @@ package jp.mzw.vtr.classify;
 
 import jp.mzw.vtr.classify.pattern.AddFailStatementsForExpectedExceptionPattern;
 import jp.mzw.vtr.classify.pattern.AddOverrideAnnotaionPattern;
+import jp.mzw.vtr.classify.pattern.AddSerialVersionUidPattern;
 import jp.mzw.vtr.classify.pattern.AddSuppressAnnotationPattern;
 import jp.mzw.vtr.classify.pattern.AddTestAnnotationPattern;
 import jp.mzw.vtr.classify.pattern.CloseResourcesPattern;
@@ -140,6 +141,9 @@ public class Classifier {
         }
         if (RemoveThisQualifierPattern.match(testCaseModification)) {
             return "#32";
+        }
+        if (AddSerialVersionUidPattern.match(testCaseModification)) {
+            return "#33";
         }
         if (AddOverrideAnnotaionPattern.match(testCaseModification)) {
             return "#34";
