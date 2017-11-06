@@ -10,6 +10,7 @@ import jp.mzw.vtr.classify.pattern.ConvertControlStatementToBlockPattern;
 import jp.mzw.vtr.classify.pattern.DoNotSwallowTestErrorsSilientlyPattern;
 import jp.mzw.vtr.classify.pattern.FixJavadocErrorsPattern;
 import jp.mzw.vtr.classify.pattern.HandleExpectedExceptionsProperlyPatrern;
+import jp.mzw.vtr.classify.pattern.ImportAssertNonStaticPattern;
 import jp.mzw.vtr.classify.pattern.OutputForDebugPattern;
 import jp.mzw.vtr.classify.pattern.RemoveObsoleteVariableAssignmentPattern;
 import jp.mzw.vtr.classify.pattern.RemoveThisQualifierPattern;
@@ -88,6 +89,9 @@ public class Classifier {
         if (SwapActualExpectedValuePattern.match(testCaseModification)) {
             return "#10";
         }
+        if (ImportAssertNonStaticPattern.match(testCaseModification)) {
+            return "#12";
+        }
         if (DoNotSwallowTestErrorsSilientlyPattern.match(testCaseModification)) {
             return "#13";
         }
@@ -152,7 +156,8 @@ public class Classifier {
             return "#35";
         }
         if (ReorganizeTestCases.match(testCaseModification)) {
-            return "#L3";
+            // TODO: implement
+            // return "#L3";
         }
         return "Nan";
     }
