@@ -6,10 +6,6 @@ import java.util.List;
 
 public class UseAtCodeInsteadOfTtTag {
     static public boolean match(TestCaseModification testCaseModification) {
-        if (testCaseModification.getCommitId().equals("8af568eabb916ad2ff780fcd0838fdf29f57e97f")) {
-            PatternUtils.printForDebug(testCaseModification);
-        }
-
         return (0 < countNumOfTtTag(testCaseModification.getOriginalNodeClassesWithText()))
                     && (0 < countNumOfAtCode(testCaseModification.getRevisedNodeClassesWithText()));
     }

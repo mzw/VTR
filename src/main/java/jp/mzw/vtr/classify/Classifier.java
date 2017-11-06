@@ -20,6 +20,7 @@ import jp.mzw.vtr.classify.pattern.RemoveUnusedExceptionsPattern;
 import jp.mzw.vtr.classify.pattern.ReplaceAtTodoWithTODOPattern;
 import jp.mzw.vtr.classify.pattern.SwapActualExpectedValuePattern;
 import jp.mzw.vtr.classify.pattern.UseAssertEqualsProperlyPattern;
+import jp.mzw.vtr.classify.pattern.UseAssignmentOperatorPattern;
 import jp.mzw.vtr.classify.pattern.UseAtCodeInsteadOfTtTag;
 import jp.mzw.vtr.classify.pattern.UseDiamondOperatorPattern;
 import jp.mzw.vtr.classify.pattern.UseEnhancedForLoopPattern;
@@ -27,6 +28,7 @@ import jp.mzw.vtr.classify.pattern.UseFinalModifierPattern;
 import jp.mzw.vtr.classify.pattern.UseProcessWaitForPattern;
 import jp.mzw.vtr.classify.pattern.UseProperFileConstructorPattern;
 import jp.mzw.vtr.classify.pattern.UseStaticFieldDirectlyPattern;
+import jp.mzw.vtr.classify.pattern.UseStaticMethodDirectlyPattern;
 import jp.mzw.vtr.classify.pattern.UseStringContainsPattern;
 import jp.mzw.vtr.classify.pattern.UseTryWithResourcesPattern;
 import jp.mzw.vtr.classify.pattern.limitation.ReorganizeTestCases;
@@ -166,9 +168,16 @@ public class Classifier {
         if (UseDiamondOperatorPattern.match(testCaseModification)) {
             return "#35";
         }
+        if (UseAssignmentOperatorPattern.match(testCaseModification)) {
+            return "#36";
+        }
         if (UseProperFileConstructorPattern.match(testCaseModification)) {
             // TODO: implement
             // return "#37";
+        }
+        if (UseStaticMethodDirectlyPattern.match(testCaseModification)) {
+            // TODO: implement
+            // return "#39";
         }
         if (UseStaticFieldDirectlyPattern.match(testCaseModification)) {
             // TODO: implement
