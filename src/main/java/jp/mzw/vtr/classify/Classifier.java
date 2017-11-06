@@ -21,6 +21,7 @@ import jp.mzw.vtr.classify.pattern.ReplaceAtTodoWithTODOPattern;
 import jp.mzw.vtr.classify.pattern.SwapActualExpectedValuePattern;
 import jp.mzw.vtr.classify.pattern.UseAssertEqualsProperlyPattern;
 import jp.mzw.vtr.classify.pattern.UseAssertNotSamePattern;
+import jp.mzw.vtr.classify.pattern.UseAssertNullPattern;
 import jp.mzw.vtr.classify.pattern.UseAssignmentOperatorPattern;
 import jp.mzw.vtr.classify.pattern.UseAtCodeInsteadOfTtTag;
 import jp.mzw.vtr.classify.pattern.UseDiamondOperatorPattern;
@@ -92,6 +93,9 @@ public class Classifier {
         }
         if (UseAssertNotSamePattern.match(testCaseModification)) {
             return "#5";
+        }
+        if (UseAssertNullPattern.match(testCaseModification)) {
+            return "#6";
         }
         if (UseStringContainsPattern.match(testCaseModification)) {
             return "#9";
