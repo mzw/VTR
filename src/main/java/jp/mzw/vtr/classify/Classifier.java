@@ -14,7 +14,7 @@ import jp.mzw.vtr.classify.pattern.ImportAssertNonStaticPattern;
 import jp.mzw.vtr.classify.pattern.OutputForDebugPattern;
 import jp.mzw.vtr.classify.pattern.RemoveObsoleteVariableAssignmentPattern;
 import jp.mzw.vtr.classify.pattern.RemoveThisQualifierPattern;
-import jp.mzw.vtr.classify.pattern.RemoveUnnecessaryCastPattern;
+import jp.mzw.vtr.classify.pattern.IntroduceAutoBoxingPattern;
 import jp.mzw.vtr.classify.pattern.RemoveUnusedExceptionsPattern;
 import jp.mzw.vtr.classify.pattern.ReplaceAtTodoWithTODOPattern;
 import jp.mzw.vtr.classify.pattern.SwapActualExpectedValuePattern;
@@ -23,6 +23,8 @@ import jp.mzw.vtr.classify.pattern.UseDiamondOperatorPattern;
 import jp.mzw.vtr.classify.pattern.UseEnhancedForLoopPattern;
 import jp.mzw.vtr.classify.pattern.UseFinalModifierPattern;
 import jp.mzw.vtr.classify.pattern.UseProcessWaitForPattern;
+import jp.mzw.vtr.classify.pattern.UseProperFileConstructorPattern;
+import jp.mzw.vtr.classify.pattern.UseStaticFieldDirectlyPattern;
 import jp.mzw.vtr.classify.pattern.UseStringContainsPattern;
 import jp.mzw.vtr.classify.pattern.UseTryWithResourcesPattern;
 import jp.mzw.vtr.classify.pattern.limitation.ReorganizeTestCases;
@@ -119,7 +121,7 @@ public class Classifier {
         if (RemoveObsoleteVariableAssignmentPattern.match(testCaseModification)) {
             return "#21";
         }
-        if (RemoveUnnecessaryCastPattern.match(testCaseModification)) {
+        if (IntroduceAutoBoxingPattern.match(testCaseModification)) {
             return "#23";
         }
         if (OutputForDebugPattern.match(testCaseModification)) {
@@ -154,6 +156,14 @@ public class Classifier {
         }
         if (UseDiamondOperatorPattern.match(testCaseModification)) {
             return "#35";
+        }
+        if (UseProperFileConstructorPattern.match(testCaseModification)) {
+            // TODO: implement
+            // return "#37";
+        }
+        if (UseStaticFieldDirectlyPattern.match(testCaseModification)) {
+            // TODO: implement
+            // return "#40";
         }
         if (ReorganizeTestCases.match(testCaseModification)) {
             // TODO: implement

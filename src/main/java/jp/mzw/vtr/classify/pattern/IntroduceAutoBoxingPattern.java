@@ -4,7 +4,7 @@ import jp.mzw.vtr.detect.TestCaseModification;
 
 import java.util.List;
 
-public class RemoveUnnecessaryCastPattern {
+public class IntroduceAutoBoxingPattern {
     static public boolean match(TestCaseModification testCaseModification) {
         if (countNumOfCastExpression(testCaseModification.getOriginalNodeClassesWithText())
                 <= countNumOfCastExpression(testCaseModification.getRevisedNodeClassesWithText())) {
