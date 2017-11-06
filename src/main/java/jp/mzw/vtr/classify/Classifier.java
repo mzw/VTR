@@ -13,6 +13,7 @@ import jp.mzw.vtr.classify.pattern.HandleExpectedExceptionsProperlyPatrern;
 import jp.mzw.vtr.classify.pattern.ImportAssertNonStaticPattern;
 import jp.mzw.vtr.classify.pattern.OutputForDebugPattern;
 import jp.mzw.vtr.classify.pattern.RemoveObsoleteVariableAssignmentPattern;
+import jp.mzw.vtr.classify.pattern.RemoveRedundantCastPattern;
 import jp.mzw.vtr.classify.pattern.RemoveThisQualifierPattern;
 import jp.mzw.vtr.classify.pattern.IntroduceAutoBoxingPattern;
 import jp.mzw.vtr.classify.pattern.RemoveUnusedExceptionsPattern;
@@ -121,6 +122,10 @@ public class Classifier {
         }
         if (RemoveObsoleteVariableAssignmentPattern.match(testCaseModification)) {
             return "#21";
+        }
+        if (RemoveRedundantCastPattern.match(testCaseModification)) {
+            // TODO: implement
+            // return "#22";
         }
         if (IntroduceAutoBoxingPattern.match(testCaseModification)) {
             return "#23";
