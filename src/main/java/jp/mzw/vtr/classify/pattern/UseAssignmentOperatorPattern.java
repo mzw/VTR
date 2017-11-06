@@ -9,10 +9,6 @@ public class UseAssignmentOperatorPattern {
     static final String[] ASSIGNMENT_OPERATOR = {"+=", "-=", "*=", "/=", "%=", "&=", "|=", "^=", "<<=", ">>=", ">>>="};
 
     static public boolean match(TestCaseModification testCaseModification) {
-        if (testCaseModification.getCommitId().equals("6527a801c181090326f44bffef6709f898cae70b")) {
-            PatternUtils.printForDebug(testCaseModification);
-        }
-
         return (countNumOfInfixExpression(testCaseModification.getRevisedNodeClassesWithText())
                     < countNumOfInfixExpression(testCaseModification.getOriginalNodeClassesWithText()))
                 && (countNumOfAssignmentOperator(testCaseModification.getOriginalNodeClassesWithText())
