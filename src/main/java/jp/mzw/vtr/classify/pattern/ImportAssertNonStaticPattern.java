@@ -6,10 +6,6 @@ import java.util.List;
 
 public class ImportAssertNonStaticPattern {
     static public boolean match(TestCaseModification testCaseModification) {
-        if (testCaseModification.getCommitId().equals("7b19201a29a66e64f42b04f7726c5e29319791b8")) {
-            PatternUtils.printForDebug(testCaseModification);
-        }
-
         for (String revisedNode : testCaseModification.getRevisedNodeClassesWithText()) {
             if (revisedNode.startsWith("org.eclipse.jdt.core.dom.MarkerAnnotation:@Test")) {
                 // prevent below false positives
