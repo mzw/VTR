@@ -23,7 +23,7 @@ public class ClassifyExperiment {
 
     static final String CLASSIFY_ANSWER = "src/main/resources/training-data.csv";
     static final String[] KNOWN_PATTERNS = {
-            "#1", "#2", "#3", "#4", "#5", "#6", "#7", "#8", "#9", "#10",
+             "#1",  "#2",  "#3",  "#4",  "#5",  "#6",  "#7",  "#8",  "#9", "#10",
             "#11", "#12", "#13", "#14", "#15", "#16", "#17", "#18", "#19", "#20",
             "#21", "#22", "#23", "#24", "#25", "#26", "#27", "#28", "#29", "#30",
             "#31", "#32", "#33", "#34", "#35", "#36", "#37", "#38", "#39", "#40",
@@ -57,16 +57,17 @@ public class ClassifyExperiment {
                     String truePositive = answer.get(5) + TRUE_POSITIVE;
                     counts.merge(truePositive, 1, (v1, v2) -> v1 + v2);
                 } else {
-//                    System.out.print("Answer(5): " + answer.get(5));
                     String falseNegative = answer.get(5) + FALSE_NEGATIVE;
                     counts.merge(falseNegative, 1, (v1, v2) -> v1 + v2);
-//                    System.out.print("Result(4): " + result.get(4));
                     String falsePositive = result.get(4) + FALSE_POSITIVE;
                     counts.merge(falsePositive, 1, (v1, v2) -> v1 + v2);
                 }
             }
         }
 
+        int totalTP = 0;
+        int totalFP = 0;
+        int totalFN = 0;
         for (String pattern : KNOWN_PATTERNS) {
             int cntTP = (counts.get(pattern + TRUE_POSITIVE)  == null) ? 0 : counts.get(pattern + TRUE_POSITIVE);
             int cntFP = (counts.get(pattern + FALSE_POSITIVE) == null) ? 0 : counts.get(pattern + FALSE_POSITIVE);
@@ -84,7 +85,24 @@ public class ClassifyExperiment {
                     .append(", False positive: ").append(String.format("%3s", String.format("%2d", cntFP)))
                     .append(", False negative: ").append(String.format("%3s", String.format("%2d", cntFN)));
             System.out.println(sb.toString());
+
+            totalTP += cntTP;
+            totalFP += cntFP;
+            totalFN += cntFN;
         }
+        double precision = totalTP / ((double) (totalTP + totalFP));
+        double recall    = totalTP / ((double) (totalTP + totalFN));
+        double Fmeasure  = 2 * precision * recall / (precision + recall);
+        StringBuilder sb = new StringBuilder();
+        sb.append("----------------------------------------------------------------------\n");
+        sb.append("Pattern: ").append(String.format("%-10s", "Total"))
+                .append(", Precision: ").append(String.format("%4s", String.format("%.2f", precision)))
+                .append(", Recall: ").append(String.format("%4s", String.format("%.2f", recall)))
+                .append(", F-Measure: ").append(String.format("%4s", String.format("%.2f", Fmeasure)))
+                .append(", True positive: ").append(String.format("%3s", String.format("%2d", totalTP)))
+                .append(", False positive: ").append(String.format("%3s", String.format("%2d", totalFP)))
+                .append(", False negative: ").append(String.format("%3s", String.format("%2d", totalFN)));
+        System.out.println(sb.toString());
     }
 
     protected static List<CSVRecord> getCsvRecords(Path path) {
