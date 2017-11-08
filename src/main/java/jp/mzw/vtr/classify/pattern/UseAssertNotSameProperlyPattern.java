@@ -4,7 +4,7 @@ import jp.mzw.vtr.detect.TestCaseModification;
 
 import java.util.List;
 
-public class UseAssertNotSamePattern {
+public class UseAssertNotSameProperlyPattern {
     static public boolean match(TestCaseModification testCaseModification) {
         return (0 < countNumOfAssertTrueNotEqual(testCaseModification.getOriginalNodeClassesWithText()))
                 && (0 == countNumOfAssertTrueNotEqual(testCaseModification.getRevisedNodeClassesWithText()))

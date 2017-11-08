@@ -4,7 +4,7 @@ import jp.mzw.vtr.detect.TestCaseModification;
 
 import java.util.List;
 
-public class UseAssertNullPattern {
+public class UseAssertNullProperlyPattern {
     static public boolean match(TestCaseModification testCaseModification) {
         return (0 < countNumOfAssertEqualsNull(testCaseModification.getOriginalNodeClassesWithText()))
                 && (0 == countNumOfAssertEqualsNull(testCaseModification.getRevisedNodeClassesWithText()))

@@ -1,10 +1,12 @@
 package jp.mzw.vtr.classify;
 
+import jp.mzw.vtr.classify.pattern.AddCastToNullPattern;
 import jp.mzw.vtr.classify.pattern.AddFailStatementsForExpectedExceptionPattern;
 import jp.mzw.vtr.classify.pattern.AddOverrideAnnotaionPattern;
 import jp.mzw.vtr.classify.pattern.AddSerialVersionUidPattern;
 import jp.mzw.vtr.classify.pattern.AddSuppressAnnotationPattern;
 import jp.mzw.vtr.classify.pattern.AddTestAnnotationPattern;
+import jp.mzw.vtr.classify.pattern.AssertNotNullToINstancesPattern;
 import jp.mzw.vtr.classify.pattern.CloseResourcesPattern;
 import jp.mzw.vtr.classify.pattern.ConvertControlStatementToBlockPattern;
 import jp.mzw.vtr.classify.pattern.DoNotSwallowTestErrorsSilientlyPattern;
@@ -19,13 +21,17 @@ import jp.mzw.vtr.classify.pattern.IntroduceAutoBoxingPattern;
 import jp.mzw.vtr.classify.pattern.RemoveUnusedExceptionsPattern;
 import jp.mzw.vtr.classify.pattern.ReplaceAtTodoWithTODOPattern;
 import jp.mzw.vtr.classify.pattern.SwapActualExpectedValuePattern;
+import jp.mzw.vtr.classify.pattern.UseAssertArrayEqualsProperlyPattern;
 import jp.mzw.vtr.classify.pattern.UseAssertEqualsProperlyPattern;
-import jp.mzw.vtr.classify.pattern.UseAssertNotSamePattern;
-import jp.mzw.vtr.classify.pattern.UseAssertNullPattern;
+import jp.mzw.vtr.classify.pattern.UseAssertFalseProperlyPattern;
+import jp.mzw.vtr.classify.pattern.UseAssertNotSameProperlyPattern;
+import jp.mzw.vtr.classify.pattern.UseAssertNullProperlyPattern;
+import jp.mzw.vtr.classify.pattern.UseAssertTrueProperlyPattern;
 import jp.mzw.vtr.classify.pattern.UseAssignmentOperatorPattern;
 import jp.mzw.vtr.classify.pattern.UseAtCodeInsteadOfTtTag;
 import jp.mzw.vtr.classify.pattern.UseDiamondOperatorPattern;
 import jp.mzw.vtr.classify.pattern.UseEnhancedForLoopPattern;
+import jp.mzw.vtr.classify.pattern.UseFailInsteadOfAssertTruePattern;
 import jp.mzw.vtr.classify.pattern.UseFinalModifierPattern;
 import jp.mzw.vtr.classify.pattern.UseProcessWaitForPattern;
 import jp.mzw.vtr.classify.pattern.UseProperFileConstructorPattern;
@@ -33,7 +39,16 @@ import jp.mzw.vtr.classify.pattern.UseStaticFieldDirectlyPattern;
 import jp.mzw.vtr.classify.pattern.UseStaticMethodDirectlyPattern;
 import jp.mzw.vtr.classify.pattern.UseStringContainsPattern;
 import jp.mzw.vtr.classify.pattern.UseTryWithResourcesPattern;
-import jp.mzw.vtr.classify.pattern.limitation.ReorganizeTestCases;
+import jp.mzw.vtr.classify.pattern.limitation.ChangeAPIPattern;
+import jp.mzw.vtr.classify.pattern.limitation.ChangeNamePattern;
+import jp.mzw.vtr.classify.pattern.limitation.ChangeTestDataPattern;
+import jp.mzw.vtr.classify.pattern.limitation.FixTypoPattern;
+import jp.mzw.vtr.classify.pattern.limitation.NewTestCasesPattern;
+import jp.mzw.vtr.classify.pattern.limitation.RemoveCommentPattern;
+import jp.mzw.vtr.classify.pattern.limitation.ReorganizeTestCasesPattern;
+import jp.mzw.vtr.classify.pattern.limitation.RevertCommitPattern;
+import jp.mzw.vtr.classify.pattern.limitation.SkipTestCasesToRunPattern;
+import jp.mzw.vtr.classify.pattern.limitation.UtilityMethodPattern;
 import jp.mzw.vtr.cluster.similarity.LcsAnalyzer;
 import jp.mzw.vtr.core.Project;
 import jp.mzw.vtr.detect.TestCaseModification;
@@ -88,20 +103,46 @@ public class Classifier {
         if (AddTestAnnotationPattern.match(testCaseModification)) {
             return "#1";
         }
+        if (UseAssertArrayEqualsProperlyPattern.match(testCaseModification)) {
+            // XXX: unimplemented due to no data
+            return "#2";
+        }
         if (UseAssertEqualsProperlyPattern.match(testCaseModification)) {
             return "#3";
         }
-        if (UseAssertNotSamePattern.match(testCaseModification)) {
+        if (UseAssertFalseProperlyPattern.match(testCaseModification)) {
+            // XXX: unimplemented due to no data
+            return "#4";
+        }
+        if (UseAssertNotSameProperlyPattern.match(testCaseModification)) {
             return "#5";
         }
-        if (UseAssertNullPattern.match(testCaseModification)) {
+        if (UseAssertNullProperlyPattern.match(testCaseModification)) {
             return "#6";
+        }
+        if (UseAssertTrueProperlyPattern.match(testCaseModification)) {
+            // XXX: unimplemented due to no data
+            return "#7";
+        }
+        if (UseFailInsteadOfAssertTruePattern.match(testCaseModification)) {
+            // XXX: unimplemented due to no data
+            return "#8";
         }
         if (UseStringContainsPattern.match(testCaseModification)) {
             return "#9";
         }
         if (SwapActualExpectedValuePattern.match(testCaseModification)) {
             return "#10";
+        }
+        if (AssertNotNullToINstancesPattern.match(testCaseModification)) {
+            // XXX: unimplemented due to unexpected error
+            // Actually, there is a real data for this pattern.
+            // https://github.com/apache/commons-pool/blame/5720792c81415909ac7972b050be7254d2e51c08/src/test/java/org/apache/commons/pool2/TestPoolUtils.java#L62
+            // However, the commit doesn't exist already.
+            // ----------------------------------------------------------------------------------
+            // [tsukakei@mbp13-2: commons-pool]$ git log 5720792c81415909ac7972b050be7254d2e51c08
+            // fatal: bad object 5720792c81415909ac7972b050be7254d2e51c08
+            return "#11";
         }
         if (ImportAssertNonStaticPattern.match(testCaseModification)) {
             return "#12";
@@ -135,7 +176,7 @@ public class Classifier {
         }
         if (RemoveRedundantCastPattern.match(testCaseModification)) {
             // TODO: implement
-            // return "#22";
+            return "#22";
         }
         if (IntroduceAutoBoxingPattern.match(testCaseModification)) {
             return "#23";
@@ -181,19 +222,59 @@ public class Classifier {
         }
         if (UseProperFileConstructorPattern.match(testCaseModification)) {
             // TODO: implement
-            // return "#37";
+             return "#37";
+        }
+        if (AddCastToNullPattern.match(testCaseModification)) {
+            // TODO: implement
+            return "#38";
         }
         if (UseStaticMethodDirectlyPattern.match(testCaseModification)) {
             // TODO: implement
-            // return "#39";
+             return "#39";
         }
         if (UseStaticFieldDirectlyPattern.match(testCaseModification)) {
             // TODO: implement
-            // return "#40";
+             return "#40";
         }
-        if (ReorganizeTestCases.match(testCaseModification)) {
+        if (NewTestCasesPattern.match(testCaseModification)) {
             // TODO: implement
-            // return "#L3";
+            return "#L1";
+        }
+        if (SkipTestCasesToRunPattern.match(testCaseModification)) {
+            // TODO: implement
+             return "#L2";
+        }
+        if (ReorganizeTestCasesPattern.match(testCaseModification)) {
+            // TODO: implement
+            return "#L3";
+        }
+        if (ChangeNamePattern.match(testCaseModification)) {
+            // TODO: implement
+            return "#L4";
+        }
+        if (UtilityMethodPattern.match(testCaseModification)) {
+            // TODO: implement
+            return "#L5";
+        }
+        if (ChangeTestDataPattern.match(testCaseModification)) {
+            // TODO: implement
+            return "#L6";
+        }
+        if (RemoveCommentPattern.match(testCaseModification)) {
+            // TODO: implement
+            return "#L7";
+        }
+        if (FixTypoPattern.match(testCaseModification)) {
+            // TODO: implement
+            return "#L8";
+        }
+        if (RevertCommitPattern.match(testCaseModification)) {
+            // TODO: implement
+            return "#L9";
+        }
+        if (ChangeAPIPattern.match(testCaseModification)) {
+            // TODO: implement
+            return "#FP1";
         }
         return "Nan";
     }
