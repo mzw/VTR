@@ -225,7 +225,6 @@ public class Classifier {
              return "#37";
         }
         if (AddCastToNullPattern.match(testCaseModification)) {
-            // TODO: implement
             return "#38";
         }
         if (UseStaticMethodDirectlyPattern.match(testCaseModification)) {
