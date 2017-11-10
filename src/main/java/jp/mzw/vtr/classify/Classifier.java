@@ -10,6 +10,7 @@ import jp.mzw.vtr.classify.pattern.AssertNotNullToINstancesPattern;
 import jp.mzw.vtr.classify.pattern.CloseResourcesPattern;
 import jp.mzw.vtr.classify.pattern.ConvertControlStatementToBlockPattern;
 import jp.mzw.vtr.classify.pattern.DoNotSwallowTestErrorsSilientlyPattern;
+import jp.mzw.vtr.classify.pattern.UsePrimitiveValueMethodPattern;
 import jp.mzw.vtr.classify.pattern.FixJavadocErrorsPattern;
 import jp.mzw.vtr.classify.pattern.HandleExpectedExceptionsProperlyPatrern;
 import jp.mzw.vtr.classify.pattern.ImportAssertNonStaticPattern;
@@ -221,7 +222,9 @@ public class Classifier {
             return "#36";
         }
         if (UseProperFileConstructorPattern.match(testCaseModification)) {
-            // TODO: implement
+            // XXX: unimplemented due to unexpected error, but there is a commit https://github.com/apache/commons-fileupload/commit/8296784dab7104e30cf1b1527ea20926a33eebcf
+            // [tsukakei@mbp13-2: commons-fileupload]$ git log 8296784dab7104e30cf1b1527ea20926a33eebcf
+            // fatal: bad object 8296784dab7104e30cf1b1527ea20926a33eebcf
              return "#37";
         }
         if (AddCastToNullPattern.match(testCaseModification)) {
@@ -234,6 +237,10 @@ public class Classifier {
         if (UseStaticFieldDirectlyPattern.match(testCaseModification)) {
             // TODO: implement
              return "#40";
+        }
+        if (UsePrimitiveValueMethodPattern.match(testCaseModification)) {
+            // TODO: implement
+            return "#N1";
         }
         if (NewTestCasesPattern.match(testCaseModification)) {
             // TODO: implement
