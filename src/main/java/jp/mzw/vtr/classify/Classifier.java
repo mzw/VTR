@@ -177,7 +177,6 @@ public class Classifier {
             return "#21";
         }
         if (RemoveRedundantCastPattern.match(testCaseModification)) {
-            // TODO: implement
             return "#22";
         }
         if (IntroduceAutoBoxingPattern.match(testCaseModification)) {
@@ -243,7 +242,6 @@ public class Classifier {
             return "#N1";
         }
         if (UseValueofMethodPattern.match(testCaseModification)) {
-            // TODO: implement
             return "#N2";
         }
         if (NewTestCasesPattern.match(testCaseModification)) {
