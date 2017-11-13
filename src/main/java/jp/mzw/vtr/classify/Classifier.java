@@ -40,6 +40,7 @@ import jp.mzw.vtr.classify.pattern.UseStaticFieldDirectlyPattern;
 import jp.mzw.vtr.classify.pattern.UseStaticMethodDirectlyPattern;
 import jp.mzw.vtr.classify.pattern.UseStringContainsPattern;
 import jp.mzw.vtr.classify.pattern.UseTryWithResourcesPattern;
+import jp.mzw.vtr.classify.pattern.UseValueofMethodPattern;
 import jp.mzw.vtr.classify.pattern.limitation.ChangeAPIPattern;
 import jp.mzw.vtr.classify.pattern.limitation.ChangeNamePattern;
 import jp.mzw.vtr.classify.pattern.limitation.ChangeTestDataPattern;
@@ -239,8 +240,11 @@ public class Classifier {
              return "#40";
         }
         if (UsePrimitiveValueMethodPattern.match(testCaseModification)) {
-            // TODO: implement
             return "#N1";
+        }
+        if (UseValueofMethodPattern.match(testCaseModification)) {
+            // TODO: implement
+            return "#N2";
         }
         if (NewTestCasesPattern.match(testCaseModification)) {
             // TODO: implement

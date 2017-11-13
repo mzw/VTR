@@ -44,4 +44,10 @@ public class PatternUtils {
         return cnt;
     }
 
+    static protected long countNumOfValueOfMethod(List<String> nodes) {
+        return nodes.stream().filter(node ->(
+                node.startsWith("org.eclipse.jdt.core.dom.MethodInvocation:Double.valueOf")
+                        || node.startsWith("org.eclipse.jdt.core.dom.MethodInvocation:Integer.valueOf")
+        )).count();
+    }
 }
