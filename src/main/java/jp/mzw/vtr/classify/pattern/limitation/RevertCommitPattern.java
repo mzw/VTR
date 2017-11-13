@@ -4,7 +4,6 @@ import jp.mzw.vtr.detect.TestCaseModification;
 
 public class RevertCommitPattern {
     static public boolean match(TestCaseModification testCaseModification) {
-        // TODO: implement
-        return false;
+        return testCaseModification.getCommitMessage().toLowerCase().startsWith("revert");
     }
 }

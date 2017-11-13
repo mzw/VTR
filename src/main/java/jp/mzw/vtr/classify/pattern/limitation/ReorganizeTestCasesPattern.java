@@ -7,11 +7,7 @@ import java.util.List;
 
 public class ReorganizeTestCasesPattern {
     static public boolean match(TestCaseModification testCaseModification) {
-        List<ASTNode> oldNodes = testCaseModification.getOldNodes();
-        List<ASTNode> newNodes = testCaseModification.getNewNodes();
-        if (oldNodes == null) {
-            return true;
-        }
+        // TODO implement
         return false;
     }
 }

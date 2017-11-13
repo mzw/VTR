@@ -277,7 +277,6 @@ public class Classifier {
             return "#L8";
         }
         if (RevertCommitPattern.match(testCaseModification)) {
-            // TODO: implement
             return "#L9";
         }
         if (ChangeAPIPattern.match(testCaseModification)) {
