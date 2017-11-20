@@ -41,6 +41,7 @@ import jp.mzw.vtr.classify.pattern.UseStaticMethodDirectlyPattern;
 import jp.mzw.vtr.classify.pattern.UseStringContainsPattern;
 import jp.mzw.vtr.classify.pattern.UseTryWithResourcesPattern;
 import jp.mzw.vtr.classify.pattern.UseValueofMethodPattern;
+import jp.mzw.vtr.classify.pattern.limitation.AddJavadocPattern;
 import jp.mzw.vtr.classify.pattern.limitation.ChangeAPIPattern;
 import jp.mzw.vtr.classify.pattern.limitation.ChangeNamePattern;
 import jp.mzw.vtr.classify.pattern.limitation.ChangeTestDataPattern;
@@ -245,7 +246,6 @@ public class Classifier {
             return "#N2";
         }
         if (NewTestCasesPattern.match(testCaseModification)) {
-            // TODO: implement
             return "#L1";
         }
         if (SkipTestCasesToRunPattern.match(testCaseModification)) {
@@ -273,11 +273,13 @@ public class Classifier {
             return "#L7";
         }
         if (FixTypoPattern.match(testCaseModification)) {
-            // TODO: implement
             return "#L8";
         }
         if (RevertCommitPattern.match(testCaseModification)) {
             return "#L9";
+        }
+        if (AddJavadocPattern.match(testCaseModification)) {
+            return "#LN1";
         }
         if (ChangeAPIPattern.match(testCaseModification)) {
             // TODO: implement

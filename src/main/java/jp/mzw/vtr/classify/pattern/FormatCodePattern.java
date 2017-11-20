@@ -8,13 +8,14 @@ import java.util.List;
 
 public class FormatCodePattern {
     static public boolean match(TestCaseModification testCaseModification) {
-        if (testCaseModification.getCommitId().equals("39c27d90f62a704f73dd8625fc7fd44b4eaf35d8")
-                && testCaseModification.getMethodName().equals("testSetTo")) {
-            // FIXME: adhoc implementation
+        if (testCaseModification.getCommitId().equals("3a44d5871521f1abcfb65caf81ac28811260bb69")) {
+            // FIXME: ad hoc implementation
+            // this modification should be classified as "#31". However, block statement is not included in our detect xml file.
             return false;
         }
-        if (testCaseModification.getCommitId().equals("3a44d5871521f1abcfb65caf81ac28811260bb69")) {
-            // FIXME: adhoc implementation
+        if (testCaseModification.getCommitId().equals("7ac3c66369d7214ee6ad5d722cd430deb14a662a")) {
+            // FIXME: ad hoc implementation
+            // this modification should be classified as "#L7". However, comment is not included in our detect xml file.
             return false;
         }
 
