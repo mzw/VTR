@@ -2062,7 +2062,7 @@ ID,Subject,Commit,Class,Method,Item
 2061,commons-math,3e8cbfa5c99b8abf82f472f9a63c9b7a51abed1d,org.apache.commons.math3.linear.RealVectorTest,testGetL1Norm,#L1
 2062,commons-math,3e8cbfa5c99b8abf82f472f9a63c9b7a51abed1d,org.apache.commons.math3.linear.RealVectorTest,testGetLInfNorm,#L1
 2063,commons-math,3fd9cf1753a24587ee9d64d2133784adaa099219,org.apache.commons.math4.distribution.AbstractIntegerDistributionTest,testProbabilitiesRangeArguments,#FP1
-2064,commons-math,4039a1446040821a29d0f267b65d379cd1b782d2,org.apache.commons.math.util.MathUtilsTest,testArrayEquals,#L7
+2064,commons-math,4039a1446040821a29d0f267b65d379cd1b782d2,org.apache.commons.math.util.MathUtilsTest,testArrayEquals,#LN1
 2065,commons-math,4104b213685843ad6644fd02b4f4d92ec537ab8f,org.apache.commons.math3.util.FastMathTestPerformance,testAsin,#L3
 2066,commons-math,4117b2a53aa93f26d66b5bd8594b211ff61bd343,org.apache.commons.math.analysis.polynomials.PolynomialFunctionTest,testConstants,#1
 2067,commons-math,4117b2a53aa93f26d66b5bd8594b211ff61bd343,org.apache.commons.math.analysis.polynomials.PolynomialFunctionTest,testQuadratic,#1
