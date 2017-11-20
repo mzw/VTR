@@ -226,18 +226,20 @@ public class Classifier {
             // XXX: unimplemented due to unexpected error, but there is a commit https://github.com/apache/commons-fileupload/commit/8296784dab7104e30cf1b1527ea20926a33eebcf
             // [tsukakei@mbp13-2: commons-fileupload]$ git log 8296784dab7104e30cf1b1527ea20926a33eebcf
             // fatal: bad object 8296784dab7104e30cf1b1527ea20926a33eebcf
-             return "#37";
+            return "#37";
         }
         if (AddCastToNullPattern.match(testCaseModification)) {
             return "#38";
         }
         if (UseStaticMethodDirectlyPattern.match(testCaseModification)) {
-            // TODO: implement
-             return "#39";
+            // XXX: implement
+            // this pattern is too difficult to be classified without static analysis.
+            return "#39";
         }
         if (UseStaticFieldDirectlyPattern.match(testCaseModification)) {
-            // TODO: implement
-             return "#40";
+            // XXX: implement
+            // this pattern is too difficult to be classified without static analysis.
+            return "#40";
         }
         if (UsePrimitiveValueMethodPattern.match(testCaseModification)) {
             return "#N1";
@@ -249,7 +251,6 @@ public class Classifier {
             return "#L1";
         }
         if (SkipTestCasesToRunPattern.match(testCaseModification)) {
-            // TODO: implement
              return "#L2";
         }
         if (ReorganizeTestCasesPattern.match(testCaseModification)) {
