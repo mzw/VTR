@@ -258,7 +258,7 @@ public class Classifier {
             return "#L3";
         }
         if (ChangeNamePattern.match(testCaseModification)) {
-            // TODO: implement
+            // HACKME: low precision and recall score
             return "#L4";
         }
         if (UtilityMethodPattern.match(testCaseModification)) {
@@ -270,7 +270,8 @@ public class Classifier {
             return "#L6";
         }
         if (RemoveCommentPattern.match(testCaseModification)) {
-            // TODO: implement
+            // XXX: implement
+            // our detection results don't contain information about comment. (this is due to specification of eclipse JDT AST.)
             return "#L7";
         }
         if (FixTypoPattern.match(testCaseModification)) {
