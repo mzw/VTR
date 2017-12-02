@@ -24,7 +24,7 @@ public class DictCommand {
          if (args.length != 1) { // Invalid usage
              System.out.println("$ java -cp=<class-path> jp.mzw.vtr.CLI dict      <subject-id>");
          } else {
-             String projectId = args[1];
+             String projectId = args[0];
              Project project = new Project(projectId).setConfig(CONFIG_FILENAME);
              dict(project);
          }

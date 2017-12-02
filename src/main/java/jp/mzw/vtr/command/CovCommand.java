@@ -15,13 +15,13 @@ import static jp.mzw.vtr.CLI.CONFIG_FILENAME;
  */
 public class CovCommand {
     public static void command(String... args) throws IOException, ParseException, GitAPIException {
-        String projectId = args[1];
+        String projectId = args[0];
         Project project = new Project(projectId).setConfig(CONFIG_FILENAME);
-        if (args.length == 2) {
+        if (args.length == 1) {
             cov(project);
-        } else if (args.length == 4) { // specific commit(s)
-            CheckoutConductor.Type type = CheckoutConductor.Type.valueOf(args[2]);
-            String commitId = args[3];
+        } else if (args.length == 3) { // specific commit(s)
+            CheckoutConductor.Type type = CheckoutConductor.Type.valueOf(args[1]);
+            String commitId = args[2];
             cov(project, type, commitId);
         } else {
             System.out.println("$ java -cp=<class-path> jp.mzw.vtr.CLI cov <subject-id>");
