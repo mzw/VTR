@@ -18,6 +18,10 @@
 			<id>Jspresso Repository</id>
 			<url>http://repository.jspresso.org/maven2/</url>
 		</repository>
+		<repository>
+			<id>jp.mzw.mvn-repo</id>
+			<url>http://mvn-repo.mzw.jp/</url>
+		</repository>
 	</repositories>
 	
     <distributionManagement>
