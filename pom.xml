@@ -260,6 +260,16 @@
 			<scope>system</scope>
 			<systemPath>${project.basedir}/lib/jtidy-r938.jar</systemPath>
 		</dependency>
+		<dependency>
+			<groupId>GrouMiner</groupId>
+			<artifactId>groum</artifactId>
+			<version>1.0</version>
+		</dependency>
+		<dependency>
+			<groupId>GrouMiner</groupId>
+			<artifactId>grouminer</artifactId>
+			<version>1.0</version>
+		</dependency>
 	</dependencies>
 
 	<build>
