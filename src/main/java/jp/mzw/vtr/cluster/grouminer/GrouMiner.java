@@ -1,11 +1,9 @@
 package jp.mzw.vtr.cluster.grouminer;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import jp.mzw.vtr.CLI;
 import jp.mzw.vtr.core.Project;
-import jp.mzw.vtr.core.VtrUtils;
 import jp.mzw.vtr.detect.Detector;
+import jp.mzw.vtr.detect.DetectionResult;
 import jp.mzw.vtr.dict.Dictionary;
 import jp.mzw.vtr.git.CheckoutConductor;
 import jp.mzw.vtr.maven.TestCase;
@@ -24,8 +22,8 @@ public class GrouMiner {
 
     public static void main(String[] args) throws IOException, GitAPIException, ParseException {
         Project project = new Project(null).setConfig(CLI.CONFIG_FILENAME);
+        List<DetectionResult> results = Detector.getDetectionResults(project.getSubjectsDir(), project.getOutputDir());
         GrouMiner miner = new GrouMiner(project.getSubjectsDir(), project.getOutputDir());
-        List<DetectionResult> results = miner.getDetectionResults();
         miner.apply(results);
     }
 
@@ -44,48 +42,6 @@ public class GrouMiner {
     public GrouMiner(final File subjectDir, final File outputDir) {
         this.subjectDir = subjectDir;
         this.outputDir = outputDir;
-    }
-
-    /**
-     * Gets detection results
-     *
-     * @return a list of detection results
-     */
-    public List<DetectionResult> getDetectionResults() {
-        final List<String> subjectList = Lists.newArrayList();
-        for (final File subject : this.subjectDir.listFiles()) {
-            if (subject.isDirectory()) {
-                subjectList.add(subject.getName());
-            }
-        }
-        final List<DetectionResult> results = Lists.newArrayList();
-        for (final File subject : this.outputDir.listFiles()) {
-            if (subject.isDirectory() && subjectList.contains(subject.getName())) {
-                DetectionResult result = new DetectionResult(subject.getName());
-                for (final File detect : subject.listFiles()) {
-                    if (detect.isDirectory() && detect.getName().equals(Detector.DETECT_DIR)) {
-                        final Map<String, List<String>> commits = Maps.newHashMap();
-                        for (final File commit : detect.listFiles()) {
-                            final List<String> testcases = Lists.newArrayList();
-                            for (final File testcase : commit.listFiles()) {
-                                final String testcaseName = VtrUtils.getNameWithoutExtension(testcase);
-                                testcases.add(testcaseName);
-                            }
-                            if (!testcases.isEmpty()) {
-                                commits.put(commit.getName(), testcases);
-                            }
-                        }
-                        if (!commits.isEmpty()) {
-                            result.setResult(commits);
-                        }
-                    }
-                }
-                if (result.hasResult()) {
-                    results.add(result);
-                }
-            }
-        }
-        return results;
     }
 
     /**
@@ -127,76 +83,5 @@ public class GrouMiner {
                 }
             }
         }
-    }
-
-    /**
-     * Container of Detection Results of Test Case Modifications across Software Release
-     *
-     * @author Yuta Maezawa
-     */
-    public static class DetectionResult {
-
-        /**
-         * Represents a project id
-         */
-        private final String subjectName;
-
-        /**
-         * A key is a commit Id and its value(s) are a list of test cases modified at the commit Id
-         */
-        private Map<String, List<String>> results;
-
-        /**
-         * True if any results, otherwise false
-         */
-        private boolean hasResult;
-
-        /**
-         * Constructor: must initially have no detection result
-         *
-         * @param subjectName represents a project id
-         */
-        public DetectionResult(final String subjectName) {
-            this.subjectName = subjectName;
-            this.hasResult = false;
-        }
-
-        /**
-         * Sets a map value containing detection results.
-         *
-         * @param results
-         */
-        public void setResult(final Map<String, List<String>> results) {
-            this.hasResult = true;
-            this.results = results;
-        }
-
-        /**
-         * A boolean
-         *
-         * @return true if any results, otherwise false.
-         */
-        public boolean hasResult() {
-            return this.hasResult;
-        }
-
-        /**
-         * Gets this project id
-         *
-         * @return this project id
-         */
-        public String getSubjectName() {
-            return this.subjectName;
-        }
-
-        /**
-         * Gets detection results
-         *
-         * @return detection results
-         */
-        public Map<String, List<String>> getResults() {
-            return this.results;
-        }
-
     }
 }
