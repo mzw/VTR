@@ -6,7 +6,7 @@ import com.paypal.digraph.parser.GraphParser;
 import groum.GROUMEdge;
 import groum.GROUMGraph;
 import groum.GROUMNode;
-import jp.mzw.vtr.git.Commit;
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
@@ -35,7 +35,7 @@ public class IntegratedGrouMinerEngine implements IGrouMinerEngine {
         this.outputDir = outputDir;
     }
 
-    protected void createDotFiles(Commit commit) {
+    protected void createDotFiles(String commit) {
         GROUMBuilder groumBuilder = new GROUMBuilder(subjectDir.getPath());
         groumBuilder.build();
         ArrayList<GROUMGraph> graphs = groumBuilder.getGroums();
@@ -50,22 +50,83 @@ public class IntegratedGrouMinerEngine implements IGrouMinerEngine {
     }
 
 
-    protected GrouMiner.PatchPattern compareGroums(Commit prvCommit, Commit curCommit, String className, String methodName) {
-        String fileName = String.join(".", className, methodName, "dot");
+    protected GrouMiner.PatchPattern compareGroums(String prvCommit, String curCommit, String className, String methodName) {
+//        System.out.println("PrevCommit: " + prvCommit);
+//        System.out.println("CurCommit: " + curCommit);
+//        System.out.println("Class Name: " + className);
+//        System.out.println("Method Name: " + methodName);
+        String fileName = String.join(".", className.substring(className.lastIndexOf(".") + 1), methodName);
         Pair<Map<String, GraphNode>, Map<String, GraphEdge>> prvDot = parse(getPathToDotFile(prvCommit, fileName));
         Pair<Map<String, GraphNode>, Map<String, GraphEdge>> curDot = parse(getPathToDotFile(curCommit, fileName));
 
         // ここで何らかの比較
-        return GrouMiner.PatchPattern.Additive;
+        Map<String, GraphEdge> prvEdges = prvDot.getRight();
+        Map<String, GraphNode> prvNodes = prvDot.getLeft();
+        Map<String, GraphEdge> curEdges = curDot.getRight();
+        Map<String, GraphNode> curNodes = curDot.getLeft();
+
+        if (prvEdges.size() < curEdges.size()) {
+            return GrouMiner.PatchPattern.Subtractive;
+        } else if (prvEdges.size() < curEdges.size()) {
+            return GrouMiner.PatchPattern.Additive;
+        } else if (isSameNodes(prvNodes, curNodes) && !isSameEdges(prvEdges, curEdges)) {
+            return GrouMiner.PatchPattern.Altering;
+        } else {
+            return GrouMiner.PatchPattern.Other;
+        }
     }
 
+    /* Compare Dot files */
+    private boolean isSameNodes(Map<String, GraphNode> prvNodes, Map<String, GraphNode> curNodes) {
+        if (prvNodes.size() != curNodes.size()) {
+            return false;
+        }
+        for (GraphNode prvNode : prvNodes.values()) {
+            boolean found = false;
+            String prvLabel = (String) prvNode.getAttribute("label");
+            for (GraphNode curNode : curNodes.values()) {
+                String curLabel = (String) curNode.getAttribute("label");
+                if (prvLabel.equals(curLabel)) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                return false;
+            }
+        }
+        return true;
+    }
+    private boolean isSameEdges(Map<String, GraphEdge> prvEdges, Map<String, GraphEdge> curEdges) {
+        if (prvEdges.size() != curEdges.size()) {
+            return false;
+        }
+        for (GraphEdge prvEdge : prvEdges.values()) {
+            boolean found = false;
+            String prvNode1Label = (String) prvEdge.getNode1().getAttribute("label");
+            String prvNode2Label = (String) prvEdge.getNode2().getAttribute("label");
+            for (GraphEdge curEdge : curEdges.values()) {
+                String curNode1Label = (String) curEdge.getNode1().getAttribute("label");
+                String curNode2Label = (String) curEdge.getNode2().getAttribute("label");
+                if (prvNode1Label.equals(curNode1Label) && prvNode2Label.equals(curNode2Label)) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /* Parse Dot file */
     private Pair<Map<String, GraphNode>, Map<String, GraphEdge>> parse(Path pathToDotFile) {
         GraphParser parser = new GraphParser(getInputStream(pathToDotFile));
         Map<String, GraphNode> nodes = parser.getNodes();
         Map<String, GraphEdge> edges = parser.getEdges();
         return new ImmutablePair<>(nodes, edges);
     }
-
     private InputStream getInputStream(Path path) {
         InputStream ret = null;
         try {
@@ -76,9 +137,15 @@ public class IntegratedGrouMinerEngine implements IGrouMinerEngine {
         }
         return ret;
     }
-
+    /* Path To Dot files */
+    private Path getPathToDotFile(String commit, String fileName) {
+        return Paths.get(String.join("/", getPathToDotDirectory(commit).toString(), fileName + ".dot"));
+    }
+    private Path getPathToDotDirectory(String commit) {
+        return Paths.get(String.join("/", outputDir.getPath(), "dot", commit));
+    }
     /* To output Dot files */
-    private void outputDotFile(Commit commit, String fileName, String content) {
+    private void outputDotFile(String commit, String fileName, String content) {
         if (!Files.exists(getPathToDotFile(commit, fileName))) {
             try {
                 Files.createDirectories(getPathToDotDirectory(commit));
@@ -88,22 +155,13 @@ public class IntegratedGrouMinerEngine implements IGrouMinerEngine {
                 LOGGER.error(e.getMessage());
             }
         }
-        try (BufferedWriter bw = Files.newBufferedWriter(getPathToDotFile(commit, content))) {
+        try (BufferedWriter bw = Files.newBufferedWriter(getPathToDotFile(commit, fileName))) {
             bw.write(content);
         } catch (IOException e) {
             e.printStackTrace();
             LOGGER.error(e.getMessage());
         }
     }
-
-    private Path getPathToDotFile(Commit commit, String fileName) {
-        return Paths.get(String.join("/", getPathToDotDirectory(commit).toString(), fileName + ".dot"));
-    }
-
-    private Path getPathToDotDirectory(Commit commit) {
-        return Paths.get(String.join("/", outputDir.getPath(), "dot", commit.getId()));
-    }
-
     /* To create Dot file */
     private static String getDotStart() {
         return "digraph G {\n";
@@ -113,7 +171,6 @@ public class IntegratedGrouMinerEngine implements IGrouMinerEngine {
     }
     private static String addNodesToDot(GROUMGraph graph) {
         StringBuilder sb = new StringBuilder();
-        // add nodes
         for (GROUMNode node : graph.getNodes()) {
             int id = node.getId();
             String label = node.getLabel();
@@ -124,7 +181,6 @@ public class IntegratedGrouMinerEngine implements IGrouMinerEngine {
     }
     private static String addEdgesToDot(GROUMGraph graph) {
         StringBuilder sb = new StringBuilder();
-        // add edges
         for (GROUMNode node : graph.getNodes()) {
             for (GROUMEdge edge : node.getInEdges()) {
                 int srcId = edge.getSrc().getId();
@@ -136,7 +192,7 @@ public class IntegratedGrouMinerEngine implements IGrouMinerEngine {
     }
     private static String nodeInfo(int id, String label, String shape, String style, String borderColor, String fontColor) {
         StringBuilder sb = new StringBuilder();
-        sb.append(id + " [label=\"" + label + "\"");
+        sb.append(id + " [label=\"" + StringEscapeUtils.escapeHtml4(label) + "\"");
         if (shape != null && !shape.isEmpty())
             sb.append(" shape=" + shape);
         if (style != null && !style.isEmpty())

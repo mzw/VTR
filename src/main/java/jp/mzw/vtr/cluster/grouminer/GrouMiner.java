@@ -1,5 +1,6 @@
 package jp.mzw.vtr.cluster.grouminer;
 
+import com.hp.gagawa.java.elements.S;
 import jp.mzw.vtr.CLI;
 import jp.mzw.vtr.core.Project;
 import jp.mzw.vtr.detect.Detector;
@@ -34,7 +35,7 @@ public class GrouMiner {
     private final File outputDir;
 
     /** A engine to invoke GrouMiner and get patch patterns */
-    private IGrouMinerEngine grouMinerEngine;
+    private IntegratedGrouMinerEngine grouMinerEngine;
 
     /**
      * Constructor
@@ -70,20 +71,25 @@ public class GrouMiner {
                 // Applying groums into "after" version of programs under analysis
                 LOGGER.info("Checkout: " + commit);
                 git.checkout(CheckoutConductor.Type.At, commit); // after
-                // Here
-
+                grouMinerEngine.createDotFiles(commit);
                 // Applying groums into "before" version of programs under analysis
                 String prevCommit = dict.getPrevCommitBy(commit).getId();
                 LOGGER.info("Checkout: " + prevCommit + " previous to " + commit);
                 git.checkout(CheckoutConductor.Type.At, prevCommit); // before
-                // Here
-
+                grouMinerEngine.createDotFiles(prevCommit);
                 // Classifying additive, subtractive, or altering patches
                 List<String> testcases = commits.get(commit);
                 for (final String testcase : testcases) {
                     final String className = TestCase.getClassName(testcase);
                     final String methodName = TestCase.getMethodName(testcase);
-                    // Here
+                    PatchPattern pattern = grouMinerEngine.compareGroums(prevCommit, commit, className, methodName);
+                    if (pattern.equals(PatchPattern.Additive)) {
+//                        System.out.println("PrevCommit: " + prevCommit);
+//                        System.out.println("CurCommit: " + commit);
+//                        System.out.println("Class Name: " + className);
+//                        System.out.println("Method Name: " + methodName);
+                    }
+                    // output
                 }
             }
         }
@@ -97,6 +103,7 @@ public class GrouMiner {
     enum PatchPattern {
         Additive,    // A patch which inserts new semantic features such as new control flows
         Subtractive, // A patch which removes semantic features
-        Altering     // A patch which changes control flows by replacing semantic features
+        Altering,    // A patch which changes control flows by replacing semantic features
+        Other
     }
 }
