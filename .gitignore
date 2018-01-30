@@ -11,6 +11,8 @@ sh/all_run.sh
 sh/ba.sh
 sh/slack.php
 
+VTR.iml
+
 # Maven
 target/
 pom.xml.tag
