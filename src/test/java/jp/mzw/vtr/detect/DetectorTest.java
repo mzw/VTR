@@ -2,6 +2,7 @@ package jp.mzw.vtr.detect;
 
 import java.io.IOException;
 import java.text.ParseException;
+import java.util.List;
 
 import jp.mzw.vtr.VtrTestBase;
 import jp.mzw.vtr.dict.DictionaryBase;
@@ -40,4 +41,10 @@ public class DetectorTest extends VtrTestBase {
 		Assert.assertNull(detector.getActualSourceFile("src/main/java/" + "bar"));
 	}
 
+	@Test
+	public void testGetDetectionResults() {
+		List<DetectionResult> results = this.detector.getDetectionResults(this.project.getSubjectsDir(), this.project.getOutputDir());
+		Assert.assertNotNull(results);
+		Assert.assertEquals(1, results.size());
+	}
 }
