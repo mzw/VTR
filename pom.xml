@@ -264,6 +264,7 @@
 			<scope>system</scope>
 			<systemPath>${project.basedir}/lib/jtidy-r938.jar</systemPath>
 		</dependency>
+		<!-- For GrouMiner -->
 		<dependency>
 			<groupId>GrouMiner</groupId>
 			<artifactId>groum</artifactId>
@@ -272,6 +273,12 @@
 		<dependency>
 			<groupId>GrouMiner</groupId>
 			<artifactId>grouminer</artifactId>
+			<version>1.0</version>
+		</dependency>
+		<!-- Parse Dot Files -->
+		<dependency>
+			<groupId>com.paypal.digraph</groupId>
+			<artifactId>digraph-parser</artifactId>
 			<version>1.0</version>
 		</dependency>
 	</dependencies>
