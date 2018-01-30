@@ -3,13 +3,13 @@ package jp.mzw.vtr.detect;
 import java.io.File;
 import java.io.IOException;
 import java.text.ParseException;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import jp.mzw.vtr.core.VtrUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.dom4j.Document;
@@ -367,5 +367,49 @@ public class Detector implements CheckoutConductor.Listener {
 			return null;
 		}
 		return document.asXML();
+	}
+
+
+
+	/**
+	 * Gets detection results
+	 *
+	 * @return a list of detection results
+	 */
+	public static List<DetectionResult> getDetectionResults(final File subjectDir, final File outputDir) {
+		final List<String> subjectList = Lists.newArrayList();
+		for (final File subject : subjectDir.listFiles()) {
+			if (subject.isDirectory()) {
+				subjectList.add(subject.getName());
+			}
+		}
+		final List<DetectionResult> results = Lists.newArrayList();
+		for (final File subject : outputDir.listFiles()) {
+			if (subject.isDirectory() && subjectList.contains(subject.getName())) {
+				DetectionResult result = new DetectionResult(subject.getName());
+				for (final File detect : subject.listFiles()) {
+					if (detect.isDirectory() && detect.getName().equals(Detector.DETECT_DIR)) {
+						final Map<String, List<String>> commits = Maps.newHashMap();
+						for (final File commit : detect.listFiles()) {
+							final List<String> testcases = Lists.newArrayList();
+							for (final File testcase : commit.listFiles()) {
+								final String testcaseName = VtrUtils.getNameWithoutExtension(testcase);
+								testcases.add(testcaseName);
+							}
+							if (!testcases.isEmpty()) {
+								commits.put(commit.getName(), testcases);
+							}
+						}
+						if (!commits.isEmpty()) {
+							result.setResult(commits);
+						}
+					}
+				}
+				if (result.hasResult()) {
+					results.add(result);
+				}
+			}
+		}
+		return results;
 	}
 }
