@@ -124,10 +124,12 @@ public class TestCase {
 	}
 
 	public static String getClassName(final String fullname) {
+		if (fullname == null) return null;
 		return fullname.split("#")[0];
 	}
 
 	public static String getMethodName(final String fullname) {
+		if (fullname == null) return null;
 		return fullname.split("#")[1];
 	}
 

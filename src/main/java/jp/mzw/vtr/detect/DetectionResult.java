@@ -31,6 +31,9 @@ public class DetectionResult {
      * @param subjectName represents a project id
      */
     public DetectionResult(final String subjectName) {
+        if (subjectName == null) {
+            throw new IllegalArgumentException("subject name must not be null");
+        }
         this.subjectName = subjectName;
         this.hasResult = false;
     }
@@ -41,6 +44,9 @@ public class DetectionResult {
      * @param results
      */
     public void setResult(final Map<String, List<String>> results) {
+        if (results == null) {
+            return;
+        }
         this.hasResult = true;
         this.results = results;
     }
