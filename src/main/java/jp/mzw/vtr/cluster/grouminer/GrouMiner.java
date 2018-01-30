@@ -35,6 +35,9 @@ public class GrouMiner {
     /** A directory to output analysis results */
     private final File outputDir;
 
+    /** A engine to invoke GrouMiner and get patch patterns */
+    private IGrouMinerEngine grouMinerEngine;
+
     /**
      * Constructor
      *
@@ -44,6 +47,7 @@ public class GrouMiner {
     public GrouMiner(final File subjectDir, final File outputDir) {
         this.subjectDir = subjectDir;
         this.outputDir = outputDir;
+        grouMinerEngine = new IntegratedGrouMinerEngine(subjectDir, outputDir);
     }
 
     /**
@@ -127,6 +131,17 @@ public class GrouMiner {
                 }
             }
         }
+    }
+
+    /**
+     * Class to classify patch patterns defined in "Automatic Patch Generation Learned from Human-Written Patches", ICSE 2013
+     *
+     * @author Keita Tsukamoto
+     */
+    enum PatchPattern {
+        Additive,    // A patch which inserts new semantic features such as new control flows
+        Subtractive, // A patch which removes semantic features
+        Altering     // A patch which changes control flows by replacing semantic features
     }
 
     /**
