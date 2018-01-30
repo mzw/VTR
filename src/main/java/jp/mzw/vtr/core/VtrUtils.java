@@ -164,4 +164,13 @@ public class VtrUtils {
 			}
 		}
 	}
+
+	public static final String getNameWithoutExtension(final File file) {
+		final String name = file.getName();
+		int index = name.lastIndexOf('.');
+		if (index != -1) {
+			return name.substring(0, index);
+		}
+		return name;
+	}
 }
