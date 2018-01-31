@@ -93,13 +93,13 @@ public class GrouMiner {
                     final String methodName = TestCase.getMethodName(testcase);
                     PatchPattern pattern = grouMinerEngine.compareGroums(prevCommit, commit, className, methodName);
                     if (pattern.equals(PatchPattern.Additive)) {
-                        generateContent(additiveSb, subjectName, commit, className, methodName);
+                        generateContent(additiveSb, subjectName, commit, prevCommit, className, methodName);
                     } else if (pattern.equals(PatchPattern.Subtractive)) {
-                        generateContent(subtractiveSb, subjectName, commit, className, methodName);
+                        generateContent(subtractiveSb, subjectName, commit, prevCommit, className, methodName);
                     } else if (pattern.equals(PatchPattern.Altering)) {
-                        generateContent(alteringSb, subjectName, commit, className, methodName);
+                        generateContent(alteringSb, subjectName, commit, prevCommit, className, methodName);
                     } else if (pattern.equals(PatchPattern.None)) {
-                        generateContent(noneSb, subjectName, commit, className, methodName);
+                        generateContent(noneSb, subjectName, commit, prevCommit, className, methodName);
                     }
                 }
             }
@@ -193,9 +193,10 @@ public class GrouMiner {
         }
     }
     /* To generate content */
-    private void generateContent(StringBuilder sb, String projectId, String commit, String className, String methodName) {
+    private void generateContent(StringBuilder sb, String projectId, String commit, String prevCommit, String className, String methodName) {
         sb.append(projectId).append(",");
         sb.append(commit).append(",");
+        sb.append(prevCommit).append(",");
         sb.append(className).append(",");
         sb.append(methodName).append("\n");
 //        sb.append(generateUrlForManualChecking(projectId, commit, className, methodName)).append("\n");
