@@ -19,6 +19,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -53,13 +54,28 @@ public class IntegratedGrouMinerEngine implements IGrouMinerEngine {
 
 
     protected GrouMiner.PatchPattern compareGroums(String prvCommit, String curCommit, String className, String methodName) {
-//        System.out.println("PrevCommit: " + prvCommit);
-//        System.out.println("CurCommit: " + curCommit);
-//        System.out.println("Class Name: " + className);
-//        System.out.println("Method Name: " + methodName);
         String fileName = String.join(".", className.substring(className.lastIndexOf(".") + 1), methodName);
-        Pair<Map<String, GraphNode>, Map<String, GraphEdge>> prvDot = parse(getPathToDotFile(prvCommit, fileName));
-        Pair<Map<String, GraphNode>, Map<String, GraphEdge>> curDot = parse(getPathToDotFile(curCommit, fileName));
+        Pair<Map<String, GraphNode>, Map<String, GraphEdge>> prvDot = null;
+        try {
+            prvDot = parse(getPathToDotFile(prvCommit, fileName));
+        } catch (NoSuchFileException e) {
+            // do nothing
+        }
+        Pair<Map<String, GraphNode>, Map<String, GraphEdge>> curDot = null;
+        try {
+            curDot = parse(getPathToDotFile(curCommit, fileName));
+        } catch (NoSuchFileException e) {
+            // do nothing
+        }
+
+        // when dot files are not generated.
+        if (prvDot == null && curDot == null) {
+            return GrouMiner.PatchPattern.None;
+        } else if (prvDot != null && curDot == null) {
+            return GrouMiner.PatchPattern.Subtractive;
+        } else if (prvDot == null) { // curDOt != null is always true.
+            return GrouMiner.PatchPattern.Additive;
+        }
 
         // ここで何らかの比較
         Map<String, GraphEdge> prvEdges = prvDot.getRight();
@@ -123,16 +139,19 @@ public class IntegratedGrouMinerEngine implements IGrouMinerEngine {
     }
 
     /* Parse Dot file */
-    private Pair<Map<String, GraphNode>, Map<String, GraphEdge>> parse(Path pathToDotFile) {
+    private Pair<Map<String, GraphNode>, Map<String, GraphEdge>> parse(Path pathToDotFile) throws NoSuchFileException {
         GraphParser parser = new GraphParser(getInputStream(pathToDotFile));
         Map<String, GraphNode> nodes = parser.getNodes();
         Map<String, GraphEdge> edges = parser.getEdges();
         return new ImmutablePair<>(nodes, edges);
     }
-    private InputStream getInputStream(Path path) {
+    private InputStream getInputStream(Path path) throws NoSuchFileException {
         InputStream ret = null;
         try {
             ret = Files.newInputStream(path);
+        } catch (NoSuchFileException e) {
+            LOGGER.error(e.getMessage());
+            throw new NoSuchFileException(path.toString());
         } catch (IOException e) {
             e.printStackTrace();
             LOGGER.error(e.getMessage());
