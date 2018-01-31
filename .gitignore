@@ -1,6 +1,6 @@
 # Ours
-./subjects/
-./output/
+subjects/
+output/
 *.log
 
 config.properties
@@ -12,6 +12,9 @@ sh/ba.sh
 sh/slack.php
 
 VTR.iml
+
+# Groum
+log.txt
 
 # Maven
 target/
