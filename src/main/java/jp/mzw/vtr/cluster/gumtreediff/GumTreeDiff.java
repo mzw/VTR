@@ -13,7 +13,7 @@ public class GumTreeDiff extends BeforeAfterComparer {
     }
 
     @Override
-    pubilc void prepare(final Project project) {
+    public void prepare(final Project project) {
 
     }
 
