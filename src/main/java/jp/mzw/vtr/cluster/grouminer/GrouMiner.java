@@ -93,25 +93,13 @@ public class GrouMiner {
                     final String methodName = TestCase.getMethodName(testcase);
                     PatchPattern pattern = grouMinerEngine.compareGroums(prevCommit, commit, className, methodName);
                     if (pattern.equals(PatchPattern.Additive)) {
-                        additiveSb.append(subjectName).append(",");
-                        additiveSb.append(commit).append(",");
-                        additiveSb.append(className).append(",");
-                        additiveSb.append(methodName).append("\n");
+                        generateContent(additiveSb, subjectName, commit, className, methodName);
                     } else if (pattern.equals(PatchPattern.Subtractive)) {
-                        subtractiveSb.append(subjectName).append(",");
-                        subtractiveSb.append(commit).append(",");
-                        subtractiveSb.append(className).append(",");
-                        subtractiveSb.append(methodName).append("\n");
+                        generateContent(subtractiveSb, subjectName, commit, className, methodName);
                     } else if (pattern.equals(PatchPattern.Altering)) {
-                        alteringSb.append(subjectName).append(",");
-                        alteringSb.append(commit).append(",");
-                        alteringSb.append(className).append(",");
-                        alteringSb.append(methodName).append("\n");
+                        generateContent(alteringSb, subjectName, commit, className, methodName);
                     } else if (pattern.equals(PatchPattern.None)) {
-                        noneSb.append(subjectName).append(",");
-                        noneSb.append(commit).append(",");
-                        noneSb.append(className).append(",");
-                        noneSb.append(methodName).append("\n");
+                        generateContent(noneSb, subjectName, commit, className, methodName);
                     }
                 }
             }
@@ -204,7 +192,20 @@ public class GrouMiner {
             LOGGER.error(e.getMessage());
         }
     }
-
+    /* To generate content */
+    private void generateContent(StringBuilder sb, String projectId, String commit, String className, String methodName) {
+        sb.append(projectId).append(",");
+        sb.append(commit).append(",");
+        sb.append(className).append(",");
+        sb.append(methodName).append("\n");
+//        sb.append(generateUrlForManualChecking(projectId, commit, className, methodName)).append("\n");
+    }
+    /* To generate html */
+    private String generateUrlForManualChecking(String projectId, String commit, String className, String methodName) {
+        String prefix = "http://mzw.jp/yuta/research/vtr/results/tmp/20161212/visual/html/origin/";
+        String htmlName = String.join(":", projectId, commit, className, methodName) + ".html";
+        return prefix + htmlName;
+    }
     /* To get path to output */
     private Path getPathToOutputAdditive() {
         return getPathToOutputFile(PatchPattern.Additive);
