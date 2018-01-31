@@ -77,17 +77,17 @@ public class IntegratedGrouMinerEngine implements IGrouMinerEngine {
             return GrouMiner.PatchPattern.Additive;
         }
 
-        // ここで何らかの比較
         Map<String, GraphEdge> prvEdges = prvDot.getRight();
         Map<String, GraphNode> prvNodes = prvDot.getLeft();
         Map<String, GraphEdge> curEdges = curDot.getRight();
         Map<String, GraphNode> curNodes = curDot.getLeft();
 
-        if (prvEdges.size() < curEdges.size()) {
-            return GrouMiner.PatchPattern.Subtractive;
-        } else if (prvEdges.size() < curEdges.size()) {
+        if (prvEdges.size() < curEdges.size()) { // the num of edges increases -> Additive
             return GrouMiner.PatchPattern.Additive;
+        } else if (prvEdges.size() > curEdges.size()) { // the num of edges decreases -> Subtractive
+            return GrouMiner.PatchPattern.Subtractive;
         } else if (isSameNodes(prvNodes, curNodes) && !isSameEdges(prvEdges, curEdges)) {
+            // nodes don't change and edges change -> altering
             return GrouMiner.PatchPattern.Altering;
         } else {
             return GrouMiner.PatchPattern.None;
