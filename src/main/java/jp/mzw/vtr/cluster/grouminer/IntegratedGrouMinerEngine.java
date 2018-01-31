@@ -27,16 +27,18 @@ import java.util.Map;
 public class IntegratedGrouMinerEngine implements IGrouMinerEngine {
     private static Logger LOGGER = LoggerFactory.getLogger(IntegratedGrouMinerEngine.class);
 
-    private final File subjectDir;
+    private final String projectId;
+    private final File projectDir;
     private final File outputDir;
 
-    public IntegratedGrouMinerEngine(File subjectDir, File outputDir) {
-        this.subjectDir = subjectDir;
+    public IntegratedGrouMinerEngine(String projectId, File projectDir, File outputDir) {
+        this.projectId = projectId;
+        this.projectDir = projectDir;
         this.outputDir = outputDir;
     }
 
     protected void createDotFiles(String commit) {
-        GROUMBuilder groumBuilder = new GROUMBuilder(subjectDir.getPath());
+        GROUMBuilder groumBuilder = new GROUMBuilder(projectDir.getPath());
         groumBuilder.build();
         ArrayList<GROUMGraph> graphs = groumBuilder.getGroums();
         for (GROUMGraph graph : graphs) {
@@ -72,7 +74,7 @@ public class IntegratedGrouMinerEngine implements IGrouMinerEngine {
         } else if (isSameNodes(prvNodes, curNodes) && !isSameEdges(prvEdges, curEdges)) {
             return GrouMiner.PatchPattern.Altering;
         } else {
-            return GrouMiner.PatchPattern.Other;
+            return GrouMiner.PatchPattern.None;
         }
     }
 
@@ -142,7 +144,8 @@ public class IntegratedGrouMinerEngine implements IGrouMinerEngine {
         return Paths.get(String.join("/", getPathToDotDirectory(commit).toString(), fileName + ".dot"));
     }
     private Path getPathToDotDirectory(String commit) {
-        return Paths.get(String.join("/", outputDir.getPath(), "dot", commit));
+        return Paths.get(String.join("/",
+                outputDir.getPath(), projectId, GrouMiner.GROUM_OUTPUT_DIR, "dot", commit));
     }
     /* To output Dot files */
     private void outputDotFile(String commit, String fileName, String content) {

@@ -1,6 +1,5 @@
 package jp.mzw.vtr.cluster.grouminer;
 
-import com.hp.gagawa.java.elements.S;
 import jp.mzw.vtr.CLI;
 import jp.mzw.vtr.core.Project;
 import jp.mzw.vtr.detect.Detector;
@@ -21,6 +20,8 @@ import java.util.Map;
 public class GrouMiner {
     private static final Logger LOGGER = LoggerFactory.getLogger(GrouMiner.class);
 
+    protected static final String GROUM_OUTPUT_DIR = "grouminer";
+
     public static void main(String[] args) throws IOException, GitAPIException, ParseException {
         Project project = new Project(null).setConfig(CLI.CONFIG_FILENAME);
         List<DetectionResult> results = Detector.getDetectionResults(project.getSubjectsDir(), project.getOutputDir());
@@ -34,9 +35,6 @@ public class GrouMiner {
     /** A directory to output analysis results */
     private final File outputDir;
 
-    /** A engine to invoke GrouMiner and get patch patterns */
-    private IntegratedGrouMinerEngine grouMinerEngine;
-
     /**
      * Constructor
      *
@@ -46,7 +44,6 @@ public class GrouMiner {
     public GrouMiner(final File subjectDir, final File outputDir) {
         this.subjectDir = subjectDir;
         this.outputDir = outputDir;
-        grouMinerEngine = new IntegratedGrouMinerEngine(subjectDir, outputDir);
     }
 
     /**
@@ -65,6 +62,9 @@ public class GrouMiner {
             final Project project = new Project(subjectName).setConfig(CLI.CONFIG_FILENAME);
             final CheckoutConductor git = new CheckoutConductor(project);
             final Dictionary dict = new Dictionary(this.outputDir, subjectName).parse().createPrevCommitByCommitIdMap();
+
+            final IntegratedGrouMinerEngine grouMinerEngine = new IntegratedGrouMinerEngine(subjectName,
+                    project.getProjectDir(), project.getOutputDir());
 
             final Map<String, List<String>> commits = result.getResults();
             for (final String commit : commits.keySet()) {
@@ -104,6 +104,11 @@ public class GrouMiner {
         Additive,    // A patch which inserts new semantic features such as new control flows
         Subtractive, // A patch which removes semantic features
         Altering,    // A patch which changes control flows by replacing semantic features
-        Other
+        None
+    }
+
+
+    private void output(PatchPattern pattern, String projectId, String commitId, String className, String methodName) {
+
     }
 }
