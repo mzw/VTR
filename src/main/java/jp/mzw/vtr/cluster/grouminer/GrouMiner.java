@@ -11,8 +11,12 @@ import org.eclipse.jgit.api.errors.GitAPIException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.text.ParseException;
 import java.util.List;
 import java.util.Map;
@@ -55,6 +59,11 @@ public class GrouMiner {
      * @throws GitAPIException
      */
     public void apply(final List<DetectionResult> results) throws IOException, ParseException, GitAPIException {
+        // StringBuilders to contain results
+        StringBuilder additiveSb    = new StringBuilder();
+        StringBuilder subtractiveSb = new StringBuilder();
+        StringBuilder alteringSb    = new StringBuilder();
+        StringBuilder noneSb        = new StringBuilder();
         for (final DetectionResult result : results) {
             final String subjectName = result.getSubjectName();
             LOGGER.info("Subject: " + subjectName);
@@ -84,15 +93,34 @@ public class GrouMiner {
                     final String methodName = TestCase.getMethodName(testcase);
                     PatchPattern pattern = grouMinerEngine.compareGroums(prevCommit, commit, className, methodName);
                     if (pattern.equals(PatchPattern.Additive)) {
-//                        System.out.println("PrevCommit: " + prevCommit);
-//                        System.out.println("CurCommit: " + commit);
-//                        System.out.println("Class Name: " + className);
-//                        System.out.println("Method Name: " + methodName);
+                        additiveSb.append(subjectName).append(",");
+                        additiveSb.append(commit).append(",");
+                        additiveSb.append(className).append(",");
+                        additiveSb.append(methodName).append("\n");
+                    } else if (pattern.equals(PatchPattern.Subtractive)) {
+                        subtractiveSb.append(subjectName).append(",");
+                        subtractiveSb.append(commit).append(",");
+                        subtractiveSb.append(className).append(",");
+                        subtractiveSb.append(methodName).append("\n");
+                    } else if (pattern.equals(PatchPattern.Altering)) {
+                        alteringSb.append(subjectName).append(",");
+                        alteringSb.append(commit).append(",");
+                        alteringSb.append(className).append(",");
+                        alteringSb.append(methodName).append("\n");
+                    } else if (pattern.equals(PatchPattern.None)) {
+                        noneSb.append(subjectName).append(",");
+                        noneSb.append(commit).append(",");
+                        noneSb.append(className).append(",");
+                        noneSb.append(methodName).append("\n");
                     }
-                    // output
                 }
             }
         }
+        // output
+        outputAddictive(additiveSb.toString());
+        outputSubtractive(subtractiveSb.toString());
+        outputAltering(alteringSb.toString());
+        outputNone(noneSb.toString());
     }
     /**
      * Class to classify patch patterns
@@ -107,8 +135,104 @@ public class GrouMiner {
         None
     }
 
-
-    private void output(PatchPattern pattern, String projectId, String commitId, String className, String methodName) {
-
+    /* To output results */
+    private void outputAddictive(String content) {
+        if (!Files.exists(getPathToOutputAdditive())) {
+            try {
+                Files.createDirectories(getPathToOutputDir());
+                Files.createFile(getPathToOutputAdditive());
+            } catch (IOException e) {
+                e.printStackTrace();
+                LOGGER.error(e.getMessage());
+            }
+        }
+        try (BufferedWriter bw = Files.newBufferedWriter(getPathToOutputAdditive())) {
+            bw.write(content);
+        } catch (IOException e) {
+            e.printStackTrace();
+            LOGGER.error(e.getMessage());
+        }
     }
+    private void outputSubtractive(String content) {
+        if (!Files.exists(getPathToOutputSubtractive())) {
+            try {
+                Files.createDirectories(getPathToOutputDir());
+                Files.createFile(getPathToOutputSubtractive());
+            } catch (IOException e) {
+                e.printStackTrace();
+                LOGGER.error(e.getMessage());
+            }
+        }
+        try (BufferedWriter bw = Files.newBufferedWriter(getPathToOutputSubtractive())) {
+            bw.write(content);
+        } catch (IOException e) {
+            e.printStackTrace();
+            LOGGER.error(e.getMessage());
+        }
+    }
+    private void outputAltering(String content) {
+        if (!Files.exists(getPathToOutputAltering())) {
+            try {
+                Files.createDirectories(getPathToOutputDir());
+                Files.createFile(getPathToOutputAltering());
+            } catch (IOException e) {
+                e.printStackTrace();
+                LOGGER.error(e.getMessage());
+            }
+        }
+        try (BufferedWriter bw = Files.newBufferedWriter(getPathToOutputAltering())) {
+            bw.write(content);
+        } catch (IOException e) {
+            e.printStackTrace();
+            LOGGER.error(e.getMessage());
+        }
+    }
+    private void outputNone(String content) {
+        if (!Files.exists(getPathToOutputNone())) {
+            try {
+                Files.createDirectories(getPathToOutputDir());
+                Files.createFile(getPathToOutputNone());
+            } catch (IOException e) {
+                e.printStackTrace();
+                LOGGER.error(e.getMessage());
+            }
+        }
+        try (BufferedWriter bw = Files.newBufferedWriter(getPathToOutputNone())) {
+            bw.write(content);
+        } catch (IOException e) {
+            e.printStackTrace();
+            LOGGER.error(e.getMessage());
+        }
+    }
+
+    /* To get path to output */
+    private Path getPathToOutputAdditive() {
+        return getPathToOutputFile(PatchPattern.Additive);
+    }
+    private Path getPathToOutputSubtractive() {
+        return getPathToOutputFile(PatchPattern.Subtractive);
+    }
+    private Path getPathToOutputAltering() {
+        return getPathToOutputFile(PatchPattern.Altering);
+    }
+    private Path getPathToOutputNone() {
+        return getPathToOutputFile(PatchPattern.None);
+    }
+    private Path getPathToOutputFile(PatchPattern pattern) {
+        String filename = "";
+        if (pattern.equals(PatchPattern.Additive)) {
+            filename = "additive";
+        } else if (pattern.equals(PatchPattern.Subtractive)){
+            filename = "subtractive";
+        } else if (pattern.equals(PatchPattern.Altering)) {
+            filename = "altering";
+        } else if (pattern.equals(PatchPattern.None)) {
+            filename = "none";
+        }
+        return Paths.get(String.join("/", getPathToOutputDir().toString(), filename + ".csv"));
+    }
+    private Path getPathToOutputDir() {
+        return Paths.get(String.join("/", outputDir.getPath(), GROUM_OUTPUT_DIR));
+    }
+
 }
