@@ -181,7 +181,7 @@ public class IntegratedGrouMinerEngine implements IGrouMinerEngine {
             String label = node.getLabel();
             sb.append(nodeInfo(id, label, "box", "rounded", null, null));
         }
-        sb.append(nodeInfo(graph.getId(), graph.getName() + ": " + commit, "rounded", null, null, null));
+        sb.append(nodeInfo(graph.getId(), graph.getName(), "box", null, null, null));
         return sb.toString();
     }
     private static String addEdgesToDot(GROUMGraph graph) {
