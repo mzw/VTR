@@ -49,7 +49,7 @@ public abstract class BeforeAfterComparer {
      * @throws ParseException
      * @throws GitAPIException
      */
-    public void compare(final List<DetectionResult> results) throws IOException, ParseException, GitAPIException {
+    public void run(final List<DetectionResult> results) throws IOException, ParseException, GitAPIException {
         for (final DetectionResult result : results) {
             final String projectId = result.getSubjectName();
             LOGGER.info("Project: " + projectId);

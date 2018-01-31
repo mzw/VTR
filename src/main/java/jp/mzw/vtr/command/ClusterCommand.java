@@ -3,6 +3,7 @@ package jp.mzw.vtr.command;
 import jp.mzw.vtr.CLI;
 import jp.mzw.vtr.cluster.HCluster;
 import jp.mzw.vtr.cluster.grouminer.GrouMiner;
+import jp.mzw.vtr.cluster.gumtreediff.GumTreeDiff;
 import jp.mzw.vtr.cluster.similarity.DistAnalyzer;
 import jp.mzw.vtr.cluster.similarity.DistMap;
 import jp.mzw.vtr.core.Project;
@@ -27,6 +28,8 @@ public class ClusterCommand {
             String mode = args[0];
             if (mode.equals("grouminer")) {
                 grouminer();
+            } else if (mode.equals("gumtreediff")) {
+                gumtreediff();
             }
         } else if (args.length == 4) {
             String analyzer = args[1];
@@ -56,5 +59,12 @@ public class ClusterCommand {
         List<DetectionResult> results = Detector.getDetectionResults(project.getSubjectsDir(), project.getOutputDir());
         GrouMiner miner = new GrouMiner(project.getSubjectsDir(), project.getOutputDir());
         miner.apply(results);
+    }
+
+    private static void gumtreediff() throws IOException, GitAPIException, ParseException {
+        Project project = new Project(null).setConfig(CLI.CONFIG_FILENAME);
+        List<DetectionResult> results = Detector.getDetectionResults(project.getSubjectsDir(), project.getOutputDir());
+        GumTreeDiff differ = new GumTreeDiff(project.getSubjectsDir(), project.getOutputDir());
+        differ.run(results);
     }
 }
