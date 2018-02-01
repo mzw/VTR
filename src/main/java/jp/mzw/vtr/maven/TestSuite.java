@@ -146,6 +146,12 @@ public class TestSuite {
 	 * @return a Java AST parser
 	 */
 	private static ASTParser instantiateAstParser() {
+		// version 9
+		try {
+			return ASTParser.newParser(AST.JLS9);
+		} catch(IllegalArgumentException e) {
+			LOGGER.warn("Failed to instantiate ASTParser with version {}", AST.JLS9);
+		}
 		// version 8
 		try {
 			return ASTParser.newParser(AST.JLS8);
