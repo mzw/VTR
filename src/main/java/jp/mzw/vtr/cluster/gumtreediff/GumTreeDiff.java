@@ -14,12 +14,9 @@ import org.eclipse.jgit.api.errors.GitAPIException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.text.ParseException;
 import java.util.List;
 import java.util.Map;
@@ -38,6 +35,8 @@ public class GumTreeDiff extends BeforeAfterComparator {
     private StringBuilder alteringSb;
     private StringBuilder noneSb;
 
+    private List<TestSuite> prev;
+    private List<TestSuite> curr;
 
     public static void main(String[] args) throws IOException, GitAPIException, ParseException {
         Project project = new Project(null).setConfig(CLI.CONFIG_FILENAME);
@@ -68,11 +67,21 @@ public class GumTreeDiff extends BeforeAfterComparator {
     @Override
     public void before(final Project project, final String commitId) {
         prevTestSuites = getTestSuites(project);
+        try {
+            prev = MavenUtils.getTestSuites(project.getProjectDir());
+        } catch(Exception e) {
+
+        }
     }
 
     @Override
     public void after(final Project project, final String commitId) {
         curTestSuites = getTestSuites(project);
+        try {
+            curr = MavenUtils.getTestSuites(project.getProjectDir());
+        } catch(Exception e) {
+
+        }
     }
 
 
@@ -111,8 +120,8 @@ public class GumTreeDiff extends BeforeAfterComparator {
             LOGGER.info("{} is null at {} and not null at {}", className, curCommitId, prvCommitId);
             return Type.Subtractive;
         }
-        TestCase curTestCase = listToMapTestCases(curTestSuite.getTestCases()).get(methodName);
-        TestCase prevTestCase = listToMapTestCases(prevTestSuite.getTestCases()).get(methodName);
+        TestCase curTestCase = TestSuite.getTestCaseWithClassMethodName(curr, className, methodName);
+        TestCase prevTestCase = TestSuite.getTestCaseWithClassMethodName(prev, className, methodName);
         if (curTestCase == null && prevTestCase == null) {
             LOGGER.error("Why both test-cases are null?");
             return Type.None;
@@ -136,7 +145,7 @@ public class GumTreeDiff extends BeforeAfterComparator {
 
     private Map<String, TestSuite> getTestSuites(Project project) {
         try {
-            return listToMapTestSuites(MavenUtils.getTestSuitesAtLevel2(project.getProjectDir()));
+            return listToMapTestSuites(MavenUtils.getTestSuites(project.getProjectDir()));
         } catch (IOException e) {
             e.printStackTrace();
             LOGGER.error(e.getMessage());

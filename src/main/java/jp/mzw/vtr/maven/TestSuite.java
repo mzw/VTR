@@ -63,7 +63,7 @@ public class TestSuite {
 			source[i] = _source.get(i);
 		}
 
-		ASTParser parser = ASTParser.newParser(AST.JLS8);
+		ASTParser parser = instantiateAstParser();
 		parser.setSource(source);
 		this.cu = (CompilationUnit) parser.createAST(new NullProgressMonitor());
 
