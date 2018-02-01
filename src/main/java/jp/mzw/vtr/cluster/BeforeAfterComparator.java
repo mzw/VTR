@@ -74,13 +74,13 @@ public abstract class BeforeAfterComparator {
 
                 // After version of a project under analysis
                 LOGGER.info("Checkout (after modified): " + curCommit);
-                git.checkout(CheckoutConductor.Type.At, curCommit);
+                git.checkoutAt(curCommit);
                 after(project, curCommit);
 
                 // Before version of a project under analysis
                 String prvCommit = dict.getPrevCommitBy(curCommit).getId();
                 LOGGER.info("Checkout (before modified): " + prvCommit + " previous to " + curCommit);
-                git.checkout(CheckoutConductor.Type.At, prvCommit);
+                git.checkoutAt(prvCommit);
                 before(project, prvCommit);
 
                 // Classifying additive, subtractive, or altering patches
@@ -98,8 +98,9 @@ public abstract class BeforeAfterComparator {
                     } else if (type.equals(Type.None)) {
                         generateContent(noneSb, project.getProjectId(), prvCommit, curCommit, className, methodName);
                     }
-
                 }
+
+                git.checkoutAt(git.getLatestCommit().getId());
             }
         }
         outputAddictive(additiveSb.toString());
