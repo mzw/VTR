@@ -45,7 +45,7 @@ public class IntegratedGrouMinerEngine implements IGrouMinerEngine {
         for (GROUMGraph graph : graphs) {
             StringBuilder sb = new StringBuilder();
             sb.append(getDotStart());
-            sb.append(addNodesToDot(graph));
+            sb.append(addNodesToDot(graph, commit));
             sb.append(addEdgesToDot(graph));
             sb.append(getDotEnd());
             outputDotFile(commit, graph.getName(), sb.toString());
@@ -191,14 +191,14 @@ public class IntegratedGrouMinerEngine implements IGrouMinerEngine {
     private static String getDotEnd() {
         return "}";
     }
-    private static String addNodesToDot(GROUMGraph graph) {
+    private static String addNodesToDot(GROUMGraph graph, String commit) {
         StringBuilder sb = new StringBuilder();
         for (GROUMNode node : graph.getNodes()) {
             int id = node.getId();
             String label = node.getLabel();
             sb.append(nodeInfo(id, label, "box", "rounded", null, null));
         }
-        sb.append(nodeInfo(graph.getId(), graph.getName(), "rounded", null, null, null));
+        sb.append(nodeInfo(graph.getId(), graph.getName() + ": " + commit, "rounded", null, null, null));
         return sb.toString();
     }
     private static String addEdgesToDot(GROUMGraph graph) {
