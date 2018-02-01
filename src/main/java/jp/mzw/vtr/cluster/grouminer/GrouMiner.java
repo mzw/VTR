@@ -79,12 +79,12 @@ public class GrouMiner {
             for (final String commit : commits.keySet()) {
                 // Applying groums into "after" version of programs under analysis
                 LOGGER.info("Checkout: " + commit);
-                git.checkout(CheckoutConductor.Type.At, commit); // after
+                git.checkoutAt(commit); // after
                 grouMinerEngine.createDotFiles(commit);
                 // Applying groums into "before" version of programs under analysis
                 String prevCommit = dict.getPrevCommitBy(commit).getId();
                 LOGGER.info("Checkout: " + prevCommit + " previous to " + commit);
-                git.checkout(CheckoutConductor.Type.At, prevCommit); // before
+                git.checkoutAt(prevCommit); // before
                 grouMinerEngine.createDotFiles(prevCommit);
                 // Classifying additive, subtractive, or altering patches
                 List<String> testcases = commits.get(commit);
@@ -102,6 +102,7 @@ public class GrouMiner {
                         generateContent(noneSb, subjectName, commit, prevCommit, className, methodName);
                     }
                 }
+                git.checkoutAt(git.getLatestCommit().getId());
             }
         }
         // output
