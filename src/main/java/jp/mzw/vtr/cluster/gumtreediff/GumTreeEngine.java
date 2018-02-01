@@ -25,38 +25,21 @@ public class GumTreeEngine {
         prevTC.getMethodDeclaration().accept(prevJdtVisitor);
         ITree prevITree = prevJdtVisitor.getTreeContext().getRoot();
         prevITree.refresh();;
-        TreeUtils.preOrderNumbering(prevITree);
-        if (prevTC.getName().equals("testLoad")) {
-            System.out.println("prevMethod");
-            System.out.println(prevTC.getMethodDeclaration());
-            System.out.println("prevITree");
-            System.out.println(prevITree.toShortString());
-        }
+        TreeUtils.postOrderNumbering(prevITree);
 
         JdtVisitor curJdtVisitor = new JdtVisitor();
         curTC.getMethodDeclaration().accept(curJdtVisitor);
         ITree curITree = curJdtVisitor.getTreeContext().getRoot();
         curITree.refresh();
-        TreeUtils.preOrderNumbering(curITree);
-        if (curTC.getName().equals("testLoad")) {
-            System.out.println("curITree");
-            System.out.println(curTC.getMethodDeclaration());
-            System.out.println("curITree");
-            System.out.println(curITree.toShortString());
-        }
+        TreeUtils.postOrderNumbering(curITree);
 
         // You can use any matcher you like.
-        Matcher matcher = new XyBottomUpMatcher(prevITree, curITree, new MappingStore());
-//        Matcher matcher = new LcsMatcher(prevITree, curITree, new MappingStore());
+//        Matcher matcher = new XyBottomUpMatcher(prevITree, curITree, new MappingStore());
+        Matcher matcher = new LcsMatcher(prevITree, curITree, new MappingStore());
 //        Matcher matcher = Matchers.getInstance().getMatcher(prevITree, curITree);
         matcher.match();
         ActionGenerator generator = new ActionGenerator(prevITree, curITree, matcher.getMappings());
         generator.generate();
-        if (curTC.getName().equals("testLoad")) {
-            for (Action action : generator.getActions()) {
-//                System.out.println("Action: " + action);
-            }
-        }
 
         return generator.getActions();
     }
