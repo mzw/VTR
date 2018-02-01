@@ -276,6 +276,17 @@
 			<artifactId>digraph-parser</artifactId>
 			<version>1.0</version>
 		</dependency>
+        <!-- For Gumtreediff -->
+        <dependency>
+            <groupId>com.github.gumtreediff</groupId>
+            <artifactId>core</artifactId>
+            <version>2.0.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.github.gumtreediff</groupId>
+            <artifactId>client</artifactId>
+            <version>2.0.0</version>
+        </dependency>
 	</dependencies>
 
 	<build>

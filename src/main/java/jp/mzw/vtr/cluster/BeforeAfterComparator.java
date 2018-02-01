@@ -1,13 +1,13 @@
 package jp.mzw.vtr.cluster;
 
 import jp.mzw.vtr.CLI;
-import jp.mzw.vtr.cluster.grouminer.GrouMiner;
-import jp.mzw.vtr.cluster.grouminer.IntegratedGrouMinerEngine;
 import jp.mzw.vtr.core.Project;
 import jp.mzw.vtr.detect.DetectionResult;
 import jp.mzw.vtr.dict.Dictionary;
 import jp.mzw.vtr.git.CheckoutConductor;
+import jp.mzw.vtr.maven.MavenUtils;
 import jp.mzw.vtr.maven.TestCase;
+import jp.mzw.vtr.maven.TestSuite;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,8 +18,8 @@ import java.text.ParseException;
 import java.util.List;
 import java.util.Map;
 
-public abstract class BeforeAfterComparer {
-    private static final Logger LOGGER = LoggerFactory.getLogger(BeforeAfterComparer.class);
+public abstract class BeforeAfterComparator {
+    private static final Logger LOGGER = LoggerFactory.getLogger(BeforeAfterComparator.class);
 
     /** A directory containing projects under analysis  */
     protected final File projectDir;
@@ -27,7 +27,7 @@ public abstract class BeforeAfterComparer {
     /** A directory to output analysis results */
     protected final File outputDir;
 
-    public BeforeAfterComparer(final File projectDir, final File outputDir) {
+    public BeforeAfterComparator(final File projectDir, final File outputDir) {
         this.projectDir = projectDir;
         this.outputDir = outputDir;
     }
@@ -79,7 +79,6 @@ public abstract class BeforeAfterComparer {
                 for (final String testcase : testcases) {
                     final String className = TestCase.getClassName(testcase);
                     final String methodName = TestCase.getMethodName(testcase);
-
                     compare(project, curCommit, prvCommit, className, methodName);
                 }
             }

@@ -39,6 +39,10 @@ public class TestSuite {
 		this.testCases = new ArrayList<TestCase>();
 	}
 
+	public String getTestClassName() {
+		return this.testClassName;
+	}
+
 	/**
 	 * Parse source codes at level 1
 	 * 
