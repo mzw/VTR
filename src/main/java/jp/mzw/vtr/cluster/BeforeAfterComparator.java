@@ -36,16 +36,15 @@ public abstract class BeforeAfterComparator {
         this.outputDir = outputDir;
     }
 
-    // FIXME: ここはprotectedにするべき？
-    public abstract void prepare(Project project);
+    protected abstract void prepare(Project project);
 
-    public abstract void before(Project project, String commitId);
+    protected abstract void before(Project project, String commitId);
 
-    public abstract void after(Project project, String commitId);
+    protected abstract void after(Project project, String commitId);
 
-    public abstract void compare(Project project, String prvCommitId, String curCommitId, String className, String methodName);
+    protected abstract void compare(Project project, String prvCommitId, String curCommitId, String className, String methodName);
 
-    public abstract void output();
+    protected abstract void output();
 
 
     /**
