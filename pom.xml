@@ -126,11 +126,9 @@
 		</dependency>
 		<!-- Use latest Eclipse JDT (AST parser) -->
 		<dependency>
-			<groupId>eclipse.jdt.core</groupId>
+			<groupId>org.eclipse.jdt</groupId>
 			<artifactId>org.eclipse.jdt.core</artifactId>
-			<version>3.13.0-SNAPSHOT</version>
-			<scope>system</scope>
-			<systemPath>${project.basedir}/lib/org.eclipse.jdt.core-3.13.0-SNAPSHOT.jar</systemPath>
+			<version>3.13.100</version>
 		</dependency>
 		<dependency>
 			<groupId>rt.equinox.bundles</groupId>
@@ -280,12 +278,7 @@
         <dependency>
             <groupId>com.github.gumtreediff</groupId>
             <artifactId>core</artifactId>
-            <version>2.0.0</version>
-        </dependency>
-        <dependency>
-            <groupId>com.github.gumtreediff</groupId>
-            <artifactId>client</artifactId>
-            <version>2.0.0</version>
+            <version>2.1.0</version>
         </dependency>
 	</dependencies>
 
