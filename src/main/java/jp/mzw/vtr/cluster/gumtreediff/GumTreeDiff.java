@@ -4,6 +4,7 @@ import com.github.gumtreediff.actions.model.Action;
 import jp.mzw.vtr.CLI;
 import jp.mzw.vtr.cluster.BeforeAfterComparator;
 import jp.mzw.vtr.core.Project;
+import jp.mzw.vtr.core.VtrUtils;
 import jp.mzw.vtr.detect.DetectionResult;
 import jp.mzw.vtr.detect.Detector;
 import jp.mzw.vtr.maven.MavenUtils;
@@ -31,6 +32,13 @@ public class GumTreeDiff extends BeforeAfterComparator {
     private Map<String, TestSuite> prevTestSuites;
     private Map<String, TestSuite> curTestSuites;
 
+    // StringBuilders to contain results
+    private StringBuilder additiveSb;
+    private StringBuilder subtractiveSb;
+    private StringBuilder alteringSb;
+    private StringBuilder noneSb;
+
+
     public static void main(String[] args) throws IOException, GitAPIException, ParseException {
         Project project = new Project(null).setConfig(CLI.CONFIG_FILENAME);
         List<DetectionResult> results = Detector.getDetectionResults(project.getSubjectsDir(), project.getOutputDir());
@@ -38,14 +46,23 @@ public class GumTreeDiff extends BeforeAfterComparator {
         differ.run(results);
     }
 
-
     public GumTreeDiff(final File projectDir, final File outputDir) {
         super(projectDir, outputDir);
     }
 
+    private enum Type {
+        Additive,
+        Subtractive,
+        Altering,
+        None
+    }
+
     @Override
     public void prepare(final Project project) {
-        // do nothing
+        additiveSb    = new StringBuilder();
+        subtractiveSb = new StringBuilder();
+        alteringSb    = new StringBuilder();
+        noneSb        = new StringBuilder();
     }
 
     @Override
@@ -60,7 +77,28 @@ public class GumTreeDiff extends BeforeAfterComparator {
 
 
     @Override
-    public Type compare(final Project project, final String prvCommitId, final String curCommitId, final String className, final String methodName) {
+    public void compare(final Project project, final String prvCommit, final String curCommit, final String className, final String methodName) {
+        Type type = _compare(project, prvCommit, curCommit, className, methodName);
+        if (type.equals(Type.Additive)) {
+            VtrUtils.addCsvRecords(additiveSb, project.getProjectId(), prvCommit, curCommit, className, methodName);
+        } else if (type.equals(Type.Subtractive)) {
+            VtrUtils.addCsvRecords(subtractiveSb, project.getProjectId(), prvCommit, curCommit, className, methodName);
+        } else if (type.equals(Type.Altering)) {
+            VtrUtils.addCsvRecords(alteringSb, project.getProjectId(), prvCommit, curCommit, className, methodName);
+        } else if (type.equals(Type.None)) {
+            VtrUtils.addCsvRecords(noneSb, project.getProjectId(), prvCommit, curCommit, className, methodName);
+        }
+    }
+
+    @Override
+    public void output() {
+        outputAddictive(additiveSb.toString());
+        outputSubtractive(subtractiveSb.toString());
+        outputAltering(alteringSb.toString());
+        outputNone(noneSb.toString());
+    }
+
+    private Type _compare(final Project project, final String prvCommitId, final String curCommitId, final String className, final String methodName) {
         TestSuite curTestSuite  = curTestSuites.get(className);
         TestSuite prevTestSuite = prevTestSuites.get(className);
         if (curTestSuite == null && prevTestSuite == null) {
@@ -84,10 +122,6 @@ public class GumTreeDiff extends BeforeAfterComparator {
         } else if (curTestCase == null) { // (prevTestCase != null) is always true.
             LOGGER.info("{} is null at {} and not null at {}", className + ":" + methodName, curCommitId, prvCommitId);
             return Type.Subtractive;
-        }
-        if (methodName.equals("testLoad")) {
-            System.out.println("prevCommit: " + prvCommitId);
-            System.out.println("curCommit: " + curCommitId);
         }
         GumTreeEngine engine = new GumTreeEngine();
         List<Action> actions = engine.getEditActions(prevTestCase, curTestCase);
@@ -141,31 +175,51 @@ public class GumTreeDiff extends BeforeAfterComparator {
     }
 
     private void outputEditActions(Project project, String curCommitId, String className, String methodName, String content) {
-        if (!Files.exists(getPathToOutputEditActions(project, curCommitId, className, methodName))) {
-            try {
-                Files.createDirectories(getPathToOutputEditActionsDir(project, curCommitId, className, methodName));
-                Files.createFile(getPathToOutputEditActions(project, curCommitId, className, methodName));
-            } catch (IOException e) {
-                e.printStackTrace();
-                LOGGER.error(e.getMessage());
-            }
-        }
-        try (BufferedWriter bw = Files.newBufferedWriter(getPathToOutputEditActions(project, curCommitId, className, methodName))) {
-            bw.write(content);
-        } catch (IOException e) {
-            e.printStackTrace();
-            LOGGER.error(e.getMessage());
-        }
+        VtrUtils.writeContent(getPathToOutputEditActions(project, curCommitId, className, methodName), content);
     }
 
-
+    /* To output results */
+    private void outputAddictive(String content) {
+        VtrUtils.writeContent(getPathToOutputAdditive(), content);
+    }
+    private void outputSubtractive(String content) {
+        VtrUtils.writeContent(getPathToOutputSubtractive(), content);
+    }
+    private void outputAltering(String content) {
+        VtrUtils.writeContent(getPathToOutputAltering(), content);
+    }
+    private void outputNone(String content) {
+        VtrUtils.writeContent(getPathToOutputNone(), content);
+    }
     /* To get path to output */
-    private Path getPathToOutputEditActions(Project project, String curCommitId, String className, String methodName) {
-        return Paths.get(String.join("/", getPathToOutputEditActionsDir(project, curCommitId, className, methodName).toString(), "actions.txt"));
+    private Path getPathToOutputAdditive() {
+        return getPathToOutputFile(Type.Additive);
     }
-    private Path getPathToOutputEditActionsDir(Project project, String curCommitId, String className, String methodName) {
-        return Paths.get(String.join("/", project.getOutputDir().toString(), project.getProjectId(), GUMTREE_DIR, curCommitId, className, methodName));
+    private Path getPathToOutputSubtractive() {
+        return getPathToOutputFile(Type.Subtractive);
     }
-
-
+    private Path getPathToOutputAltering() {
+        return getPathToOutputFile(Type.Altering);
+    }
+    private Path getPathToOutputNone() {
+        return getPathToOutputFile(Type.None);
+    }
+    private Path getPathToOutputFile(Type pattern) {
+        String filename = "";
+        if (pattern.equals(Type.Additive)) {
+            filename = "additive";
+        } else if (pattern.equals(Type.Subtractive)){
+            filename = "subtractive";
+        } else if (pattern.equals(Type.Altering)) {
+            filename = "altering";
+        } else if (pattern.equals(Type.None)) {
+            filename = "none";
+        }
+        String className = this.getClass().toString();
+        className = className.substring(className.lastIndexOf(".") + 1);
+        return VtrUtils.getPathToFile(outputDir.getPath(), className, filename + ".csv");
+    }
+    private Path getPathToOutputEditActions(Project project, String commitId, String className, String methodName) {
+        return VtrUtils.getPathToFile(project.getOutputDir().toString(), project.getProjectId(), GUMTREE_DIR, commitId, className, methodName, "actions.txt");
+    }
 }

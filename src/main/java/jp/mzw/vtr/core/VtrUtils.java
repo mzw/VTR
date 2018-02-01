@@ -1,17 +1,24 @@
 package jp.mzw.vtr.core;
 
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
 import org.apache.commons.lang3.tuple.Pair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class VtrUtils {
+	private static Logger LOGGER = LoggerFactory.getLogger(VtrUtils.class);
 
 	private static List<String> fse17Subjects;
 	/**
@@ -172,5 +179,36 @@ public class VtrUtils {
 			return name.substring(0, index);
 		}
 		return name;
+	}
+
+	public static void writeContent(Path pathToFile, String content) {
+		if (!Files.exists(pathToFile)) {
+			try {
+				Files.createDirectories(pathToFile.getParent());
+				Files.createFile(pathToFile);
+			} catch (IOException e) {
+				e.printStackTrace();
+				LOGGER.error(e.getMessage());
+			}
+		}
+		try (BufferedWriter bw = Files.newBufferedWriter(pathToFile)) {
+			bw.write(content);
+		} catch (IOException e) {
+			e.printStackTrace();
+			LOGGER.error(e.getMessage());
+		}
+	}
+
+	public static Path getPathToFile(String... paths) {
+		return Paths.get(String.join("/", paths));
+	}
+
+	public static void addCsvRecords(StringBuilder sb, String... data) {
+		for (String tmp : data) {
+			sb.append(tmp).append(",");
+		}
+		// delete the last comma
+		sb.deleteCharAt(sb.length() - 1);
+		sb.append("\n");
 	}
 }

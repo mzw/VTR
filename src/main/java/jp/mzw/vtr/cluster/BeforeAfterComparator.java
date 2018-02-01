@@ -36,13 +36,16 @@ public abstract class BeforeAfterComparator {
         this.outputDir = outputDir;
     }
 
+    // FIXME: ここはprotectedにするべき？
     public abstract void prepare(Project project);
 
     public abstract void before(Project project, String commitId);
 
     public abstract void after(Project project, String commitId);
 
-    public abstract Type compare(Project project, String prvCommitId, String curCommitId, String className, String methodName);
+    public abstract void compare(Project project, String prvCommitId, String curCommitId, String className, String methodName);
+
+    public abstract void output();
 
 
     /**
@@ -54,11 +57,6 @@ public abstract class BeforeAfterComparator {
      * @throws GitAPIException
      */
     public void run(final List<DetectionResult> results) throws IOException, ParseException, GitAPIException {
-        // StringBuilders to contain results
-        StringBuilder additiveSb    = new StringBuilder();
-        StringBuilder subtractiveSb = new StringBuilder();
-        StringBuilder alteringSb    = new StringBuilder();
-        StringBuilder noneSb        = new StringBuilder();
         for (final DetectionResult result : results) {
             final String projectId = result.getSubjectName();
             LOGGER.info("Project: " + projectId);
@@ -88,141 +86,12 @@ public abstract class BeforeAfterComparator {
                 for (final String testcase : testcases) {
                     final String className = TestCase.getClassName(testcase);
                     final String methodName = TestCase.getMethodName(testcase);
-                    Type type = compare(project, prvCommit, curCommit, className, methodName);
-                    if (type.equals(Type.Additive)) {
-                        generateContent(additiveSb, project.getProjectId(), prvCommit, curCommit, className, methodName);
-                    } else if (type.equals(Type.Subtractive)) {
-                        generateContent(subtractiveSb, project.getProjectId(), prvCommit, curCommit, className, methodName);
-                    } else if (type.equals(Type.Altering)) {
-                        generateContent(alteringSb, project.getProjectId(), prvCommit, curCommit, className, methodName);
-                    } else if (type.equals(Type.None)) {
-                        generateContent(noneSb, project.getProjectId(), prvCommit, curCommit, className, methodName);
-                    }
+                    compare(project, prvCommit, curCommit, className, methodName);
                 }
 
                 git.checkoutAt(git.getLatestCommit().getId());
             }
         }
-        outputAddictive(additiveSb.toString());
-        outputSubtractive(subtractiveSb.toString());
-        outputAltering(alteringSb.toString());
-        outputNone(noneSb.toString());
+        output();
     }
-
-    public enum Type {
-        Additive,
-        Subtractive,
-        Altering,
-        None
-    }
-
-    /* To output results */
-    private void outputAddictive(String content) {
-        if (!Files.exists(getPathToOutputAdditive())) {
-            try {
-                Files.createDirectories(getPathToOutputDir());
-                Files.createFile(getPathToOutputAdditive());
-            } catch (IOException e) {
-                e.printStackTrace();
-                LOGGER.error(e.getMessage());
-            }
-        }
-        try (BufferedWriter bw = Files.newBufferedWriter(getPathToOutputAdditive())) {
-            bw.write(content);
-        } catch (IOException e) {
-            e.printStackTrace();
-            LOGGER.error(e.getMessage());
-        }
-    }
-    private void outputSubtractive(String content) {
-        if (!Files.exists(getPathToOutputSubtractive())) {
-            try {
-                Files.createDirectories(getPathToOutputDir());
-                Files.createFile(getPathToOutputSubtractive());
-            } catch (IOException e) {
-                e.printStackTrace();
-                LOGGER.error(e.getMessage());
-            }
-        }
-        try (BufferedWriter bw = Files.newBufferedWriter(getPathToOutputSubtractive())) {
-            bw.write(content);
-        } catch (IOException e) {
-            e.printStackTrace();
-            LOGGER.error(e.getMessage());
-        }
-    }
-    private void outputAltering(String content) {
-        if (!Files.exists(getPathToOutputAltering())) {
-            try {
-                Files.createDirectories(getPathToOutputDir());
-                Files.createFile(getPathToOutputAltering());
-            } catch (IOException e) {
-                e.printStackTrace();
-                LOGGER.error(e.getMessage());
-            }
-        }
-        try (BufferedWriter bw = Files.newBufferedWriter(getPathToOutputAltering())) {
-            bw.write(content);
-        } catch (IOException e) {
-            e.printStackTrace();
-            LOGGER.error(e.getMessage());
-        }
-    }
-    private void outputNone(String content) {
-        if (!Files.exists(getPathToOutputNone())) {
-            try {
-                Files.createDirectories(getPathToOutputDir());
-                Files.createFile(getPathToOutputNone());
-            } catch (IOException e) {
-                e.printStackTrace();
-                LOGGER.error(e.getMessage());
-            }
-        }
-        try (BufferedWriter bw = Files.newBufferedWriter(getPathToOutputNone())) {
-            bw.write(content);
-        } catch (IOException e) {
-            e.printStackTrace();
-            LOGGER.error(e.getMessage());
-        }
-    }
-    /* To generate content */
-    private void generateContent(StringBuilder sb, String projectId, String commit, String prevCommit, String className, String methodName) {
-        sb.append(projectId).append(",");
-        sb.append(commit).append(",");
-        sb.append(prevCommit).append(",");
-        sb.append(className).append(",");
-        sb.append(methodName).append("\n");
-    }
-    /* To get path to output */
-    private Path getPathToOutputAdditive() {
-        return getPathToOutputFile(Type.Additive);
-    }
-    private Path getPathToOutputSubtractive() {
-        return getPathToOutputFile(Type.Subtractive);
-    }
-    private Path getPathToOutputAltering() {
-        return getPathToOutputFile(Type.Altering);
-    }
-    private Path getPathToOutputNone() {
-        return getPathToOutputFile(Type.None);
-    }
-    private Path getPathToOutputFile(Type pattern) {
-        String filename = "";
-        if (pattern.equals(Type.Additive)) {
-            filename = "additive";
-        } else if (pattern.equals(Type.Subtractive)){
-            filename = "subtractive";
-        } else if (pattern.equals(Type.Altering)) {
-            filename = "altering";
-        } else if (pattern.equals(Type.None)) {
-            filename = "none";
-        }
-        return Paths.get(String.join("/", getPathToOutputDir().toString(), filename + ".csv"));
-    }
-    private Path getPathToOutputDir() {
-        String className = this.getClass().toString();
-        className = className.substring(className.lastIndexOf(".") + 1);
-        return Paths.get(String.join("/", outputDir.getPath(), className));
-    }
-
 }
