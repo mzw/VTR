@@ -43,12 +43,6 @@ public class JdtVisitor extends ASTVisitor {
         push(type, typeName, label, n.getStartPosition(), n.getLength());
     }
 
-    protected void pushFakeNode(EntityType n, int startPosition, int length) {
-        int type = -n.ordinal(); // Fake types have negative types (but does it matter ?)
-        String typeName = n.name();
-        push(type, typeName, "", startPosition, length);
-    }
-
     private void push(int type, String typeName, String label, int startPosition, int length) {
         ITree t = context.createTree(type, label, typeName);
         t.setPos(startPosition);
