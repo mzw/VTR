@@ -85,7 +85,10 @@ public class GumTreeDiff extends BeforeAfterComparator {
             LOGGER.info("{} is null at {} and not null at {}", className + ":" + methodName, curCommitId, prvCommitId);
             return Type.Subtractive;
         }
-
+        if (methodName.equals("testLoad")) {
+            System.out.println("prevCommit: " + prvCommitId);
+            System.out.println("curCommit: " + curCommitId);
+        }
         GumTreeEngine engine = new GumTreeEngine();
         List<Action> actions = engine.getEditActions(prevTestCase, curTestCase);
         outputEditActions(project, curCommitId, prvCommitId, className, methodName, actions);

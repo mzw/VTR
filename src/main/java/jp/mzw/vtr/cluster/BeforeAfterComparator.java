@@ -88,15 +88,15 @@ public abstract class BeforeAfterComparator {
                 for (final String testcase : testcases) {
                     final String className = TestCase.getClassName(testcase);
                     final String methodName = TestCase.getMethodName(testcase);
-                    Type type = compare(project, curCommit, prvCommit, className, methodName);
+                    Type type = compare(project, prvCommit, curCommit, className, methodName);
                     if (type.equals(Type.Additive)) {
-                        generateContent(additiveSb, project.getProjectId(), curCommit, prvCommit, className, methodName);
+                        generateContent(additiveSb, project.getProjectId(), prvCommit, curCommit, className, methodName);
                     } else if (type.equals(Type.Subtractive)) {
-                        generateContent(subtractiveSb, project.getProjectId(), curCommit, prvCommit, className, methodName);
+                        generateContent(subtractiveSb, project.getProjectId(), prvCommit, curCommit, className, methodName);
                     } else if (type.equals(Type.Altering)) {
-                        generateContent(alteringSb, project.getProjectId(), curCommit, prvCommit, className, methodName);
+                        generateContent(alteringSb, project.getProjectId(), prvCommit, curCommit, className, methodName);
                     } else if (type.equals(Type.None)) {
-                        generateContent(noneSb, project.getProjectId(), curCommit, prvCommit, className, methodName);
+                        generateContent(noneSb, project.getProjectId(), prvCommit, curCommit, className, methodName);
                     }
 
                 }
