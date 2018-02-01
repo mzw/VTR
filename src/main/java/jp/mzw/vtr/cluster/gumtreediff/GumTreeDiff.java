@@ -1,6 +1,10 @@
 package jp.mzw.vtr.cluster.gumtreediff;
 
 import com.github.gumtreediff.actions.model.Action;
+import com.github.gumtreediff.actions.model.Delete;
+import com.github.gumtreediff.actions.model.Insert;
+import com.github.gumtreediff.actions.model.Move;
+import com.github.gumtreediff.actions.model.Update;
 import jp.mzw.vtr.CLI;
 import jp.mzw.vtr.cluster.BeforeAfterComparator;
 import jp.mzw.vtr.core.Project;
@@ -10,6 +14,7 @@ import jp.mzw.vtr.detect.Detector;
 import jp.mzw.vtr.maven.MavenUtils;
 import jp.mzw.vtr.maven.TestCase;
 import jp.mzw.vtr.maven.TestSuite;
+import org.apache.commons.io.Charsets;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,10 +22,13 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.nio.file.Files;
 import java.text.ParseException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
 
 public class GumTreeDiff extends BeforeAfterComparator {
     private static Logger LOGGER = LoggerFactory.getLogger(GumTreeDiff.class);
@@ -53,7 +61,7 @@ public class GumTreeDiff extends BeforeAfterComparator {
         Additive,
         Subtractive,
         Altering,
-        None
+        None,
     }
 
     @Override
@@ -87,7 +95,9 @@ public class GumTreeDiff extends BeforeAfterComparator {
 
     @Override
     public void compare(final Project project, final String prvCommit, final String curCommit, final String className, final String methodName) {
-        Type type = _compare(project, prvCommit, curCommit, className, methodName);
+        Type type = _compareFromExistingEditScripts(project, prvCommit, curCommit, className, methodName);
+//        Type type = _compare(project, prvCommit, curCommit, className, methodName);
+
         if (type.equals(Type.Additive)) {
             VtrUtils.addCsvRecords(additiveSb, project.getProjectId(), prvCommit, curCommit, className, methodName);
         } else if (type.equals(Type.Subtractive)) {
@@ -138,9 +148,40 @@ public class GumTreeDiff extends BeforeAfterComparator {
         return _compare(actions);
     }
 
+    private Type _compareFromExistingEditScripts(final Project project, final String prvCommitId, final String curCommitId, final String className, final String methodName) {
+        List<String> content;
+        try {
+            content = Files.readAllLines(getPathToOutputEditActions(project, curCommitId, className, methodName), Charsets.UTF_8);
+        } catch (IOException e) {
+            return Type.None;
+        }
+        List<Action> actions = analyzeEditActions(content);
+        return _compare(actions);
+    }
+
     private Type _compare(List<Action> actions) {
         // 何を比較しよう？
         return Type.None;
+    }
+
+    private List<Action> analyzeEditActions(List<String> contents) {
+        List<Action> actions = new ArrayList<>();
+        if (contents.size() < 3) {
+            return actions;
+        }
+        for (int i = 2; i < contents.size(); i++) {
+            String content = contents.get(i);
+            if (content.startsWith("INS")) {
+                actions.add(new Insert(null, null, -1));
+            } else if (content.startsWith("DEL")) {
+                actions.add(new Delete(null));
+            } else if (content.startsWith("MOV")) {
+                actions.add(new Move(null, null, -1));
+            } else if (content.startsWith("UPD")) {
+                actions.add(new Update(null, ""));
+            }
+        }
+        return actions;
     }
 
     private Map<String, TestSuite> getTestSuites(Project project) {
