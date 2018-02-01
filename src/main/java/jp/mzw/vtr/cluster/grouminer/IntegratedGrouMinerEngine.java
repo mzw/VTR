@@ -6,6 +6,7 @@ import com.paypal.digraph.parser.GraphParser;
 import groum.GROUMEdge;
 import groum.GROUMGraph;
 import groum.GROUMNode;
+import jp.mzw.vtr.core.VtrUtils;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -160,29 +161,11 @@ public class IntegratedGrouMinerEngine implements IGrouMinerEngine {
     }
     /* Path To Dot files */
     private Path getPathToDotFile(String commit, String fileName) {
-        return Paths.get(String.join("/", getPathToDotDirectory(commit).toString(), fileName + ".dot"));
-    }
-    private Path getPathToDotDirectory(String commit) {
-        return Paths.get(String.join("/",
-                outputDir.getPath(), projectId, GrouMiner.GROUM_OUTPUT_DIR, "dot", commit));
+        return VtrUtils.getPathToFile(outputDir.getPath(), projectId, GrouMiner.GROUM_OUTPUT_DIR, "dot", commit, fileName + "dot");
     }
     /* To output Dot files */
     private void outputDotFile(String commit, String fileName, String content) {
-        if (!Files.exists(getPathToDotFile(commit, fileName))) {
-            try {
-                Files.createDirectories(getPathToDotDirectory(commit));
-                Files.createFile(getPathToDotFile(commit, fileName));
-            } catch (IOException e) {
-                e.printStackTrace();
-                LOGGER.error(e.getMessage());
-            }
-        }
-        try (BufferedWriter bw = Files.newBufferedWriter(getPathToDotFile(commit, fileName))) {
-            bw.write(content);
-        } catch (IOException e) {
-            e.printStackTrace();
-            LOGGER.error(e.getMessage());
-        }
+        VtrUtils.writeContent(getPathToDotFile(commit, fileName), content);
     }
     /* To create Dot file */
     private static String getDotStart() {
