@@ -25,7 +25,9 @@ import java.nio.file.Path;
 import java.nio.file.Files;
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 
 public class GumTreeDiff extends BeforeAfterComparator {
@@ -36,11 +38,8 @@ public class GumTreeDiff extends BeforeAfterComparator {
     private List<TestSuite> curTestSuites;
 
     // StringBuilders to contain results
-    private StringBuilder additiveSb;
-    private StringBuilder subtractiveSb;
-    private StringBuilder alteringSb;
-    private StringBuilder noneSb;
-
+    Map<String, StringBuilder> stringBuilderMap;
+    
     public static void main(String[] args) throws IOException, GitAPIException, ParseException {
         Project project = new Project(null).setConfig(CLI.CONFIG_FILENAME);
         List<DetectionResult> results = Detector.getDetectionResults(project.getSubjectsDir(), project.getOutputDir());
@@ -53,18 +52,30 @@ public class GumTreeDiff extends BeforeAfterComparator {
     }
 
     private enum Type {
-        Additive,
-        Subtractive,
-        Altering,
-        None,
+        INS_MOV_DEL_UPD,
+        INS_MOV_DEL,
+        INS_MOV_UPD,
+        INS_DEL_UPD,
+        MOV_DEL_UPD,
+        INS_MOV,
+        INS_DEL,
+        INS_UPD,
+        MOV_DEL,
+        MOV_UPD,
+        DEL_UPD,
+        INS,
+        MOV,
+        DEL,
+        UPD,
+        None
     }
 
     @Override
     public void prepare(final Project project) {
-        additiveSb    = new StringBuilder();
-        subtractiveSb = new StringBuilder();
-        alteringSb    = new StringBuilder();
-        noneSb        = new StringBuilder();
+        stringBuilderMap = new HashMap<>();
+        for (Type type : Type.values()) {
+            stringBuilderMap.put(type.toString(), new StringBuilder());
+        }
     }
 
     @Override
@@ -90,28 +101,20 @@ public class GumTreeDiff extends BeforeAfterComparator {
     public void compare(final Project project, final String prvCommit, final String curCommit, final String className, final String methodName) {
         Type type = Type.None;
         if (isDone(project, curCommit, className, methodName)) {
-            type = _compareFromExistingEditScripts(project, prvCommit, curCommit, className, methodName);
+            type = _compareFromExistingEditScripts(project, curCommit, className, methodName);
         } else {
             type = _compare(project, prvCommit, curCommit, className, methodName);
         }
 
-        if (type.equals(Type.Additive)) {
-            VtrUtils.addCsvRecords(additiveSb, project.getProjectId(), prvCommit, curCommit, className, methodName);
-        } else if (type.equals(Type.Subtractive)) {
-            VtrUtils.addCsvRecords(subtractiveSb, project.getProjectId(), prvCommit, curCommit, className, methodName);
-        } else if (type.equals(Type.Altering)) {
-            VtrUtils.addCsvRecords(alteringSb, project.getProjectId(), prvCommit, curCommit, className, methodName);
-        } else if (type.equals(Type.None)) {
-            VtrUtils.addCsvRecords(noneSb, project.getProjectId(), prvCommit, curCommit, className, methodName);
-        }
+        StringBuilder sb = stringBuilderMap.get(type.toString());
+        VtrUtils.addCsvRecords(sb, project.getProjectId(), prvCommit, curCommit, className, methodName);
     }
 
     @Override
     public void output() {
-        outputAddictive(additiveSb.toString());
-        outputSubtractive(subtractiveSb.toString());
-        outputAltering(alteringSb.toString());
-        outputNone(noneSb.toString());
+        for (Type type : Type.values()) {
+            outputGumTreeDiff(type);
+        }
     }
 
     /**
@@ -136,10 +139,10 @@ public class GumTreeDiff extends BeforeAfterComparator {
             return Type.None;
         } else if (curTestCase != null && prvTestCase == null) {
             LOGGER.info("{} is not null at {} and null at {}", className + ":" + methodName, curCommitId, prvCommitId);
-            return Type.Additive;
+            return Type.INS;
         } else if (curTestCase == null) { // (prevTestCase != null) is always true.
             LOGGER.info("{} is null at {} and not null at {}", className + ":" + methodName, curCommitId, prvCommitId);
-            return Type.Subtractive;
+            return Type.DEL;
         }
         GumTreeEngine engine = new GumTreeEngine();
         List<Action> actions = engine.getEditActions(prvTestCase, curTestCase);
@@ -147,7 +150,7 @@ public class GumTreeDiff extends BeforeAfterComparator {
         return _compare(actions);
     }
 
-    private Type _compareFromExistingEditScripts(final Project project, final String prvCommitId, final String curCommitId, final String className, final String methodName) {
+    private Type _compareFromExistingEditScripts(final Project project, final String curCommitId, final String className, final String methodName) {
         List<String> content;
         try {
             content = Files.readAllLines(getPathToOutputEditActions(project, curCommitId, className, methodName), Charsets.UTF_8);
@@ -159,8 +162,58 @@ public class GumTreeDiff extends BeforeAfterComparator {
     }
 
     private Type _compare(List<Action> actions) {
-        // 何を比較しよう？
-        return Type.None;
+        if (actions.isEmpty()) {
+            return Type.None;
+        }
+        boolean ins = false;
+        boolean mov = false;
+        boolean del = false;
+        boolean upd = false;
+        for (Action action : actions) {
+            if (action instanceof Insert) {
+                ins = true;
+            } else if (action instanceof Move) {
+                System.out.println("Move is found!");
+                mov = true;
+            } else if (action instanceof Delete) {
+                del = true;
+            } else if (action instanceof Update) {
+                upd = true;
+            }
+        }
+        if (ins && mov && del &&  upd) {
+            return Type.INS_MOV_DEL_UPD;
+        } else if (ins && mov && del) {
+            return Type.INS_MOV_DEL;
+        } else if (ins && mov && upd) {
+            return Type.INS_MOV_UPD;
+        } else if (ins && del && upd) {
+            return Type.INS_DEL_UPD;
+        } else if (mov && del && upd) {
+            return Type.MOV_DEL_UPD;
+        } else if (ins && mov) {
+            return Type.INS_MOV;
+        } else if (ins && del) {
+            return Type.INS_DEL;
+        } else if (ins && upd) {
+            return Type.INS_UPD;
+        } else if (mov && del) {
+            return Type.MOV_DEL;
+        } else if (mov && upd) {
+            return Type.MOV_UPD;
+        } else if (del && upd) {
+            return Type.DEL_UPD;
+        } else if (ins) {
+            return Type.INS;
+        } else if (mov) {
+            return Type.MOV;
+        } else if (del) {
+            return Type.DEL;
+        } else if (upd) {
+            return Type.UPD;
+        } else {
+            return Type.None;
+        }
     }
 
     private List<Action> analyzeEditActions(List<String> contents) {
@@ -199,42 +252,14 @@ public class GumTreeDiff extends BeforeAfterComparator {
     }
 
     /* To output results */
-    private void outputAddictive(String content) {
-        VtrUtils.writeContent(getPathToOutputAdditive(), content);
+    private void outputGumTreeDiff(Type type) {
+        StringBuilder sb = stringBuilderMap.get(type.toString());
+        VtrUtils.writeContent(getPathToOutputFile(type), sb.toString());
     }
-    private void outputSubtractive(String content) {
-        VtrUtils.writeContent(getPathToOutputSubtractive(), content);
-    }
-    private void outputAltering(String content) {
-        VtrUtils.writeContent(getPathToOutputAltering(), content);
-    }
-    private void outputNone(String content) {
-        VtrUtils.writeContent(getPathToOutputNone(), content);
-    }
+    
     /* To get path to output */
-    private Path getPathToOutputAdditive() {
-        return getPathToOutputFile(Type.Additive);
-    }
-    private Path getPathToOutputSubtractive() {
-        return getPathToOutputFile(Type.Subtractive);
-    }
-    private Path getPathToOutputAltering() {
-        return getPathToOutputFile(Type.Altering);
-    }
-    private Path getPathToOutputNone() {
-        return getPathToOutputFile(Type.None);
-    }
     private Path getPathToOutputFile(Type pattern) {
-        String filename = "";
-        if (pattern.equals(Type.Additive)) {
-            filename = "additive";
-        } else if (pattern.equals(Type.Subtractive)){
-            filename = "subtractive";
-        } else if (pattern.equals(Type.Altering)) {
-            filename = "altering";
-        } else if (pattern.equals(Type.None)) {
-            filename = "none";
-        }
+        String filename = pattern.toString();
         String className = this.getClass().toString();
         className = className.substring(className.lastIndexOf(".") + 1);
         return VtrUtils.getPathToFile(outputDir.getPath(), className, filename + ".csv");
