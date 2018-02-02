@@ -49,6 +49,10 @@ public class GumTreeDiff extends BeforeAfterComparator {
 
     public GumTreeDiff(final File projectDir, final File outputDir) {
         super(projectDir, outputDir);
+        stringBuilderMap = new HashMap<>();
+        for (Type type : Type.values()) {
+            stringBuilderMap.put(type.toString(), new StringBuilder());
+        }
     }
 
     private enum Type {
@@ -72,10 +76,7 @@ public class GumTreeDiff extends BeforeAfterComparator {
 
     @Override
     public void prepare(final Project project) {
-        stringBuilderMap = new HashMap<>();
-        for (Type type : Type.values()) {
-            stringBuilderMap.put(type.toString(), new StringBuilder());
-        }
+        // do nothing
     }
 
     @Override
@@ -155,7 +156,6 @@ public class GumTreeDiff extends BeforeAfterComparator {
             if (action instanceof Insert) {
                 ins = true;
             } else if (action instanceof Move) {
-                System.out.println("Move is found!");
                 mov = true;
             } else if (action instanceof Delete) {
                 del = true;
@@ -163,27 +163,28 @@ public class GumTreeDiff extends BeforeAfterComparator {
                 upd = true;
             }
         }
+        
         if (ins && mov && del &&  upd) {
             return Type.INS_MOV_DEL_UPD;
-        } else if (ins && mov && del) {
+        } else if (ins && mov && del & !upd) {
             return Type.INS_MOV_DEL;
-        } else if (ins && mov && upd) {
+        } else if (ins && mov && !del && upd) { 
             return Type.INS_MOV_UPD;
-        } else if (ins && del && upd) {
+        } else if (ins && !mov && del && upd) {
             return Type.INS_DEL_UPD;
-        } else if (mov && del && upd) {
+        } else if (!ins && mov && del && upd) {
             return Type.MOV_DEL_UPD;
-        } else if (ins && mov) {
+        } else if (ins && mov && !del && !upd) {
             return Type.INS_MOV;
-        } else if (ins && del) {
+        } else if (ins && !mov && del && !upd) {
             return Type.INS_DEL;
-        } else if (ins && upd) {
+        } else if (ins && !mov && !del && upd) {
             return Type.INS_UPD;
-        } else if (mov && del) {
+        } else if (!ins && mov && del && !upd) {
             return Type.MOV_DEL;
-        } else if (mov && upd) {
+        } else if (!ins && mov && !del && upd) {
             return Type.MOV_UPD;
-        } else if (del && upd) {
+        } else if (!ins && !mov && del && upd) {
             return Type.DEL_UPD;
         } else if (ins) {
             return Type.INS;
