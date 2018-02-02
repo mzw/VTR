@@ -5,17 +5,13 @@ import com.github.gumtreediff.actions.model.Delete;
 import com.github.gumtreediff.actions.model.Insert;
 import com.github.gumtreediff.actions.model.Move;
 import com.github.gumtreediff.actions.model.Update;
-import jp.mzw.vtr.CLI;
 import jp.mzw.vtr.cluster.BeforeAfterComparator;
 import jp.mzw.vtr.core.Project;
 import jp.mzw.vtr.core.VtrUtils;
-import jp.mzw.vtr.detect.DetectionResult;
-import jp.mzw.vtr.detect.Detector;
 import jp.mzw.vtr.maven.MavenUtils;
 import jp.mzw.vtr.maven.TestCase;
 import jp.mzw.vtr.maven.TestSuite;
 import org.apache.commons.io.Charsets;
-import org.eclipse.jgit.api.errors.GitAPIException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,34 +19,44 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Files;
-import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 
+/**
+ * Classifier for Test-Case Modifications with GumTree
+ *
+ * @author Keita Tsukamoto
+ */
 public class GumTreeDiff extends BeforeAfterComparator {
     private static Logger LOGGER = LoggerFactory.getLogger(GumTreeDiff.class);
+
+    /** A directory name to output classification results */
     private static final String GUMTREE_DIR = "gumtree";
 
+    /** Contain a previous target test suites */
     private List<TestSuite> prvTestSuites;
+    /** Contain a current target test suites */
     private List<TestSuite> curTestSuites;
 
-    // StringBuilders to contain results
-    Map<String, StringBuilder> stringBuilderMap;
-    
-    public static void main(String[] args) throws IOException, GitAPIException, ParseException {
-        Project project = new Project(null).setConfig(CLI.CONFIG_FILENAME);
-        List<DetectionResult> results = Detector.getDetectionResults(project.getSubjectsDir(), project.getOutputDir());
-        GumTreeDiff differ = new GumTreeDiff(project.getSubjectsDir(), project.getOutputDir());
-        differ.run(results);
-    }
+    /** Contain classification results by each type */
+    Map<Type, StringBuilder> results;
 
+    /**
+     * Constructor
+     *
+     * @param projectDir
+     * @param outputDir
+     */
     public GumTreeDiff(final File projectDir, final File outputDir) {
         super(projectDir, outputDir);
     }
 
+    /**
+     * Types of classification results
+     */
     private enum Type {
         INS_MOV_DEL_UPD,
         INS_MOV_DEL,
@@ -71,11 +77,16 @@ public class GumTreeDiff extends BeforeAfterComparator {
     }
 
     @Override
-    public void prepare(final Project project) {
-        stringBuilderMap = new HashMap<>();
+    public void prepare() {
+        results = new HashMap<>();
         for (Type type : Type.values()) {
-            stringBuilderMap.put(type.toString(), new StringBuilder());
+            results.put(type, new StringBuilder());
         }
+    }
+
+    @Override
+    public void prepareEach(final Project project) {
+        // NOP
     }
 
     @Override
@@ -99,21 +110,19 @@ public class GumTreeDiff extends BeforeAfterComparator {
 
     @Override
     public void compare(final Project project, final String prvCommit, final String curCommit, final String className, final String methodName) {
-        Type type = Type.None;
+        Type type;
         if (isDone(project, curCommit, className, methodName)) {
-            type = _compareFromExistingEditScripts(project, curCommit, className, methodName);
+            type = read(project, curCommit, className, methodName);
         } else {
-            type = _compare(project, prvCommit, curCommit, className, methodName);
+            type = apply(project, prvCommit, curCommit, className, methodName);
         }
-
-        StringBuilder sb = stringBuilderMap.get(type.toString());
-        VtrUtils.addCsvRecords(sb, project.getProjectId(), prvCommit, curCommit, className, methodName);
+        VtrUtils.addCsvRecords(results.get(type), project.getProjectId(), prvCommit, curCommit, className, methodName);
     }
 
     @Override
     public void output() {
         for (Type type : Type.values()) {
-            outputGumTreeDiff(type);
+            VtrUtils.writeContent(getPathToOutputFile(type), results.get(type).toString());
         }
     }
 
@@ -131,7 +140,17 @@ public class GumTreeDiff extends BeforeAfterComparator {
         return Files.exists(path);
     }
 
-    private Type _compare(final Project project, final String prvCommitId, final String curCommitId, final String className, final String methodName) {
+    /**
+     * Apply GumTree to get edit actions of a modified test case
+     *
+     * @param project is a project containing a test case
+     * @param prvCommitId is a previous target commit ID
+     * @param curCommitId is a current target commit ID
+     * @param className is a name of current target test class
+     * @param methodName is a name of current target test method
+     * @return a type of this modification
+     */
+    private Type apply(final Project project, final String prvCommitId, final String curCommitId, final String className, final String methodName) {
         TestCase curTestCase = TestSuite.getTestCaseWithClassMethodName(curTestSuites, className, methodName);
         TestCase prvTestCase = TestSuite.getTestCaseWithClassMethodName(prvTestSuites, className, methodName);
         if (curTestCase == null && prvTestCase == null) {
@@ -147,21 +166,50 @@ public class GumTreeDiff extends BeforeAfterComparator {
         GumTreeEngine engine = new GumTreeEngine();
         List<Action> actions = engine.getEditActions(prvTestCase, curTestCase);
         outputEditActions(project, curCommitId, prvCommitId, className, methodName, actions);
-        return _compare(actions);
+        return classify(actions);
     }
 
-    private Type _compareFromExistingEditScripts(final Project project, final String curCommitId, final String className, final String methodName) {
-        List<String> content;
+    /**
+     * Read existing results of applying GumTree
+     *
+     * @param project
+     * @param curCommitId
+     * @param className
+     * @param methodName
+     * @return
+     */
+    private Type read(final Project project, final String curCommitId, final String className, final String methodName) {
         try {
-            content = Files.readAllLines(getPathToOutputEditActions(project, curCommitId, className, methodName), Charsets.UTF_8);
+            List<String> contents = Files.readAllLines(getPathToOutputEditActions(project, curCommitId, className, methodName), Charsets.UTF_8);
+            if (contents.size() < 3) {
+                return Type.None;
+            }
+            List<Action> actions = new ArrayList<>();
+            for (int i = 2; i < contents.size(); i++) {
+                String content = contents.get(i);
+                if (content.startsWith("INS")) {
+                    actions.add(new Insert(null, null, -1));
+                } else if (content.startsWith("DEL")) {
+                    actions.add(new Delete(null));
+                } else if (content.startsWith("MOV")) {
+                    actions.add(new Move(null, null, -1));
+                } else if (content.startsWith("UPD")) {
+                    actions.add(new Update(null, ""));
+                }
+            }
+            return classify(actions);
         } catch (IOException e) {
             return Type.None;
         }
-        List<Action> actions = analyzeEditActions(content);
-        return _compare(actions);
     }
 
-    private Type _compare(List<Action> actions) {
+    /**
+     * Classify a test-case modifications based on its edit actions
+     *
+     * @param actions
+     * @return
+     */
+    private Type classify(List<Action> actions) {
         if (actions.isEmpty()) {
             return Type.None;
         }
@@ -215,27 +263,16 @@ public class GumTreeDiff extends BeforeAfterComparator {
         }
     }
 
-    private List<Action> analyzeEditActions(List<String> contents) {
-        List<Action> actions = new ArrayList<>();
-        if (contents.size() < 3) {
-            return actions;
-        }
-        for (int i = 2; i < contents.size(); i++) {
-            String content = contents.get(i);
-            if (content.startsWith("INS")) {
-                actions.add(new Insert(null, null, -1));
-            } else if (content.startsWith("DEL")) {
-                actions.add(new Delete(null));
-            } else if (content.startsWith("MOV")) {
-                actions.add(new Move(null, null, -1));
-            } else if (content.startsWith("UPD")) {
-                actions.add(new Update(null, ""));
-            }
-        }
-        return actions;
-    }
-
-    /* To output edit actions */
+    /**
+     * Output edit actions by applying GumTree
+     *
+     * @param project
+     * @param curCommitId
+     * @param prvCommitId
+     * @param className
+     * @param methodName
+     * @param actions
+     */
     private void outputEditActions(Project project, String curCommitId, String prvCommitId, String className, String methodName, List<Action> actions) {
         StringBuilder sb = new StringBuilder();
         sb.append("previous commit : ").append(curCommitId).append("\n");
@@ -243,26 +280,31 @@ public class GumTreeDiff extends BeforeAfterComparator {
         for (Action action : actions) {
             sb.append(action.toString()).append("\n");
         }
-        outputEditActions(project, curCommitId, className, methodName, sb.toString());
+        VtrUtils.writeContent(getPathToOutputEditActions(project, curCommitId, className, methodName), sb.toString());
     }
 
-    private void outputEditActions(Project project, String curCommitId, String className, String methodName, String content) {
-        VtrUtils.writeContent(getPathToOutputEditActions(project, curCommitId, className, methodName), content);
-    }
-
-    /* To output results */
-    private void outputGumTreeDiff(Type type) {
-        StringBuilder sb = stringBuilderMap.get(type.toString());
-        VtrUtils.writeContent(getPathToOutputFile(type), sb.toString());
-    }
-    
-    /* To get path to output */
-    private Path getPathToOutputFile(Type pattern) {
-        String filename = pattern.toString();
+    /**
+     * Get a path to an output file
+     *
+     * @param type
+     * @return
+     */
+    private Path getPathToOutputFile(Type type) {
+        String filename = type.toString();
         String className = this.getClass().toString();
         className = className.substring(className.lastIndexOf(".") + 1);
         return VtrUtils.getPathToFile(outputDir.getPath(), className, filename + ".csv");
     }
+
+    /**
+     * Get a path to an output file containing edit actions
+     *
+     * @param project
+     * @param commitId
+     * @param className
+     * @param methodName
+     * @return
+     */
     private Path getPathToOutputEditActions(Project project, String commitId, String className, String methodName) {
         return VtrUtils.getPathToFile(project.getOutputDir().toString(), project.getProjectId(), GUMTREE_DIR, commitId, className, methodName, "actions.txt");
     }

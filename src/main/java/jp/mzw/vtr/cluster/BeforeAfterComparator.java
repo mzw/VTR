@@ -36,7 +36,9 @@ public abstract class BeforeAfterComparator {
         this.outputDir = outputDir;
     }
 
-    protected abstract void prepare(Project project);
+    protected abstract void prepare();
+
+    protected abstract void prepareEach(Project project);
 
     protected abstract void before(Project project, String commitId);
 
@@ -56,6 +58,7 @@ public abstract class BeforeAfterComparator {
      * @throws GitAPIException
      */
     public void run(final List<DetectionResult> results) throws IOException, ParseException, GitAPIException {
+        prepare();
         for (final DetectionResult result : results) {
             final String projectId = result.getSubjectName();
             LOGGER.info("Project: " + projectId);
@@ -64,7 +67,7 @@ public abstract class BeforeAfterComparator {
             final CheckoutConductor git = new CheckoutConductor(project);
             final Dictionary dict = new Dictionary(this.outputDir, projectId).parse().createPrevCommitByCommitIdMap();
 
-            prepare(project);
+            prepareEach(project);
 
             final Map<String, List<String>> commits = result.getResults();
             for (final String curCommit : commits.keySet()) {
