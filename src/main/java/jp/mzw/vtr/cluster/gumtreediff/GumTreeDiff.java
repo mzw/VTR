@@ -173,7 +173,6 @@ public class GumTreeDiff extends BeforeAfterComparator {
             if (action instanceof Insert) {
                 ins = true;
             } else if (action instanceof Move) {
-                System.out.println("Move is found!");
                 mov = true;
             } else if (action instanceof Delete) {
                 del = true;
