@@ -145,6 +145,7 @@ public class TestSuite {
 	 *
 	 * @return a Java AST parser
 	 */
+	@SuppressWarnings("deprecation")
 	private static ASTParser instantiateAstParser() {
 		// version 9
 		try {
