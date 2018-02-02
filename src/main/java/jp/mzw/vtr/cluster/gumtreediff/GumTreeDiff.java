@@ -88,8 +88,12 @@ public class GumTreeDiff extends BeforeAfterComparator {
 
     @Override
     public void compare(final Project project, final String prvCommit, final String curCommit, final String className, final String methodName) {
-        Type type = _compareFromExistingEditScripts(project, prvCommit, curCommit, className, methodName);
-//        Type type = _compare(project, prvCommit, curCommit, className, methodName);
+        Type type = Type.None;
+        if (isDone(project, curCommit, className, methodName)) {
+            type = _compareFromExistingEditScripts(project, prvCommit, curCommit, className, methodName);
+        } else {
+            type = _compare(project, prvCommit, curCommit, className, methodName);
+        }
 
         if (type.equals(Type.Additive)) {
             VtrUtils.addCsvRecords(additiveSb, project.getProjectId(), prvCommit, curCommit, className, methodName);
@@ -108,6 +112,20 @@ public class GumTreeDiff extends BeforeAfterComparator {
         outputSubtractive(subtractiveSb.toString());
         outputAltering(alteringSb.toString());
         outputNone(noneSb.toString());
+    }
+
+    /**
+     * Determine whether GumTree has been applied already
+     *
+     * @param project is a project under analysis
+     * @param commitId is a current target commit ID
+     * @param className is a name of current target test class
+     * @param methodName is a name of current target test method
+     * @return true if already done, otherwise false
+     */
+    private boolean isDone(Project project, String commitId, String className, String methodName) {
+        final Path path = getPathToOutputEditActions(project, commitId, className, methodName);
+        return Files.exists(path);
     }
 
     private Type _compare(final Project project, final String prvCommitId, final String curCommitId, final String className, final String methodName) {
