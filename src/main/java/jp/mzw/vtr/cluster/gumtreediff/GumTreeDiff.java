@@ -180,7 +180,7 @@ public class GumTreeDiff extends BeforeAfterComparator {
                 upd = true;
             }
         }
-        if (ins && mov && del &&  upd) {
+        if (ins && mov && del && upd) {
             return Type.INS_MOV_DEL_UPD;
         } else if (ins && mov && del) {
             return Type.INS_MOV_DEL;
