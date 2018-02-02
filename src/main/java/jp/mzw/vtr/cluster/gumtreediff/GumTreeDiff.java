@@ -42,7 +42,7 @@ public class GumTreeDiff extends BeforeAfterComparator {
     private List<TestSuite> curTestSuites;
 
     /** Contain classification results by each type */
-    Map<Type, StringBuilder> results;
+    private Map<Type, StringBuilder> results;
 
     /**
      * Constructor
@@ -228,27 +228,28 @@ public class GumTreeDiff extends BeforeAfterComparator {
                 upd = true;
             }
         }
-        if (ins && mov && del && upd) {
+
+        if (ins && mov && del &&  upd) {
             return Type.INS_MOV_DEL_UPD;
-        } else if (ins && mov && del) {
+        } else if (ins && mov && del & !upd) {
             return Type.INS_MOV_DEL;
-        } else if (ins && mov && upd) {
+        } else if (ins && mov && !del && upd) { 
             return Type.INS_MOV_UPD;
-        } else if (ins && del && upd) {
+        } else if (ins && !mov && del && upd) {
             return Type.INS_DEL_UPD;
-        } else if (mov && del && upd) {
+        } else if (!ins && mov && del && upd) {
             return Type.MOV_DEL_UPD;
-        } else if (ins && mov) {
+        } else if (ins && mov && !del && !upd) {
             return Type.INS_MOV;
-        } else if (ins && del) {
+        } else if (ins && !mov && del && !upd) {
             return Type.INS_DEL;
-        } else if (ins && upd) {
+        } else if (ins && !mov && !del && upd) {
             return Type.INS_UPD;
-        } else if (mov && del) {
+        } else if (!ins && mov && del && !upd) {
             return Type.MOV_DEL;
-        } else if (mov && upd) {
+        } else if (!ins && mov && !del && upd) {
             return Type.MOV_UPD;
-        } else if (del && upd) {
+        } else if (!ins && !mov && del && upd) {
             return Type.DEL_UPD;
         } else if (ins) {
             return Type.INS;
