@@ -28,22 +28,18 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 
 public class GumTreeDiff extends BeforeAfterComparator {
     private static Logger LOGGER = LoggerFactory.getLogger(GumTreeDiff.class);
     private static final String GUMTREE_DIR = "gumtree";
 
-    private Map<String, TestSuite> prevTestSuites;
-    private Map<String, TestSuite> curTestSuites;
+    private List<TestSuite> prvTestSuites;
+    private List<TestSuite> curTestSuites;
 
     // StringBuilders to contain results
     Map<String, StringBuilder> stringBuilderMap;
     
-    private List<TestSuite> prev;
-    private List<TestSuite> curr;
-
     public static void main(String[] args) throws IOException, GitAPIException, ParseException {
         Project project = new Project(null).setConfig(CLI.CONFIG_FILENAME);
         List<DetectionResult> results = Detector.getDetectionResults(project.getSubjectsDir(), project.getOutputDir());
@@ -84,21 +80,19 @@ public class GumTreeDiff extends BeforeAfterComparator {
 
     @Override
     public void before(final Project project, final String commitId) {
-        prevTestSuites = getTestSuites(project);
         try {
-            prev = MavenUtils.getTestSuites(project.getProjectDir());
+            prvTestSuites = MavenUtils.getTestSuites(project.getProjectDir());
         } catch(Exception e) {
-
+            LOGGER.warn("Not found previous test suites: {}, commit: {}", project.getProjectId(), commitId);
         }
     }
 
     @Override
     public void after(final Project project, final String commitId) {
-        curTestSuites = getTestSuites(project);
         try {
-            curr = MavenUtils.getTestSuites(project.getProjectDir());
+            curTestSuites = MavenUtils.getTestSuites(project.getProjectDir());
         } catch(Exception e) {
-
+            LOGGER.warn("Not found current test suites: {}, commit: {}", project.getProjectId(), commitId);
         }
     }
 
@@ -120,24 +114,12 @@ public class GumTreeDiff extends BeforeAfterComparator {
     }
 
     private Type _compare(final Project project, final String prvCommitId, final String curCommitId, final String className, final String methodName) {
-        TestSuite curTestSuite  = curTestSuites.get(className);
-        TestSuite prevTestSuite = prevTestSuites.get(className);
-        if (curTestSuite == null && prevTestSuite == null) {
-            LOGGER.error("Why both test-suites are null?");
+        TestCase curTestCase = TestSuite.getTestCaseWithClassMethodName(curTestSuites, className, methodName);
+        TestCase prvTestCase = TestSuite.getTestCaseWithClassMethodName(prvTestSuites, className, methodName);
+        if (curTestCase == null && prvTestCase == null) {
+            LOGGER.error("Both previous and current test cases are null");
             return Type.None;
-        } else if (curTestSuite != null && prevTestSuite == null) {
-            LOGGER.info("{} is not null at {} and null at {}", className, curCommitId, prvCommitId);
-            return Type.INS;
-        } else if (curTestSuite == null) { // (prevTestSuite != null) is always true.
-            LOGGER.info("{} is null at {} and not null at {}", className, curCommitId, prvCommitId);
-            return Type.DEL;
-        }
-        TestCase curTestCase = TestSuite.getTestCaseWithClassMethodName(curr, className, methodName);
-        TestCase prevTestCase = TestSuite.getTestCaseWithClassMethodName(prev, className, methodName);
-        if (curTestCase == null && prevTestCase == null) {
-            LOGGER.error("Why both test-cases are null?");
-            return Type.None;
-        } else if (curTestCase != null && prevTestCase == null) {
+        } else if (curTestCase != null && prvTestCase == null) {
             LOGGER.info("{} is not null at {} and null at {}", className + ":" + methodName, curCommitId, prvCommitId);
             return Type.INS;
         } else if (curTestCase == null) { // (prevTestCase != null) is always true.
@@ -145,7 +127,7 @@ public class GumTreeDiff extends BeforeAfterComparator {
             return Type.DEL;
         }
         GumTreeEngine engine = new GumTreeEngine();
-        List<Action> actions = engine.getEditActions(prevTestCase, curTestCase);
+        List<Action> actions = engine.getEditActions(prvTestCase, curTestCase);
         outputEditActions(project, curCommitId, prvCommitId, className, methodName, actions);
         return _compare(actions);
     }
@@ -235,35 +217,6 @@ public class GumTreeDiff extends BeforeAfterComparator {
         }
         return actions;
     }
-
-    private Map<String, TestSuite> getTestSuites(Project project) {
-        try {
-            return listToMapTestSuites(MavenUtils.getTestSuites(project.getProjectDir()));
-        } catch (IOException e) {
-            e.printStackTrace();
-            LOGGER.error(e.getMessage());
-        }
-        return null;
-    }
-
-    private Map<String, TestSuite> listToMapTestSuites(List<TestSuite> testSuites) {
-        Map<String, TestSuite> ret = testSuites.stream()
-                .collect(Collectors.toMap(
-                        s -> s.getTestClassName(),
-                        s -> s
-                ));
-        return ret;
-    }
-    private Map<String, TestCase> listToMapTestCases(List<TestCase> testCases) {
-        Map<String, TestCase> ret = testCases.stream()
-                .collect(Collectors.toMap(
-                        s -> s.getName(),
-                        s -> s
-                ));
-        return ret;
-    }
-
-
 
     /* To output edit actions */
     private void outputEditActions(Project project, String curCommitId, String prvCommitId, String className, String methodName, List<Action> actions) {
