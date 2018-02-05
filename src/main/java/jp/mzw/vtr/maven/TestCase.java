@@ -122,7 +122,17 @@ public class TestCase {
 	public String getFullName() {
 		return this.className + "#" + this.name;
 	}
-	
+
+	public static String getClassName(final String fullname) {
+		if (fullname == null) return null;
+		return fullname.split("#")[0];
+	}
+
+	public static String getMethodName(final String fullname) {
+		if (fullname == null) return null;
+		return fullname.split("#")[1];
+	}
+
 	public List<Comment> getComments() {
 		List<Comment> ret = new ArrayList<>();
 		for (Object object : cu.getCommentList()) {

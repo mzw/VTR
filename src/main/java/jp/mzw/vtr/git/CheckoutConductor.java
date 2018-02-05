@@ -137,6 +137,28 @@ public class CheckoutConductor {
 	}
 
 	/**
+	 * Temporary implementation
+	 *
+	 * @param commitId
+	 * @throws GitAPIException
+	 * @throws IOException
+	 * @throws ParseException
+	 *
+	 * @deprecated
+	 */
+	public void checkoutAt(String commitId) throws GitAPIException, IOException, ParseException {
+		for (Commit commit : getCommitAt(commitId)) {
+			try {
+				checkout(commit);
+			} catch (GitAPIException e) {
+				LOGGER.warn("Failed to checkout @ {}", commit.getId());
+				git.clean().call();
+				continue;
+			}
+		}
+	}
+
+	/**
 	 * Checkout given commit
 	 * 
 	 * @param commit

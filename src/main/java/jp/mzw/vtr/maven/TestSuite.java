@@ -39,6 +39,10 @@ public class TestSuite {
 		this.testCases = new ArrayList<TestCase>();
 	}
 
+	public String getTestClassName() {
+		return this.testClassName;
+	}
+
 	/**
 	 * Parse source codes at level 1
 	 * 
@@ -59,7 +63,7 @@ public class TestSuite {
 			source[i] = _source.get(i);
 		}
 
-		ASTParser parser = ASTParser.newParser(AST.JLS8);
+		ASTParser parser = instantiateAstParser();
 		parser.setSource(source);
 		this.cu = (CompilationUnit) parser.createAST(new NullProgressMonitor());
 
@@ -121,7 +125,7 @@ public class TestSuite {
 	 * @throws IOException
 	 */
 	public static Map<String, CompilationUnit> getFileUnitMap(File subjectDir) throws IOException {
-		ASTParser parser = ASTParser.newParser(AST.JLS8);
+		ASTParser parser = instantiateAstParser();
 		parser.setResolveBindings(true);
 		parser.setBindingsRecovery(true);
 		parser.setEnvironment(null, null, null, true);
@@ -134,6 +138,45 @@ public class TestSuite {
 		};
 		parser.createASTs(getSources(subjectDir), null, new String[] {}, requestor, new NullProgressMonitor());
 		return units;
+	}
+
+	/**
+	 * Instantiate a Java AST parser according to local environment
+	 *
+	 * @return a Java AST parser
+	 */
+	@SuppressWarnings("deprecation")
+	private static ASTParser instantiateAstParser() {
+		// version 9
+		try {
+			return ASTParser.newParser(AST.JLS9);
+		} catch(IllegalArgumentException e) {
+			LOGGER.warn("Failed to instantiate ASTParser with version {}", AST.JLS9);
+		}
+		// version 8
+		try {
+			return ASTParser.newParser(AST.JLS8);
+		} catch(IllegalArgumentException e) {
+			LOGGER.warn("Failed to instantiate ASTParser with version {}", AST.JLS8);
+		}
+		// version 4
+		try {
+			return ASTParser.newParser(AST.JLS4);
+		} catch(IllegalArgumentException e) {
+			LOGGER.warn("Failed to instantiate ASTParser with version {}", AST.JLS4);
+		}
+		// version 3
+		try {
+			return ASTParser.newParser(AST.JLS3);
+		} catch(IllegalArgumentException e) {
+			LOGGER.warn("Failed to instantiate ASTParser with version {}", AST.JLS3);
+		}
+		// version 2
+		try {
+			return ASTParser.newParser(AST.JLS2);
+		} catch(IllegalArgumentException e) {
+			throw e;
+		}
 	}
 	
 	public TestSuite setParseResults(CompilationUnit unit) {

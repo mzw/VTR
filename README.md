@@ -1,4 +1,4 @@
-# VTR
+# VTR [![Build Status](https://travis-ci.org/mzw/VTR.svg?branch=master)](https://travis-ci.org/mzw/VTR)
 
 Written by [Yuta Maezawa](mailto:maezawa@nii.ac.jp) and greatest contributors
 
@@ -7,7 +7,7 @@ Written by [Yuta Maezawa](mailto:maezawa@nii.ac.jp) and greatest contributors
 Provide your local configurations at `src/main/resources/config.properties` .
 
 ```
-path_to_output_dir = output
+path_to_output_dir = outputs
 path_to_subjects_dir = subjects
 maven_home = /usr/local/apache-maven-3.3.9
 maven_output = false
@@ -53,10 +53,10 @@ $ sh/run detect vtr-example
 
 ### In-Review Phase
 
-#### 4. Cluster Detected Test-Case Modifications
+#### 4. Classify Detected Test-Case Modifications
 
 ```
-$ sh/run cluster lcs complete 0.5
+$ sh/run cluster gumtreediff
 ```
 
 #### 5. Review VTR In-Advance Results
