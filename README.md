@@ -14,10 +14,10 @@ maven_output = false
 ```
 
 ## Clone
-Make `output` and `subjects` directories and clone your project under the `subjects` directory.
+Make `outputs` and `subjects` directories and clone your project under the `subjects` directory.
 
 ```
-$ mkdir output
+$ mkdir outputs
 $ mkdir subjects
 $ cd subjects
 $ git clone https://github.com/mzw/vtr-example
