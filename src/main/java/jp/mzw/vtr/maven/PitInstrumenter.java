@@ -26,7 +26,7 @@ public class PitInstrumenter extends JacocoInstrumenter {
 	}
 
 	@Override
-	public boolean instrument() throws IOException, org.dom4j.DocumentException {
+	public boolean instrument() throws IOException {
 		String modified = String.copyValueOf(this.originalPomContent.toCharArray());
 		modified = this.insturumentPit(modified);
 		if (this.originalPomContent.compareTo(modified) != 0) { // modified
