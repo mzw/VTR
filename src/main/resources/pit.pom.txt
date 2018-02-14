@@ -12,6 +12,7 @@
         <mutators>
             <mutator>ALL</mutator>
         </mutators>
+        <timestampedReports>false</timestampedReports>
         <threads>100</threads>
         <timeoutConstant>300</timeoutConstant>
     </configuration>

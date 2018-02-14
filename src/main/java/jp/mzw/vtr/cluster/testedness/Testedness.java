@@ -1,0 +1,225 @@
+package jp.mzw.vtr.cluster.testedness;
+
+import jp.mzw.vtr.CLI;
+import jp.mzw.vtr.core.Project;
+import jp.mzw.vtr.core.VtrUtils;
+import jp.mzw.vtr.detect.DetectionResult;
+import jp.mzw.vtr.dict.Dictionary;
+import jp.mzw.vtr.git.CheckoutConductor;
+import jp.mzw.vtr.maven.JacocoInstrumenter;
+import jp.mzw.vtr.maven.MavenUtils;
+import jp.mzw.vtr.maven.PitInstrumenter;
+import jp.mzw.vtr.maven.Results;
+import jp.mzw.vtr.maven.TestCase;
+import org.apache.commons.io.FileUtils;
+import org.apache.maven.shared.invoker.MavenInvocationException;
+import org.dom4j.DocumentException;
+import org.eclipse.jgit.api.errors.GitAPIException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.text.ParseException;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+public class Testedness {
+    private static Logger LOGGER = LoggerFactory.getLogger(Testedness.class);
+
+    /** A directory name to output classification results */
+    private static final String TESTEDNESS_DIR = "testedness";
+    private static final String JACOCO_DIR = "jacoco";
+    private static final String PITEST_DIR = "pitest";
+
+    /** A directory containing projects under analysis  */
+    protected final File projectDir;
+    /** A directory to output analysis results */
+    protected final File outputDir;
+
+    private Map<Type, StringBuilder> results;
+    private Project project;
+
+    public Testedness(final File projectDir, final File outputDir) {
+        this.projectDir = projectDir;
+        this.outputDir = outputDir;
+    }
+
+    /**
+     * Compare before and after versions of projects under analysis
+     *
+     * @param results
+     * @throws IOException
+     * @throws ParseException
+     * @throws GitAPIException
+     */
+    public void run(final List<DetectionResult> results) throws IOException, ParseException, GitAPIException {
+        prepare();
+        for (final DetectionResult result : results) {
+            final String projectId = result.getSubjectName();
+            LOGGER.info("Project: " + projectId);
+
+            final Project project = new Project(projectId).setConfig(CLI.CONFIG_FILENAME);
+            final CheckoutConductor git = new CheckoutConductor(project);
+            final Dictionary dict = new Dictionary(this.outputDir, projectId).parse().createPrevCommitByCommitIdMap();
+
+            prepareEach(project);
+
+            final Map<String, List<String>> commits = result.getResults();
+            for (final String curCommit : commits.keySet()) {
+                // Classifying additive, subtractive, or altering patches
+                List<String> testcases = commits.get(curCommit);
+                for (final String testcase : testcases) {
+                    final String className = TestCase.getClassName(testcase);
+                    final String methodName = TestCase.getMethodName(testcase);
+                    // After version of a project under analysis
+                    LOGGER.info("Checkout (after modified): " + curCommit);
+                    git.checkoutAt(curCommit);
+                    after(project, curCommit, className);
+
+                    // Before version of a project under analysis
+                    String prvCommit = dict.getPrevCommitBy(curCommit).getId();
+                    LOGGER.info("Checkout (before modified): " + prvCommit + " previous to " + curCommit);
+                    git.checkoutAt(prvCommit);
+                    before(project, prvCommit, className);
+
+                    compare(project, prvCommit, curCommit, className, methodName);
+                }
+
+                git.checkoutAt(git.getLatestCommit().getId());
+            }
+        }
+        output();
+    }
+
+
+    public void prepare() {
+        results = new HashMap<>();
+        for (Testedness.Type type : Testedness.Type.values()) {
+            results.put(type, new StringBuilder());
+        }
+    }
+
+    private enum Type {
+        JACOCO_PITEST,
+        JACOCO,
+        PITEST,
+        NONE,
+    }
+
+
+    public void prepareEach(final Project project) {
+        this.project = project;
+    }
+
+    public void before(final Project project, final String commitId, String className) {
+        try {
+            runJacocoAndPitest(project, commitId, className);
+        } catch(Exception e) {
+            LOGGER.warn("Not found previous test suites: {}, commit: {}", project.getProjectId(), commitId);
+        }
+    }
+
+    public void after(final Project project, final String commitId, String className) {
+        try {
+            runJacocoAndPitest(project, commitId, className);
+        } catch(Exception e) {
+            LOGGER.warn("Not found current test suites: {}, commit: {}", project.getProjectId(), commitId);
+        }
+    }
+
+    public void compare(final Project project, final String prvCommit, final String curCommit, final String className, final String methodName) {
+        Testedness.Type type = Type.NONE;
+
+
+
+        VtrUtils.addCsvRecords(results.get(type), project.getProjectId(), prvCommit, curCommit, className, methodName);
+    }
+
+    public void output() {
+        for (Testedness.Type type : Testedness.Type.values()) {
+            VtrUtils.writeContent(getPathToOutputFile(type), results.get(type).toString());
+        }
+    }
+
+    protected void runJacocoAndPitest(final Project project, final String commitId, String className) {
+        try {
+            JacocoInstrumenter ji = new JacocoInstrumenter(project.getProjectDir());
+            boolean modified = ji.instrument();
+            runJacoco(commitId, className);
+            copyJacocoOutput(commitId, className);
+            if (modified) {
+                ji.revert();
+            }
+        } catch (MavenInvocationException e) {
+            LOGGER.warn("Error when maven invoking jacoco.");
+        } catch (DocumentException e) {
+            LOGGER.warn("Error when instrumenting jacoco.");
+        } catch (IOException e) {
+            LOGGER.warn("Error when copying jacoco result.");
+        }
+        try {
+            PitInstrumenter pi = new PitInstrumenter(project.getProjectDir(), PitInstrumenter.getTargetClasses(project.getProjectDir()), className);
+            boolean modified = pi.instrument();
+            runPitest(commitId, className);
+            copyPitestOutput(commitId, className);
+            if (modified) {
+                pi.revert();
+            }
+        } catch (MavenInvocationException e) {
+            LOGGER.warn("Error when maven invoking pitest.");
+        } catch (IOException e) {
+            LOGGER.warn("Error when copying pitest result.");
+        }
+    }
+
+
+    protected void runJacoco(String commit, String testCaseFullName) throws MavenInvocationException {
+        LOGGER.info("Measure coverage: {} @ {}", testCaseFullName, commit);
+        String each = "-Dtest=" + testCaseFullName;
+        List<String> args = Arrays.asList("clean", "compile", "test-compile",
+                "org.jacoco:jacoco-maven-plugin:prepare-agent", "test", each, "org.jacoco:jacoco-maven-plugin:report");
+        runMaven(args);
+        return;
+    }
+
+    protected void runPitest(String commit, String testCaseFullName) throws MavenInvocationException {
+        LOGGER.info("Mutation score: {} @ {}", testCaseFullName, commit);
+        List<String> args = Arrays.asList("clean", "compile", "test-compile", "org.pitest:pitest-maven:mutationCoverage");
+        runMaven(args);
+        return;
+    }
+
+    protected void runMaven(List<String> args) throws MavenInvocationException {
+        MavenUtils.maven(this.project.getProjectDir(), args, this.project.getMavenHome());
+        return;
+    }
+
+
+    private void copyJacocoOutput(String commit, String testCaseFullName) throws IOException {
+        FileUtils.copyDirectoryToDirectory(VtrUtils.getPathToFile(project.getProjectDir().getAbsolutePath(), "target/site/jacoco").toFile(),
+                getPathToJacocoOutput(commit, testCaseFullName).toFile());
+    }
+
+    private void copyPitestOutput(String commit, String testCaseFullName) throws IOException {
+        FileUtils.copyDirectoryToDirectory(VtrUtils.getPathToFile(project.getProjectDir().getAbsolutePath(), "target/pit-reports").toFile(),
+                getPathToPitestOutput(commit, testCaseFullName).toFile());
+    }
+
+    private Path getPathToJacocoOutput(String commit, String testCaseFullName) {
+        return VtrUtils.getPathToFile(project.getOutputDir().getAbsolutePath(), project.getProjectId(),
+                TESTEDNESS_DIR, commit, testCaseFullName, JACOCO_DIR);
+    }
+    private Path getPathToPitestOutput(String commit, String testCaseFullName) {
+        return VtrUtils.getPathToFile(project.getOutputDir().getAbsolutePath(), project.getProjectId(),
+                TESTEDNESS_DIR, commit, testCaseFullName, PITEST_DIR);
+    }
+
+    private Path getPathToOutputFile(Type type) {
+        String filename = type.toString();
+        return VtrUtils.getPathToFile(outputDir.getPath(), filename + ".csv");
+    }
+}
