@@ -15,17 +15,25 @@ import org.apache.commons.io.FileUtils;
 import org.apache.maven.shared.invoker.MavenInvocationException;
 import org.dom4j.DocumentException;
 import org.eclipse.jgit.api.errors.GitAPIException;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.parser.Parser;
+import org.jsoup.select.Elements;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.ParseException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class Testedness {
     private static Logger LOGGER = LoggerFactory.getLogger(Testedness.class);
@@ -75,17 +83,20 @@ public class Testedness {
                 for (final String testcase : testcases) {
                     final String className = TestCase.getClassName(testcase);
                     final String methodName = TestCase.getMethodName(testcase);
-                    // After version of a project under analysis
-                    LOGGER.info("Checkout (after modified): " + curCommit);
-                    git.checkoutAt(curCommit);
-                    after(project, curCommit, className);
+                    if (!isDone(curCommit, className)) {
+                        // After version of a project under analysis
+                        LOGGER.info("Checkout (after modified): " + curCommit);
+                        git.checkoutAt(curCommit);
+                        after(project, curCommit, className);
+                    }
 
                     // Before version of a project under analysis
                     String prvCommit = dict.getPrevCommitBy(curCommit).getId();
-                    LOGGER.info("Checkout (before modified): " + prvCommit + " previous to " + curCommit);
-                    git.checkoutAt(prvCommit);
-                    before(project, prvCommit, className);
-
+                    if (!isDone(prvCommit, className)) {
+                        LOGGER.info("Checkout (before modified): " + prvCommit + " previous to " + curCommit);
+                        git.checkoutAt(prvCommit);
+                        before(project, prvCommit, className);
+                    }
                     compare(project, prvCommit, curCommit, className, methodName);
                 }
 
@@ -94,7 +105,6 @@ public class Testedness {
         }
         output();
     }
-
 
     public void prepare() {
         results = new HashMap<>();
@@ -133,8 +143,28 @@ public class Testedness {
 
     public void compare(final Project project, final String prvCommit, final String curCommit, final String className, final String methodName) {
         Testedness.Type type = Type.NONE;
+        // compare coverage score
+        boolean coverageIncrease = false;
+        int prvCoverageScore = getCoverageScore(prvCommit, className);
+        int curCoverageScore = getCoverageScore(curCommit, className);
+        if (prvCoverageScore < curCoverageScore) {
+            coverageIncrease = true;
+        }
+        // compare num of killed mutatns
+        boolean mutationIncrease = false;
+        int prvNumOfKilledMutants = getNumOfKilledMutants(prvCommit, className);
+        int curNumOfKilledMutants = getNumOfKilledMutants(curCommit, className);
+        if (prvNumOfKilledMutants < curNumOfKilledMutants) {
+            mutationIncrease = true;
+        }
 
-
+        if (coverageIncrease && mutationIncrease) {
+            type = Type.JACOCO_PITEST;
+        } else if (coverageIncrease) {
+            type = Type.JACOCO;
+        } else if (mutationIncrease) {
+            type = Type.PITEST;
+        }
 
         VtrUtils.addCsvRecords(results.get(type), project.getProjectId(), prvCommit, curCommit, className, methodName);
     }
@@ -143,6 +173,11 @@ public class Testedness {
         for (Testedness.Type type : Testedness.Type.values()) {
             VtrUtils.writeContent(getPathToOutputFile(type), results.get(type).toString());
         }
+    }
+
+    private boolean isDone(String commit, String className) {
+        return Files.exists(getPathToJacocoOutput(commit, className))
+                && Files.exists(getPathToPitestOutput(commit, className));
     }
 
     protected void runJacocoAndPitest(final Project project, final String commitId, String className) {
@@ -199,6 +234,49 @@ public class Testedness {
     }
 
 
+    private int getCoverageScore(String commit, String className) {
+        String content = getJacocoReport(commit, className);
+        Document document = Jsoup.parse(content);
+        Element element = document.select("#coveragetable tfoot tr .ctr2").first();
+        return Integer.parseInt(element.text().replace("%", ""));
+    }
+
+    private String getJacocoReport(String commit, String className) {
+        String content = "";
+        try {
+            content = Files.lines(
+                    VtrUtils.getPathToFile(getPathToJacocoOutput(commit, className).toString(), "jacoco/index.html"),
+                    Charset.forName("UTF-8")
+            ).collect(Collectors.joining(System.getProperty("line.separator")));
+        } catch (IOException e) {
+            LOGGER.warn("Not found jacoco report of {} @ {}", className, commit);
+        }
+        return content;
+    }
+
+    private int getNumOfKilledMutants(String commit, String className) {
+        String content = getPitestReport(commit, className);
+        Document document = Jsoup.parse(content, "", Parser.xmlParser());
+        Elements elements = document.select("body > table:nth-child(3) > tbody > tr > td:nth-child(3) > div > div.coverage_ledgend");
+        String text = elements.get(0).text();
+        String[] split = text.split("/");
+        return Integer.parseInt(split[0]);
+    }
+
+    private String getPitestReport(String commit, String className) {
+        String content = "";
+        try {
+            content = Files.lines(
+                    VtrUtils.getPathToFile(getPathToPitestOutput(commit, className).toString(), "pit-reports/index.html"),
+                    Charset.forName("UTF-8")
+            ).collect(Collectors.joining(System.getProperty("line.separator")));
+        } catch (IOException e) {
+            LOGGER.warn("Not found pitest report of {} @ {}", className, commit);
+        }
+        return content;
+    }
+
+
     private void copyJacocoOutput(String commit, String testCaseFullName) throws IOException {
         FileUtils.copyDirectoryToDirectory(VtrUtils.getPathToFile(project.getProjectDir().getAbsolutePath(), "target/site/jacoco").toFile(),
                 getPathToJacocoOutput(commit, testCaseFullName).toFile());
@@ -220,6 +298,6 @@ public class Testedness {
 
     private Path getPathToOutputFile(Type type) {
         String filename = type.toString();
-        return VtrUtils.getPathToFile(outputDir.getPath(), filename + ".csv");
+        return VtrUtils.getPathToFile(outputDir.getPath(), TESTEDNESS_DIR, filename + ".csv");
     }
 }
