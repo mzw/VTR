@@ -82,24 +82,27 @@ public class Testedness {
                 List<String> testcases = commits.get(curCommit);
                 for (final String testcase : testcases) {
                     final String className = TestCase.getClassName(testcase);
-                    final String methodName = TestCase.getMethodName(testcase);
-                    if (!isDone(curCommit, className)) {
-                        // After version of a project under analysis
-                        LOGGER.info("Checkout (after modified): " + curCommit);
-                        git.checkoutAt(curCommit);
-                        after(project, curCommit, className);
-                    }
+                    try {
+                        final String methodName = TestCase.getMethodName(testcase);
+                        if (!isDone(curCommit, className)) {
+                            // After version of a project under analysis
+                            LOGGER.info("Checkout (after modified): " + curCommit);
+                            git.checkoutAt(curCommit);
+                            after(project, curCommit, className);
+                        }
 
-                    // Before version of a project under analysis
-                    String prvCommit = dict.getPrevCommitBy(curCommit).getId();
-                    if (!isDone(prvCommit, className)) {
-                        LOGGER.info("Checkout (before modified): " + prvCommit + " previous to " + curCommit);
-                        git.checkoutAt(prvCommit);
-                        before(project, prvCommit, className);
+                        // Before version of a project under analysis
+                        String prvCommit = dict.getPrevCommitBy(curCommit).getId();
+                        if (!isDone(prvCommit, className)) {
+                            LOGGER.info("Checkout (before modified): " + prvCommit + " previous to " + curCommit);
+                            git.checkoutAt(prvCommit);
+                            before(project, prvCommit, className);
+                        }
+                        compare(project, prvCommit, curCommit, className, methodName);
+                    } catch (NullPointerException e) {
+                        LOGGER.warn("NullPointerException: {} @ {}", className, curCommit);
                     }
-                    compare(project, prvCommit, curCommit, className, methodName);
                 }
-
                 git.checkoutAt(git.getLatestCommit().getId());
             }
         }
@@ -216,7 +219,7 @@ public class Testedness {
         LOGGER.info("Measure coverage: {} @ {}", testCaseFullName, commit);
         String each = "-Dtest=" + testCaseFullName;
         List<String> args = Arrays.asList("clean", "compile", "test-compile",
-                "org.jacoco:jacoco-maven-plugin:prepare-agent", "test", each, "org.jacoco:jacoco-maven-plugin:report");
+                "org.jacoco:jacoco-maven-plugin:prepare-agent", "test", each, "-DfailIfNoTests=false", "org.jacoco:jacoco-maven-plugin:report");
         runMaven(args);
         return;
     }
