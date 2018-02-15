@@ -8,6 +8,7 @@ import jp.mzw.vtr.cluster.similarity.DistAnalyzer;
 import jp.mzw.vtr.cluster.similarity.DistMap;
 import jp.mzw.vtr.cluster.testedness.ResultAnalyzer;
 import jp.mzw.vtr.cluster.testedness.Testedness;
+import jp.mzw.vtr.cluster.wild_caught_mutants.PatchCollector;
 import jp.mzw.vtr.core.Project;
 import jp.mzw.vtr.detect.DetectionResult;
 import jp.mzw.vtr.detect.Detector;
@@ -37,6 +38,8 @@ public class ClusterCommand {
             } else if (mode.equals("add-patterns-for-testedness")) {
                 Project project = new Project(null).setConfig(CLI.CONFIG_FILENAME);
                 ResultAnalyzer.analyze(project.getSubjectsDir(), project.getOutputDir());
+            } else if (mode.equals("collect-patches")) {
+                unifyPatches();
             }
 
         } else if (args.length == 4) {
@@ -81,5 +84,12 @@ public class ClusterCommand {
         List<DetectionResult> results = Detector.getDetectionResults(project.getSubjectsDir(), project.getOutputDir());
         Testedness testedness = new Testedness(project.getSubjectsDir(), project.getOutputDir());
         testedness.run(results);
+    }
+
+    private static void unifyPatches() throws ParseException, GitAPIException, IOException {
+        Project project = new Project(null).setConfig(CLI.CONFIG_FILENAME);
+        List<DetectionResult> results = Detector.getDetectionResults(project.getSubjectsDir(), project.getOutputDir());
+        PatchCollector collector = new PatchCollector(project.getSubjectsDir(), project.getOutputDir());
+        collector.run(results);
     }
 }
