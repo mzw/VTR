@@ -6,6 +6,7 @@ import jp.mzw.vtr.cluster.grouminer.GrouMiner;
 import jp.mzw.vtr.cluster.gumtreediff.GumTreeDiff;
 import jp.mzw.vtr.cluster.similarity.DistAnalyzer;
 import jp.mzw.vtr.cluster.similarity.DistMap;
+import jp.mzw.vtr.cluster.wild_caught_mutants.PatchCollector;
 import jp.mzw.vtr.core.Project;
 import jp.mzw.vtr.detect.DetectionResult;
 import jp.mzw.vtr.detect.Detector;
@@ -30,6 +31,8 @@ public class ClusterCommand {
                 grouminer();
             } else if (mode.equals("gumtreediff")) {
                 gumtreediff();
+            } else if (mode.equals("collect-patches")) {
+                unifyPatches();
             }
         } else if (args.length == 4) {
             String analyzer = args[1];
@@ -66,5 +69,12 @@ public class ClusterCommand {
         List<DetectionResult> results = Detector.getDetectionResults(project.getSubjectsDir(), project.getOutputDir());
         GumTreeDiff differ = new GumTreeDiff(project.getSubjectsDir(), project.getOutputDir());
         differ.run(results);
+    }
+
+    private static void unifyPatches() throws ParseException, GitAPIException, IOException {
+        Project project = new Project(null).setConfig(CLI.CONFIG_FILENAME);
+        List<DetectionResult> results = Detector.getDetectionResults(project.getSubjectsDir(), project.getOutputDir());
+        PatchCollector collector = new PatchCollector(project.getSubjectsDir(), project.getOutputDir());
+        collector.run(results);
     }
 }
