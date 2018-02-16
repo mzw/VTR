@@ -20,8 +20,8 @@ import java.util.Map;
 public class PatchCollector extends BeforeAfterComparator {
     private static Logger LOGGER = LoggerFactory.getLogger(PatchCollector.class);
 
-    public static final String PATCH_UNIFIER_DIR = "PatchCollector";
-    public static final String PATCH_UNIFIER_FILE = "patches.diff";
+    public static final String PATCH_COLLECTOR_DIR = "PatchCollector";
+    public static final String PATCH_COLLECTOR_FILE = "patches.diff";
 
     /** Contain patches as results */
     List<List<String>> patches;
@@ -36,8 +36,12 @@ public class PatchCollector extends BeforeAfterComparator {
     /** Contain source codes of current test suites */
     private Map<String, List<String>> curTestSuiteCodes;
 
-    public PatchCollector(final File projectDir, final File outputDir) {
+    /** If true, excluding parts of other test cases; otherwise, extracting parts of a given test case */
+    private final boolean exclude;
+
+    public PatchCollector(final File projectDir, final File outputDir, final boolean exclude) {
         super(projectDir, outputDir);
+        this.exclude = exclude;
     }
 
     @Override
@@ -95,11 +99,11 @@ public class PatchCollector extends BeforeAfterComparator {
         // FIXME: Keep raw text (not compressed text)
         if (curTestCase != null) {
             final List<String> lines = curTestSuiteCodes.get(curTestCase.getTestSuite().getTestClassName());
-            curTestCaseCode = getContent(curTestCase, lines, true);
+            curTestCaseCode = getContent(curTestCase, lines);
         }
         if (prvTestCase != null) {
             final List<String> lines = prvTestSuiteCodes.get(prvTestCase.getTestSuite().getTestClassName());
-            prvTestCaseCode = getContent(prvTestCase, lines, true);
+            prvTestCaseCode = getContent(prvTestCase, lines);
         }
 
         List<String> patch = ValidatorBase.genPatch(prvTestCaseCode, curTestCaseCode, prvTestFile, curTestFile);
@@ -111,10 +115,9 @@ public class PatchCollector extends BeforeAfterComparator {
      *
      * @param testCase
      * @param lines
-     * @param exclude if true, excluding parts of other test cases; otherwise, extracting parts of a given test case
      * @return
      */
-    private String getContent(final TestCase testCase, final List<String> lines, final boolean exclude) {
+    private String getContent(final TestCase testCase, final List<String> lines) {
         StringBuilder content = new StringBuilder();
         String delim = "";
         if (exclude) {
@@ -150,16 +153,17 @@ public class PatchCollector extends BeforeAfterComparator {
     @Override
     public void output() {
         try {
-            File dir = new File(outputDir, PATCH_UNIFIER_DIR);
+            File dir = new File(outputDir, PATCH_COLLECTOR_DIR);
             if (!dir.exists()) {
                 dir.mkdirs();
             }
-            File file = new File(dir, PATCH_UNIFIER_FILE);
+            File file = new File(dir, PATCH_COLLECTOR_FILE);
             boolean append = false;
             for (List<String> patch : patches) {
                 FileUtils.writeLines(file, patch, append);
                 append = true;
             }
+            FileUtils.copyFile(file, new File(dir, exclude ? "exclude_" : "extract_" + PATCH_COLLECTOR_FILE));
         } catch (IOException e) {
             LOGGER.error("Error: {}", e.getMessage());
         }

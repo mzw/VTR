@@ -31,8 +31,14 @@ public class ClusterCommand {
                 grouminer();
             } else if (mode.equals("gumtreediff")) {
                 gumtreediff();
-            } else if (mode.equals("collect-patches")) {
-                unifyPatches();
+            } else if ("collect-patches".equals(mode)) {
+                collectPatches(true); // true is default
+            }
+        } else if (args.length == 2) {
+            String mode = args[0];
+            if ("collect-patches".equals(mode)) {
+                boolean exclude = Boolean.parseBoolean(args[1]);
+                collectPatches(exclude);
             }
         } else if (args.length == 4) {
             String analyzer = args[1];
@@ -71,10 +77,10 @@ public class ClusterCommand {
         differ.run(results);
     }
 
-    private static void unifyPatches() throws ParseException, GitAPIException, IOException {
+    private static void collectPatches(final boolean exclude) throws ParseException, GitAPIException, IOException {
         Project project = new Project(null).setConfig(CLI.CONFIG_FILENAME);
         List<DetectionResult> results = Detector.getDetectionResults(project.getSubjectsDir(), project.getOutputDir());
-        PatchCollector collector = new PatchCollector(project.getSubjectsDir(), project.getOutputDir());
+        PatchCollector collector = new PatchCollector(project.getSubjectsDir(), project.getOutputDir(), exclude);
         collector.run(results);
     }
 }
