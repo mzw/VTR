@@ -69,9 +69,7 @@ public class Testedness {
      */
     public void run(final List<DetectionResult> results) throws IOException, ParseException, GitAPIException {
         prepare();
-        List<CSVRecord> blacklists =VtrUtils.getCsvRecords(
-                Paths.get(Testedness.class.getClassLoader().getResource(BLACKLIST).getPath())
-        );
+
         for (final DetectionResult result : results) {
             final String projectId = result.getSubjectName();
             LOGGER.info("Project: " + projectId);
@@ -88,31 +86,26 @@ public class Testedness {
                 List<String> testcases = commits.get(curCommit);
                 for (final String testcase : testcases) {
                     final String className = TestCase.getClassName(testcase);
-                    // skip if this is listed on blacklist.
-                    boolean skip = false;
-                    for (CSVRecord blacklist : blacklists) {
-                        if (projectId.equals(blacklist.get(0))
-                                && curCommit.equals(blacklist.get(1))
-                                && className.equals(blacklist.get(2))) {
-                            skip = true;
-                            break;
-                        }
-                    }
-                    if (skip) {
-                        LOGGER.warn("SKIP: {} @ {} on {}", className, curCommit, projectId);
-                        continue;
-                    }
                     try {
                         final String methodName = TestCase.getMethodName(testcase);
+                        String prvCommit = dict.getPrevCommitBy(curCommit).getId();
+                        // skip if (projectId, curCommit, className) is listed on blacklist.
+                        if (isSkip(projectId, curCommit, className)) {
+                            LOGGER.warn("SKIP: {} @ {} on {}", className, curCommit, projectId);
+                            continue;
+                        }
+                        // skip if (projectId, prvCommit, className) is listed on blacklist.
+                        if (isSkip(projectId, prvCommit, className)) {
+                            LOGGER.warn("SKIP: {} @ {} on {}", className, curCommit, projectId);
+                            continue;
+                        }
+                        // After version of a project under analysis
                         if (!isDone(curCommit, className)) {
-                            // After version of a project under analysis
                             LOGGER.info("Checkout (after modified): " + curCommit);
                             git.checkoutAt(curCommit);
                             after(project, curCommit, className);
                         }
-
                         // Before version of a project under analysis
-                        String prvCommit = dict.getPrevCommitBy(curCommit).getId();
                         if (!isDone(prvCommit, className)) {
                             LOGGER.info("Checkout (before modified): " + prvCommit + " previous to " + curCommit);
                             git.checkoutAt(prvCommit);
@@ -128,6 +121,21 @@ public class Testedness {
         }
         output();
     }
+
+    private boolean isSkip(String projectId, String commit, String className) {
+        List<CSVRecord> blacklists =VtrUtils.getCsvRecords(
+                Paths.get(Testedness.class.getClassLoader().getResource(BLACKLIST).getPath())
+        );
+        for (CSVRecord blacklist : blacklists) {
+            if (projectId.equals(blacklist.get(0))
+                    && commit.equals(blacklist.get(1))
+                    && className.equals(blacklist.get(2))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
 
     public void prepare() {
         results = new HashMap<>();
