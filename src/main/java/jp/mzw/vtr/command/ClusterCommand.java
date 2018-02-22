@@ -6,6 +6,7 @@ import jp.mzw.vtr.cluster.grouminer.GrouMiner;
 import jp.mzw.vtr.cluster.gumtreediff.GumTreeDiff;
 import jp.mzw.vtr.cluster.similarity.DistAnalyzer;
 import jp.mzw.vtr.cluster.similarity.DistMap;
+import jp.mzw.vtr.cluster.testedness.ResultAnalyzer;
 import jp.mzw.vtr.cluster.testedness.Testedness;
 import jp.mzw.vtr.core.Project;
 import jp.mzw.vtr.detect.DetectionResult;
@@ -33,7 +34,11 @@ public class ClusterCommand {
                 gumtreediff();
             } else if (mode.equals("testedness")) {
                 testedness();
+            } else if (mode.equals("add-pattens-for-testedness")) {
+                Project project = new Project(null).setConfig(CLI.CONFIG_FILENAME);
+                ResultAnalyzer.analyze(project.getSubjectsDir(), project.getOutputDir());
             }
+
         } else if (args.length == 4) {
             String analyzer = args[1];
             String strategy = args[2];

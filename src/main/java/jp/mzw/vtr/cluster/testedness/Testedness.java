@@ -9,7 +9,6 @@ import jp.mzw.vtr.git.CheckoutConductor;
 import jp.mzw.vtr.maven.JacocoInstrumenter;
 import jp.mzw.vtr.maven.MavenUtils;
 import jp.mzw.vtr.maven.PitInstrumenter;
-import jp.mzw.vtr.maven.Results;
 import jp.mzw.vtr.maven.TestCase;
 import org.apache.commons.io.FileUtils;
 import org.apache.maven.shared.invoker.MavenInvocationException;
@@ -39,7 +38,7 @@ public class Testedness {
     private static Logger LOGGER = LoggerFactory.getLogger(Testedness.class);
 
     /** A directory name to output classification results */
-    private static final String TESTEDNESS_DIR = "testedness";
+    static final String TESTEDNESS_DIR = "testedness";
     private static final String JACOCO_DIR = "jacoco";
     private static final String PITEST_DIR = "pitest";
 
@@ -116,7 +115,7 @@ public class Testedness {
         }
     }
 
-    private enum Type {
+    enum Type {
         JACOCO_PITEST,
         JACOCO,
         PITEST,
@@ -299,8 +298,9 @@ public class Testedness {
                 TESTEDNESS_DIR, commit, testCaseFullName, PITEST_DIR);
     }
 
-    private Path getPathToOutputFile(Type type) {
+    Path getPathToOutputFile(Type type) {
         String filename = type.toString();
         return VtrUtils.getPathToFile(outputDir.getPath(), TESTEDNESS_DIR, filename + ".csv");
     }
+
 }
