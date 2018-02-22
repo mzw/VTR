@@ -34,7 +34,7 @@ public class ClusterCommand {
                 gumtreediff();
             } else if (mode.equals("testedness")) {
                 testedness();
-            } else if (mode.equals("add-pattens-for-testedness")) {
+            } else if (mode.equals("add-patterns-for-testedness")) {
                 Project project = new Project(null).setConfig(CLI.CONFIG_FILENAME);
                 ResultAnalyzer.analyze(project.getSubjectsDir(), project.getOutputDir());
             }
