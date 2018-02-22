@@ -152,7 +152,7 @@ public class Testedness {
         if (prvCoverageScore < curCoverageScore) {
             coverageIncrease = true;
         }
-        // compare num of killed mutatns
+        // compare num of killed mutants
         boolean mutationIncrease = false;
         int prvNumOfKilledMutants = getNumOfKilledMutants(prvCommit, className);
         int curNumOfKilledMutants = getNumOfKilledMutants(curCommit, className);
@@ -238,6 +238,9 @@ public class Testedness {
 
     private int getCoverageScore(String commit, String className) {
         String content = getJacocoReport(commit, className);
+        if (content.equals("")) {
+            return -1;
+        }
         Document document = Jsoup.parse(content);
         Element element = document.select("#coveragetable tfoot tr .ctr2").first();
         return Integer.parseInt(element.text().replace("%", ""));
@@ -258,6 +261,9 @@ public class Testedness {
 
     private int getNumOfKilledMutants(String commit, String className) {
         String content = getPitestReport(commit, className);
+        if (content.equals("")) {
+            return -1;
+        }
         Document document = Jsoup.parse(content, "", Parser.xmlParser());
         Elements elements = document.select("body > table:nth-child(3) > tbody > tr > td:nth-child(3) > div > div.coverage_ledgend");
         String text = elements.get(0).text();
