@@ -10,6 +10,7 @@ import jp.mzw.vtr.maven.JacocoInstrumenter;
 import jp.mzw.vtr.maven.MavenUtils;
 import jp.mzw.vtr.maven.PitInstrumenter;
 import jp.mzw.vtr.maven.TestCase;
+import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.io.FileUtils;
 import org.apache.maven.shared.invoker.MavenInvocationException;
 import org.dom4j.DocumentException;
@@ -27,6 +28,7 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.text.ParseException;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -41,6 +43,8 @@ public class Testedness {
     static final String TESTEDNESS_DIR = "testedness";
     private static final String JACOCO_DIR = "jacoco";
     private static final String PITEST_DIR = "pitest";
+
+    private static final String BLACKLIST = "blacklists/testedness.csv";
 
     /** A directory containing projects under analysis  */
     protected final File projectDir;
@@ -65,6 +69,9 @@ public class Testedness {
      */
     public void run(final List<DetectionResult> results) throws IOException, ParseException, GitAPIException {
         prepare();
+        List<CSVRecord> blacklists =VtrUtils.getCsvRecords(
+                Paths.get(Testedness.class.getClassLoader().getResource(BLACKLIST).getPath())
+        );
         for (final DetectionResult result : results) {
             final String projectId = result.getSubjectName();
             LOGGER.info("Project: " + projectId);
@@ -81,6 +88,19 @@ public class Testedness {
                 List<String> testcases = commits.get(curCommit);
                 for (final String testcase : testcases) {
                     final String className = TestCase.getClassName(testcase);
+                    // skip if this is listed on blacklist.
+                    boolean skip = false;
+                    for (CSVRecord blacklist : blacklists) {
+                        if (projectId.equals(blacklist.get(0))
+                                && curCommit.equals(blacklist.get(1))
+                                && className.equals(blacklist.get(2))) {
+                            skip = true;
+                            break;
+                        }
+                    }
+                    if (skip) {
+                        continue;
+                    }
                     try {
                         final String methodName = TestCase.getMethodName(testcase);
                         if (!isDone(curCommit, className)) {

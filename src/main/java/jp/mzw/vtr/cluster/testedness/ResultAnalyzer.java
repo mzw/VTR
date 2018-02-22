@@ -30,13 +30,13 @@ public class ResultAnalyzer {
         Map<String, List<CSVRecord>> testednessResult = new HashMap<>();
         for (Testedness.Type type : Testedness.Type.values()) {
             String key = type.name();
-            List<CSVRecord> records = getCsvRecords(testedness.getPathToOutputFile(type));
+            List<CSVRecord> records = VtrUtils.getCsvRecords(testedness.getPathToOutputFile(type));
             testednessResult.put(key, records);
         }
         Map<String, List<CSVRecord>> gumtreediffResult = new HashMap<>();
         for (GumTreeDiff.Type type : GumTreeDiff.Type.values()) {
             String key = type.name();
-            List<CSVRecord> records = getCsvRecords(
+            List<CSVRecord> records = VtrUtils.getCsvRecords(
                     Paths.get(ResultAnalyzer.class.getClassLoader().getResource(type.name() + ".csv").getPath())
             );
             gumtreediffResult.put(key, records);
@@ -74,17 +74,6 @@ public class ResultAnalyzer {
 
 
 
-    }
-
-
-    private static List<CSVRecord> getCsvRecords(Path path) {
-        try (BufferedReader br = Files.newBufferedReader(path)) {
-            CSVParser parser = CSVFormat.DEFAULT.parse(br);
-            return parser.getRecords();
-        } catch (IOException e) {
-            LOGGER.warn("Not found {}", path.toAbsolutePath());
-        }
-        return null;
     }
 
     private static Path getPathToOutput(File outputDir, Testedness.Type type) {
