@@ -99,6 +99,7 @@ public class Testedness {
                         }
                     }
                     if (skip) {
+                        LOGGER.warn("SKIP: {} @ {} on {}", className, curCommit, projectId);
                         continue;
                     }
                     try {
