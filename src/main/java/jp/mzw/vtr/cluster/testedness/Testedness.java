@@ -123,6 +123,9 @@ public class Testedness {
     }
 
     private boolean isSkip(String projectId, String commit, String className) {
+        if (projectId.equals("commons-math") && className.equals("org.apache.commons.math3.util.FastMathTestPerformance")) {
+            return true;
+        }
         List<CSVRecord> blacklists =VtrUtils.getCsvRecords(
                 Paths.get(Testedness.class.getClassLoader().getResource(BLACKLIST).getPath())
         );
