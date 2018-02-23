@@ -156,7 +156,7 @@ public class Testedness {
         }
     }
 
-    enum Type {
+    public enum Type {
         JACOCO_PITEST,
         JACOCO,
         PITEST,
@@ -345,7 +345,7 @@ public class Testedness {
                 TESTEDNESS_DIR, commit, testCaseFullName, PITEST_DIR);
     }
 
-    Path getPathToOutputFile(Type type) {
+    protected Path getPathToOutputFile(Type type) {
         String filename = type.toString();
         return VtrUtils.getPathToFile(outputDir.getPath(), TESTEDNESS_DIR, filename + ".csv");
     }

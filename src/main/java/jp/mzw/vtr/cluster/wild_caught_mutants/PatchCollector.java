@@ -3,17 +3,23 @@ package jp.mzw.vtr.cluster.wild_caught_mutants;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import jp.mzw.vtr.cluster.BeforeAfterComparator;
+import jp.mzw.vtr.cluster.testedness.Testedness;
 import jp.mzw.vtr.core.Project;
+import jp.mzw.vtr.core.VtrUtils;
 import jp.mzw.vtr.maven.MavenUtils;
 import jp.mzw.vtr.maven.TestCase;
 import jp.mzw.vtr.maven.TestSuite;
 import jp.mzw.vtr.validate.ValidatorBase;
+import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URL;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 
@@ -39,6 +45,12 @@ public class PatchCollector extends BeforeAfterComparator {
     /** If true, excluding parts of other test cases; otherwise, extracting parts of a given test case */
     private final boolean exclude;
 
+    /** Relative path to a directory containing testedness results */
+    public static final String TESTEDNESS_RESULTS_DIR = "results/testedness/";
+
+    /** Containing results of measuring improvement of test-case modifications in terms of testedness */
+    private Map<Testedness.Type, List<CSVRecord>> testedness;
+
     public PatchCollector(final File projectDir, final File outputDir, final boolean exclude) {
         super(projectDir, outputDir);
         this.exclude = exclude;
@@ -47,6 +59,42 @@ public class PatchCollector extends BeforeAfterComparator {
     @Override
     public void prepare() {
         patches = Lists.newArrayList();
+
+        // Read CSV files containing `testedness` results
+        this.testedness = Maps.newHashMap();
+        for (final Testedness.Type type : Testedness.Type.values()) {
+            final List<CSVRecord> results = getTestednessResults(type);
+            testedness.put(type, results);
+        }
+    }
+
+    /**
+     * Determine whether given test-case modification improves testedness
+     *
+     * @param projectId
+     * @param commitId
+     * @param className
+     * @param methodName
+     * @return
+     */
+    private boolean isImproved(final String projectId, final String commitId, final String className, final String methodName) {
+        for (final Testedness.Type type : Testedness.Type.values()) {
+            // Not improved
+            if (Testedness.Type.NONE.equals(type)) {
+                continue;
+            }
+            // Improved
+            final List<CSVRecord> results = testedness.get(type);
+            for (final CSVRecord result : results) {
+                if (projectId.equals(result.get(0))
+                        && commitId.equals(result.get(1))
+                        && className.equals(result.get(2))
+                        && methodName.equals(result.get(3))) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     @Override
@@ -87,6 +135,11 @@ public class PatchCollector extends BeforeAfterComparator {
 
     @Override
     public void compare(final Project project, final String prvCommit, final String curCommit, final String className, final String methodName) {
+        if (!isImproved(project.getProjectId(), curCommit, className, methodName)) {
+            LOGGER.info("Skip due to testedness NOT improved: {} @ {}, {}#{}", project.getProjectId(), curCommit, className, methodName);
+            return;
+        }
+
         final TestCase curTestCase = TestSuite.getTestCaseWithClassMethodName(curTestSuites, className, methodName);
         final TestCase prvTestCase = TestSuite.getTestCaseWithClassMethodName(prvTestSuites, className, methodName);
 
@@ -96,7 +149,6 @@ public class PatchCollector extends BeforeAfterComparator {
         String curTestCaseCode = "";
         String prvTestCaseCode = "";
 
-        // FIXME: Keep raw text (not compressed text)
         if (curTestCase != null) {
             final List<String> lines = curTestSuiteCodes.get(curTestCase.getTestSuite().getTestClassName());
             curTestCaseCode = getContent(curTestCase, lines);
@@ -108,6 +160,19 @@ public class PatchCollector extends BeforeAfterComparator {
 
         List<String> patch = ValidatorBase.genPatch(prvTestCaseCode, curTestCaseCode, prvTestFile, curTestFile);
         patches.add(patch);
+    }
+
+    /**
+     * Get CSV records containing results of testedness improvement
+     *
+     * @param type
+     * @return
+     */
+    private List<CSVRecord> getTestednessResults(final Testedness.Type type) {
+        final String name = new StringBuilder(TESTEDNESS_RESULTS_DIR).append(type.name()).append(".csv").toString();
+        final URL resource = PatchCollector.class.getClassLoader().getResource(name);
+        final Path path = Paths.get(resource.getPath());
+        return VtrUtils.getCsvRecords(path);
     }
 
     /**
