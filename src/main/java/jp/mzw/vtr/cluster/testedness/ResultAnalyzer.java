@@ -2,16 +2,11 @@ package jp.mzw.vtr.cluster.testedness;
 
 import jp.mzw.vtr.cluster.gumtreediff.GumTreeDiff;
 import jp.mzw.vtr.core.VtrUtils;
-import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
@@ -20,6 +15,10 @@ import java.util.Map;
 
 import static jp.mzw.vtr.cluster.testedness.Testedness.TESTEDNESS_DIR;
 
+/**
+ * Class for adding manual defined patterns to testedness classifying results.
+ * This class requires testedness classifying results and your manual inspection results.
+ */
 public class ResultAnalyzer {
     private static Logger LOGGER = LoggerFactory.getLogger(ResultAnalyzer.class);
     private static final String PATTERN_DIR = "pattern";
@@ -27,12 +26,14 @@ public class ResultAnalyzer {
 
     public static void analyze(File subjectDir, File outputDir) {
         Testedness testedness = new Testedness(subjectDir, outputDir);
+        // get testedness results
         Map<String, List<CSVRecord>> testednessResult = new HashMap<>();
         for (Testedness.Type type : Testedness.Type.values()) {
             String key = type.name();
             List<CSVRecord> records = VtrUtils.getCsvRecords(testedness.getPathToOutputFile(type));
             testednessResult.put(key, records);
         }
+        // get gumtreediff results
         Map<String, List<CSVRecord>> gumtreediffResult = new HashMap<>();
         for (GumTreeDiff.Type type : GumTreeDiff.Type.values()) {
             String key = type.name();
@@ -41,7 +42,7 @@ public class ResultAnalyzer {
             );
             gumtreediffResult.put(key, records);
         }
-
+        // add patterns
         for (Testedness.Type type : Testedness.Type.values()) {
             List<CSVRecord> records = testednessResult.get(type.name());
             StringBuilder sb = new StringBuilder();
@@ -71,9 +72,6 @@ public class ResultAnalyzer {
             Path pathToOutput = getPathToOutput(outputDir, type);
             VtrUtils.writeContent(pathToOutput, sb.toString());
         }
-
-
-
     }
 
     private static Path getPathToOutput(File outputDir, Testedness.Type type) {

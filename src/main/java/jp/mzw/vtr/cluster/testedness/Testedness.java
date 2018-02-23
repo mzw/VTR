@@ -36,6 +36,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+/**
+ * Class for comparing testedness of each test case before/after modification.
+ * Testedness is propsed in "Can Testedness be Effectively Measured?", FSE'16,
+ * and it is calculated by coverage score and mutation score.
+ * This class has two main tasks as follows.
+ * 1. Measure coverage score and mutation score of test cases before/after modification.
+ * 2. Compare the results of 1., then classify into 4 categories.
+ * (e.g., if a test case after modification scored higher than before one on both coverage and mutation score,
+ * it is classified into JACOCO_PITEST.)
+ */
 public class Testedness {
     private static Logger LOGGER = LoggerFactory.getLogger(Testedness.class);
 
@@ -139,7 +149,6 @@ public class Testedness {
         return false;
     }
 
-
     public void prepare() {
         results = new HashMap<>();
         for (Testedness.Type type : Testedness.Type.values()) {
@@ -153,7 +162,6 @@ public class Testedness {
         PITEST,
         NONE,
     }
-
 
     public void prepareEach(final Project project) {
         this.project = project;
@@ -245,7 +253,6 @@ public class Testedness {
         }
     }
 
-
     protected void runJacoco(String commit, String testCaseFullName) throws MavenInvocationException {
         LOGGER.info("Measure coverage: {} @ {}", testCaseFullName, commit);
         String each = "-Dtest=" + testCaseFullName;
@@ -266,7 +273,6 @@ public class Testedness {
         MavenUtils.maven(this.project.getProjectDir(), args, this.project.getMavenHome());
         return;
     }
-
 
     private int getCoverageScore(String commit, String className) {
         String content = getJacocoReport(commit, className);
@@ -316,23 +322,26 @@ public class Testedness {
         return content;
     }
 
-
     private void copyJacocoOutput(String commit, String testCaseFullName) throws IOException {
-        FileUtils.copyDirectoryToDirectory(VtrUtils.getPathToFile(project.getProjectDir().getAbsolutePath(), "target/site/jacoco").toFile(),
+        FileUtils.copyDirectoryToDirectory(
+                VtrUtils.getPathToFile(project.getProjectDir().getAbsolutePath(), "target/site/jacoco").toFile(),
                 getPathToJacocoOutput(commit, testCaseFullName).toFile());
     }
 
     private void copyPitestOutput(String commit, String testCaseFullName) throws IOException {
-        FileUtils.copyDirectoryToDirectory(VtrUtils.getPathToFile(project.getProjectDir().getAbsolutePath(), "target/pit-reports").toFile(),
+        FileUtils.copyDirectoryToDirectory(
+                VtrUtils.getPathToFile(project.getProjectDir().getAbsolutePath(), "target/pit-reports").toFile(),
                 getPathToPitestOutput(commit, testCaseFullName).toFile());
     }
 
     private Path getPathToJacocoOutput(String commit, String testCaseFullName) {
-        return VtrUtils.getPathToFile(project.getOutputDir().getAbsolutePath(), project.getProjectId(),
+        return VtrUtils.getPathToFile(
+                project.getOutputDir().getAbsolutePath(), project.getProjectId(),
                 TESTEDNESS_DIR, commit, testCaseFullName, JACOCO_DIR);
     }
     private Path getPathToPitestOutput(String commit, String testCaseFullName) {
-        return VtrUtils.getPathToFile(project.getOutputDir().getAbsolutePath(), project.getProjectId(),
+        return VtrUtils.getPathToFile(
+                project.getOutputDir().getAbsolutePath(), project.getProjectId(),
                 TESTEDNESS_DIR, commit, testCaseFullName, PITEST_DIR);
     }
 
