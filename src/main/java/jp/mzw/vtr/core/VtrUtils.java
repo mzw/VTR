@@ -13,6 +13,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -210,5 +213,15 @@ public class VtrUtils {
 		// delete the last comma
 		sb.deleteCharAt(sb.length() - 1);
 		sb.append("\n");
+	}
+
+	public static List<CSVRecord> getCsvRecords(Path path) {
+		try (BufferedReader br = Files.newBufferedReader(path)) {
+			CSVParser parser = CSVFormat.DEFAULT.parse(br);
+			return parser.getRecords();
+		} catch (IOException e) {
+			LOGGER.warn("Not found {}", path.toAbsolutePath());
+		}
+		return null;
 	}
 }

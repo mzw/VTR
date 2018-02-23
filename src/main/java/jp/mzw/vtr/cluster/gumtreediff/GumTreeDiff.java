@@ -57,7 +57,7 @@ public class GumTreeDiff extends BeforeAfterComparator {
     /**
      * Types of classification results
      */
-    private enum Type {
+    public enum Type {
         INS_MOV_DEL_UPD,
         INS_MOV_DEL,
         INS_MOV_UPD,

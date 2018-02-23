@@ -96,7 +96,7 @@ public class MutationAnalysis extends EvaluatorBase {
 			if (modified) {
 				pi.revert();
 			}
-		} catch (IOException | DocumentException | MavenInvocationException e) {
+		} catch (IOException | MavenInvocationException e) {
 			LOGGER.warn("Failed to invoke PIT mutation testing: {} at {}", repair.getTestCaseClassName(), repair.getCommit().getId());
 		}
 	}
@@ -149,7 +149,7 @@ public class MutationAnalysis extends EvaluatorBase {
 			if (modified) {
 				pi.revert();
 			}
-		} catch (IOException | DocumentException | MavenInvocationException e) {
+		} catch (IOException | MavenInvocationException e) {
 			LOGGER.warn("Failed to invoke PIT mutation testing: {} at {}", repair.getTestCaseClassName(), repair.getCommit().getId());
 		}
 	}

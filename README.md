@@ -31,55 +31,67 @@ $ mvn compile test-compile dependency:copy-dependencies
 
 ## Run
 
-### In-Advance Phase
+### 1. In-Advance Phase
 
-#### 1. Make Dictionary
+#### 1-1. Make Dictionary
 
 ```
 $ sh/run dict vtr-example
 ```
 
-#### 2.  Measure Coverage of Modified Test Cases
+#### 1-2.  Measure Coverage of Modified Test Cases
 
 ```
 $ sh/run cov vtr-example
 ```
 
-#### 3. Detect Test-Case Modifications for Previously-Released Source Code
+#### 1-3. Detect Test-Case Modifications for Previously-Released Source Code
 
 ```
 $ sh/run detect vtr-example
 ```
 
-### In-Review Phase
+### 2. In-Review Phase
 
-#### 4. Classify Detected Test-Case Modifications
+#### 2-1. Classify Detected Test-Case Modifications by [GumTreeDiff](https://github.com/GumTreeDiff/gumtree)
 
 ```
 $ sh/run cluster gumtreediff
 ```
 
-#### 5. Review VTR In-Advance Results
+#### 2-2. Classify Detected Test-Case Modifications by Testedness
+
+```
+$ sh/run cluster testedness
+```
+
+##### (Optional) Adding Manual Defined Modification Patterns
+
+```
+$ sh/run cluster add-patterns-for-testedness
+```
+
+#### 2-3. Review VTR In-Advance Results
 
 ```
 $ sh/run visualize html
 ```
 
-### In-Use Phase
+### 3. In-Use Phase
 
-#### 6. Validate Test Cases to Be Modified
+#### 3-1. Validate Test Cases to Be Modified
 
 ```
 $ sh/run validate vtr-example
 ```
 
-#### 7. Generate Patches to Modify Test Cases Detected
+#### 3-2. Generate Patches to Modify Test Cases Detected
 
 ```
 $ sh/run gen vtr-example
 ```
 
-#### 8. Evaluate Improvement of Modified Test Cases
+#### 3-3. Evaluate Improvement of Modified Test Cases
 
 ```
 $ sh/run repair vtr-example

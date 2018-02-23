@@ -49,7 +49,7 @@ public class RuntimeOutput extends OutputBase {
 			// change po.xml
 			JacocoInstrumenter ji = new JacocoInstrumenter(this.projectDir);
 			boolean modified = ji.instrument();
-			// execute test casea
+			// execute test case
 			Results results = run(repair.getTestCaseFullName());
 			results.patchBeforeRuntimeOutput(getAfterDir(repair));
 
