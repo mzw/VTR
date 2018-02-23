@@ -228,7 +228,7 @@ public class PatchCollector extends BeforeAfterComparator {
                 FileUtils.writeLines(file, patch, append);
                 append = true;
             }
-            FileUtils.copyFile(file, new File(dir, exclude ? "exclude_" : "extract_" + PATCH_COLLECTOR_FILE));
+            FileUtils.copyFile(file, new File(dir, (exclude ? "exclude_" : "extract_") + PATCH_COLLECTOR_FILE));
         } catch (IOException e) {
             LOGGER.error("Error: {}", e.getMessage());
         }
