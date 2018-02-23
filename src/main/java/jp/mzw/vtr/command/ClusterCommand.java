@@ -33,6 +33,7 @@ public class ClusterCommand {
                 grouminer();
             } else if (mode.equals("gumtreediff")) {
                 gumtreediff();
+<<<<<<< HEAD
             } else if (mode.equals("testedness")) {
                 testedness();
             } else if (mode.equals("add-patterns-for-testedness")) {
@@ -40,6 +41,16 @@ public class ClusterCommand {
                 ResultAnalyzer.analyze(project.getSubjectsDir(), project.getOutputDir());
             } else if (mode.equals("collect-patches")) {
                 unifyPatches();
+=======
+            } else if ("collect-patches".equals(mode)) {
+                collectPatches(true); // true is default
+            }
+        } else if (args.length == 2) {
+            String mode = args[0];
+            if ("collect-patches".equals(mode)) {
+                boolean exclude = Boolean.parseBoolean(args[1]);
+                collectPatches(exclude);
+>>>>>>> implement CLI for PatchCollector
             }
 
         } else if (args.length == 4) {
@@ -79,6 +90,7 @@ public class ClusterCommand {
         differ.run(results);
     }
 
+<<<<<<< HEAD
     private static void testedness() throws IOException, GitAPIException, ParseException {
         Project project = new Project(null).setConfig(CLI.CONFIG_FILENAME);
         List<DetectionResult> results = Detector.getDetectionResults(project.getSubjectsDir(), project.getOutputDir());
@@ -87,9 +99,12 @@ public class ClusterCommand {
     }
 
     private static void unifyPatches() throws ParseException, GitAPIException, IOException {
+=======
+    private static void collectPatches(final boolean exclude) throws ParseException, GitAPIException, IOException {
+>>>>>>> implement CLI for PatchCollector
         Project project = new Project(null).setConfig(CLI.CONFIG_FILENAME);
         List<DetectionResult> results = Detector.getDetectionResults(project.getSubjectsDir(), project.getOutputDir());
-        PatchCollector collector = new PatchCollector(project.getSubjectsDir(), project.getOutputDir());
+        PatchCollector collector = new PatchCollector(project.getSubjectsDir(), project.getOutputDir(), exclude);
         collector.run(results);
     }
 }
