@@ -53,7 +53,7 @@ $ sh/run detect vtr-example
 
 ### 2. In-Review Phase
 
-#### 2-1. Classify Detected Test-Case Modifications by GumTreeDiff
+#### 2-1. Classify Detected Test-Case Modifications by [GumTreeDiff](https://github.com/GumTreeDiff/gumtree)
 
 ```
 $ sh/run cluster gumtreediff
