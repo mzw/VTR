@@ -33,15 +33,11 @@ public class ClusterCommand {
                 grouminer();
             } else if (mode.equals("gumtreediff")) {
                 gumtreediff();
-<<<<<<< HEAD
             } else if (mode.equals("testedness")) {
                 testedness();
             } else if (mode.equals("add-patterns-for-testedness")) {
                 Project project = new Project(null).setConfig(CLI.CONFIG_FILENAME);
                 ResultAnalyzer.analyze(project.getSubjectsDir(), project.getOutputDir());
-            } else if (mode.equals("collect-patches")) {
-                unifyPatches();
-=======
             } else if ("collect-patches".equals(mode)) {
                 collectPatches(true); // true is default
             }
@@ -50,9 +46,7 @@ public class ClusterCommand {
             if ("collect-patches".equals(mode)) {
                 boolean exclude = Boolean.parseBoolean(args[1]);
                 collectPatches(exclude);
->>>>>>> implement CLI for PatchCollector
             }
-
         } else if (args.length == 4) {
             String analyzer = args[1];
             String strategy = args[2];
@@ -63,6 +57,7 @@ public class ClusterCommand {
             System.out.println("$ java -cp=<class-path> jp.mzw.vtr.CLI cluster <mode: e.g., grouminer>");
         }
     }
+
     private static void cluster(Project project, String analyzer, String strategy, double threshold)
             throws IOException, ParseException, NoHeadException, GitAPIException {
         // Similarity
@@ -90,7 +85,6 @@ public class ClusterCommand {
         differ.run(results);
     }
 
-<<<<<<< HEAD
     private static void testedness() throws IOException, GitAPIException, ParseException {
         Project project = new Project(null).setConfig(CLI.CONFIG_FILENAME);
         List<DetectionResult> results = Detector.getDetectionResults(project.getSubjectsDir(), project.getOutputDir());
@@ -98,10 +92,7 @@ public class ClusterCommand {
         testedness.run(results);
     }
 
-    private static void unifyPatches() throws ParseException, GitAPIException, IOException {
-=======
     private static void collectPatches(final boolean exclude) throws ParseException, GitAPIException, IOException {
->>>>>>> implement CLI for PatchCollector
         Project project = new Project(null).setConfig(CLI.CONFIG_FILENAME);
         List<DetectionResult> results = Detector.getDetectionResults(project.getSubjectsDir(), project.getOutputDir());
         PatchCollector collector = new PatchCollector(project.getSubjectsDir(), project.getOutputDir(), exclude);
