@@ -1,0 +1,18 @@
+K abstract continue for new switch
+K assert default if package synchronized
+K boolean do goto private this
+K break double implements protected throw
+K byte else import public throws
+K case enum instanceof return transient
+K catch extends int short try
+K char final interface static void
+K class finally long strictfp volatile
+K const float native super while
+O ( ) { } [ ] ; , . ... @ ::
+O = > < ! ~ ? : ->
+O == >= <= != && || ++ --
+O + - * / & | ^ % << >> >>>
+O += -= *= /= &= |= ^= %= <<= >>= >>>=
+Q ' "
+C /* */
+c //
